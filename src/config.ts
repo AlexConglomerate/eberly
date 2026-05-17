@@ -25,12 +25,12 @@ export type EbelyConfig = {
    * Откуда сгенерированный файл импортирует `InternalStore`.
    * По умолчанию — имя пакета библиотеки.
    */
-  internalStoreImport?: string
+  internalStoreImport: string
   /**
    * Откуда сгенерированный файл импортирует `ebely`-конфиг.
    * По умолчанию — соседний модуль `./ebely`.
    */
-  configImport?: string
+  configImport: string
 
 }
 
