@@ -1,7 +1,10 @@
 import { generateClient } from 'ebely'
-import { ebely } from './ebely'
 
 await generateClient({
-  swaggerSchema: ebely.swaggerSchema,
-  generateClientTo: ebely.generateClientTo,
+  // swaggerSchema: ebely.swagger.pathToFile,
+  swagger: {
+    pathToFile: 'swagger.json',
+    // url: 'http://localhost:3000/swagger.json'
+  },
+  generateClientTo: 'ebely/generated.ts',
 })
