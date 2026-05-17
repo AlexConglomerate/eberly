@@ -13,8 +13,38 @@ export type CreateUserArgs = {
   headers?: Record<string, string>
 }
 
-export class World {
-  constructor(public args: { url: string }) {}
+/**
+ * Хранилище внутренних переменных одного пользователя.
+ *
+ * Это схемо-независимая обвязка — она НЕ выводится из swagger. Конкретный
+ * набор переменных задаёт пользователь библиотеки: он наследуется от
+ * InternalStore в своём (не генерируемом) файле, передаёт тип переменных
+ * дженериком и может добавлять производные методы поверх this.get/this.set.
+ */
+export class InternalStore<
+  Vars extends Record<string, unknown> = Record<string, never>,
+> {
+  private internalStore = new Map<keyof Vars, unknown>()
+
+  /** Сохранить внутреннюю переменную пользователя. */
+  set<K extends keyof Vars>(args: { key: K; value: Vars[K] }): void {
+    this.internalStore.set(args.key, args.value)
+  }
+
+  /** Прочитать внутреннюю переменную пользователя (undefined, если не задана). */
+  get<K extends keyof Vars>(args: { key: K }): Vars[K] | undefined {
+    return this.internalStore.get(args.key) as Vars[K] | undefined
+  }
+}
+
+export class World<Store extends InternalStore = InternalStore> {
+  constructor(
+    public args: {
+      url: string
+      /** Класс-хранилище внутренних переменных (наследник InternalStore). */
+      store?: new () => Store
+    },
+  ) {}
 
   /** Базовый URL с учётом server.url из схемы. */
   private baseUrl(): string {
@@ -27,6 +57,8 @@ export class World {
    */
   createUser(userArgs: CreateUserArgs = {}) {
     const baseUrl = this.baseUrl()
+    const StoreClass = this.args.store ?? (InternalStore as new () => Store)
+    const store = new StoreClass()
 
     const request = async (req: {
       method: string
@@ -70,7 +102,7 @@ export class World {
       return data
     }
 
-    return {
+    return Object.assign(store, {
       "posts": {
 
         /** List all posts */
@@ -171,6 +203,6 @@ export class World {
         "success": boolean
       }>,
       },
-    }
+    })
   }
 }
