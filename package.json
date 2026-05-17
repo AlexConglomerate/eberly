@@ -11,7 +11,8 @@
     "lint": "tsc",
     "backend:dev": "tsx watch src/test-backend/server.ts",
     "backend:start": "tsx src/test-backend/server.ts",
-    "backend:swagger": "tsx src/test-backend/generate-swagger.ts"
+    "backend:swagger": "tsx src/test-backend/generate-swagger.ts",
+    "client:generate": "tsx src/client/generate-client.ts"
   },
   "devDependencies": {
     "@changesets/cli": "^2.26.0",
