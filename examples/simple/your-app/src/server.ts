@@ -2,7 +2,7 @@ import { createServer } from 'node:http'
 
 import { OpenAPIHandler } from '@orpc/openapi/node'
 
-import { generateOpenAPISpec } from './openapi'
+import { generateOpenAPISpec } from '../swagger/openapi'
 import { router } from './router'
 
 const PORT = Number(process.env.PORT ?? 3000)

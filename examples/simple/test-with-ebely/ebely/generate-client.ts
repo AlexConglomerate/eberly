@@ -2,7 +2,7 @@
 // Берёт пути из локального ebely-конфига и зовёт генератор библиотеки.
 import { generateClient } from 'ebely'
 
-import { ebely } from '../src/ebely'
+import { ebely } from './ebely'
 
 const { outPath, operations } = await generateClient({
   swaggerSchema: ebely.forGen.swaggerSchema,

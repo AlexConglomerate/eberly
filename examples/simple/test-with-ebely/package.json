@@ -1,0 +1,19 @@
+{
+  "name": "@ebely-examples/test-with-ebely",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Пример использования библиотеки ebely для тестирования бэкенда (your-app)",
+  "type": "module",
+  "scripts": {
+    "client:generate": "tsx ebely/generate-client.ts",
+    "test": "tsx tests/test1.ts"
+  },
+  "dependencies": {
+    "ebely": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.8.0",
+    "tsx": "^4.22.1",
+    "typescript": "^6.0.3"
+  }
+}

@@ -1,8 +1,8 @@
-import { World } from "./world"
+import { World } from "../ebely/world"
 
-// pnpm tsx src/client/index.ts
+// pnpm --filter @ebely-examples/test-with-ebely run test
 
-const main = async () => {
+const test1 = async () => {
     // url и store берутся из src/client/ebely.ts — аргументы не нужны.
     const world = new World()
     const user1 = world.createUser()
@@ -32,4 +32,4 @@ const main = async () => {
     console.log(lastPostId2)
 }
 
-main()
+test1()
