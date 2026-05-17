@@ -1,6 +1,3 @@
-import { generateClient } from 'ebely'
+import { generateEbelyClient } from "./ebely";
 
-await generateClient({
-  swagger: { pathToFile: 'swagger.json', },
-  generateClientTo: 'ebely/generated.ts',
-})
+generateEbelyClient();

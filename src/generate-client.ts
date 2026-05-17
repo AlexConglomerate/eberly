@@ -1,5 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
+import type { EbelyConfig } from './config'
 
 /**
  * Генератор типизированного TypeScript-клиента из OpenAPI/Swagger-схемы.
@@ -312,24 +313,6 @@ export type SwaggerSource =
     pathToFile?: never
   }
 
-/** Аргументы генерации типизированного клиента. */
-export type GenerateClientArgs = {
-  /** Откуда брать swagger-схему: из файла (`pathToFile`) или по `url`. */
-  swagger: SwaggerSource
-  /** Путь, куда писать сгенерированный клиент (резолвится от process.cwd()). */
-  generateClientTo: `${string}.ts`
-  /**
-   * Откуда сгенерированный файл импортирует `InternalStore`.
-   * По умолчанию — имя пакета библиотеки.
-   */
-  internalStoreImport?: string
-  /**
-   * Откуда сгенерированный файл импортирует `ebely`-конфиг.
-   * По умолчанию — соседний модуль `./ebely`.
-   */
-  configImport?: string
-}
-
 /** Загружает swagger-схему из файла или по URL — в зависимости от источника. */
 async function loadSpec(args: { swagger: SwaggerSource }): Promise<Json> {
   const { swagger } = args
@@ -354,7 +337,7 @@ async function loadSpec(args: { swagger: SwaggerSource }): Promise<Json> {
  * своего проекта, передавая пути из собственного ebely-конфига.
  */
 export async function generateClient(
-  args: GenerateClientArgs,
+  args: EbelyConfig,
 ): Promise<{ outPath: string; operations: number }> {
   const {
     swagger,
