@@ -5,11 +5,11 @@ import { generateClient } from 'ebely'
 export const ebely = {
     internalStore: AppStore, // внутренние переменные
     url: 'http://localhost:3000', // url бекенда, который нужно тестировать
-    swagger: { pathToFile: 'swagger.json', },
-    generateClientTo: 'ebely/generated.ts',
+    swagger: { pathToFile: 'swagger.json', }, // путь к swagger-схеме
+    generateClientTo: 'ebely/generated.ts', // путь к генерируемому клиенту
 } satisfies EbelyConfig
 
-
+// запустить в другом файле для генерации клиента
 export const generateEbelyClient = async () => {
     await generateClient(ebely)
 }
