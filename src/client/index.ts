@@ -1,3 +1,5 @@
+import { World } from "./world"
+
 const main = async () => {
     const world = new World({
         url: "http://localhost:3000",
