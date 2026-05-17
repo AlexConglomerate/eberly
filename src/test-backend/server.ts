@@ -5,7 +5,7 @@ import { OpenAPIHandler } from '@orpc/openapi/node'
 import { generateOpenAPISpec } from './openapi'
 import { router } from './router'
 
-const PORT = Number(process.env.PORT ?? 3333)
+const PORT = Number(process.env.PORT ?? 3000)
 
 const handler = new OpenAPIHandler(router)
 
