@@ -1,6 +1,7 @@
-import { World } from "../ebely/world"
 
 // pnpm --filter @ebely-examples/test-with-ebely run test
+
+import { World } from "../ebely/generated"
 
 const test1 = async () => {
     // url и store берутся из src/client/ebely.ts — аргументы не нужны.

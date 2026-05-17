@@ -341,5 +341,11 @@ export async function generateClient(
   })
 
   await writeFile(outPath, source, 'utf8')
+  console.log(`
+✅ Typed client written to:
+${outPath}
+
+Endpoints: ${operations.length}
+`)
   return { outPath, operations: operations.length }
 }
