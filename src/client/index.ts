@@ -17,7 +17,14 @@ const main = async () => {
     user1.set({ key: "lastPostId", value: answer1.id })
     const lastPostId1 = user1.get({ key: "lastPostId" })
     console.log(lastPostId1)
-    console.log(user1.getFirstPostId())
+    const firstPostId1 = user1.getFirstPostId();
+
+    user1.set({
+        key: "createdPosts",
+        value: [{ postId: "1", date: "1" }, { postId: "2", date: "2" }]
+    })
+    const firstPostId2 = user1.getFirstPostId();
+
 
     const user2 = world.createUser()
     const answer2 = await user2.posts.create({

@@ -4,4 +4,5 @@ export const evely = {
     swaggerSchema: 'src/test-backend/swagger.json', // свагер бакэнда
     generateClientTo: 'src/client/world.ts', // сюда будет генерироваться типизированный клиент для тестов
     internalStore: AppStore, // внутренние переменные
+    url: 'http://localhost:3000', // url бекенда, который нужно тестировать
 }
