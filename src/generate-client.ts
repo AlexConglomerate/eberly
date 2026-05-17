@@ -295,12 +295,29 @@ ${groupBlocks.join('\n')}
 `
 }
 
+/**
+ * Источник swagger/OpenAPI-схемы. Указывается ровно одно из полей:
+ * либо `pathToFile` (локальный файл), либо `url` (HTTP-эндпоинт).
+ * Тип построен так, что указать оба поля одновременно нельзя.
+ */
+export type SwaggerSource =
+  | {
+    /** Путь к файлу схемы (резолвится от process.cwd()). */
+    pathToFile: `${string}.json`
+    url?: never
+  }
+  | {
+    /** URL, по которому отдаётся swagger.json. */
+    url: `http${string}.json`
+    pathToFile?: never
+  }
+
 /** Аргументы генерации типизированного клиента. */
 export type GenerateClientArgs = {
-  /** Путь к swagger/OpenAPI-схеме (резолвится от process.cwd()). */
-  swaggerSchema: string
+  /** Откуда брать swagger-схему: из файла (`pathToFile`) или по `url`. */
+  swagger: SwaggerSource
   /** Путь, куда писать сгенерированный клиент (резолвится от process.cwd()). */
-  generateClientTo: string
+  generateClientTo: `${string}.ts`
   /**
    * Откуда сгенерированный файл импортирует `InternalStore`.
    * По умолчанию — имя пакета библиотеки.
@@ -313,6 +330,24 @@ export type GenerateClientArgs = {
   configImport?: string
 }
 
+/** Загружает swagger-схему из файла или по URL — в зависимости от источника. */
+async function loadSpec(args: { swagger: SwaggerSource }): Promise<Json> {
+  const { swagger } = args
+
+  if (swagger.pathToFile !== undefined) {
+    const specPath = resolve(process.cwd(), swagger.pathToFile)
+    return JSON.parse(await readFile(specPath, 'utf8'))
+  }
+
+  const response = await fetch(swagger.url)
+  if (!response.ok) {
+    throw new Error(
+      `Не удалось получить swagger по ${swagger.url}: ${response.status} ${response.statusText}`,
+    )
+  }
+  return (await response.json()) as Json
+}
+
 /**
  * Читает swagger-схему и пишет типизированный клиент `World` в файл.
  * Это публичная точка входа библиотеки: пользователь вызывает её из
@@ -322,16 +357,15 @@ export async function generateClient(
   args: GenerateClientArgs,
 ): Promise<{ outPath: string; operations: number }> {
   const {
-    swaggerSchema,
+    swagger,
     generateClientTo,
     internalStoreImport = 'ebely',
     configImport = './ebely',
   } = args
 
-  const specPath = resolve(process.cwd(), swaggerSchema)
   const outPath = resolve(process.cwd(), generateClientTo)
 
-  const spec: Json = JSON.parse(await readFile(specPath, 'utf8'))
+  const spec: Json = await loadSpec({ swagger })
   const operations = collectOperations({ spec })
   const source = renderClient({
     spec,
