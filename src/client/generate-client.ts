@@ -1,5 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises'
-import { fileURLToPath } from 'node:url'
+import { resolve } from 'node:path'
+import { evely } from './evely'
 
 /**
  * Генератор типизированного TypeScript-клиента из OpenAPI/Swagger-схемы.
@@ -199,6 +200,9 @@ function renderClient(args: { spec: Json; operations: Operation[] }): string {
 // Источник: ${spec.info?.title ?? 'OpenAPI spec'} v${spec.info?.version ?? '?'}
 // Перегенерация: pnpm run client:generate
 
+import { InternalStore } from './internal-store'
+import { evely } from './evely'
+
 type RequestInput = {
   path?: Record<string, string>
   query?: Record<string, string | number | boolean | undefined>
@@ -210,42 +214,21 @@ export type CreateUserArgs = {
   headers?: Record<string, string>
 }
 
-/**
- * Хранилище внутренних переменных одного пользователя.
- *
- * Это схемо-независимая обвязка — она НЕ выводится из swagger. Конкретный
- * набор переменных задаёт пользователь библиотеки: он наследуется от
- * InternalStore в своём (не генерируемом) файле, передаёт тип переменных
- * дженериком и может добавлять производные методы поверх this.get/this.set.
- */
-export class InternalStore<
-  Vars extends Record<string, unknown> = Record<string, never>,
+export class World<
+  Store extends InternalStore = InstanceType<typeof evely.internalStore>,
 > {
-  private internalStore = new Map<keyof Vars, unknown>()
-
-  /** Сохранить внутреннюю переменную пользователя. */
-  set<K extends keyof Vars>(args: { key: K; value: Vars[K] }): void {
-    this.internalStore.set(args.key, args.value)
-  }
-
-  /** Прочитать внутреннюю переменную пользователя (undefined, если не задана). */
-  get<K extends keyof Vars>(args: { key: K }): Vars[K] | undefined {
-    return this.internalStore.get(args.key) as Vars[K] | undefined
-  }
-}
-
-export class World<Store extends InternalStore = InternalStore> {
   constructor(
     public args: {
-      url: string
-      /** Класс-хранилище внутренних переменных (наследник InternalStore). */
+      /** URL бэкенда. Если не задан — берётся evely.url из конфига. */
+      url?: string
+      /** Класс-хранилище. Если не задан — берётся evely.internalStore. */
       store?: new () => Store
-    },
+    } = {},
   ) {}
 
   /** Базовый URL с учётом server.url из схемы. */
   private baseUrl(): string {
-    return this.args.url.replace(/\\/$/, '') + ${JSON.stringify(basePath)}
+    return (this.args.url ?? evely.url).replace(/\\/$/, '') + ${JSON.stringify(basePath)}
   }
 
   /**
@@ -254,7 +237,8 @@ export class World<Store extends InternalStore = InternalStore> {
    */
   createUser(userArgs: CreateUserArgs = {}) {
     const baseUrl = this.baseUrl()
-    const StoreClass = this.args.store ?? (InternalStore as new () => Store)
+    const StoreClass =
+      this.args.store ?? (evely.internalStore as unknown as new () => Store)
     const store = new StoreClass()
 
     const request = async (req: {
@@ -308,10 +292,9 @@ ${groupBlocks.join('\n')}
 }
 
 async function main() {
-  const specPath = fileURLToPath(
-    new URL('../test-backend/swagger.json', import.meta.url),
-  )
-  const outPath = fileURLToPath(new URL('./world.ts', import.meta.url))
+  // Пути берём из evely.forGen — конфиг это единственный источник правды.
+  const specPath = resolve(process.cwd(), evely.forGen.swaggerSchema)
+  const outPath = resolve(process.cwd(), evely.forGen.generateClientTo)
 
   const spec: Json = JSON.parse(await readFile(specPath, 'utf8'))
   const operations = collectOperations({ spec })

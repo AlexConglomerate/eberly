@@ -1,13 +1,10 @@
 import { World } from "./world"
-import { AppStore } from "./internalVariable"
 
 // pnpm tsx src/client/index.ts
 
 const main = async () => {
-    const world = new World({
-        url: "http://localhost:3000",
-        store: AppStore,
-    })
+    // url и store берутся из src/client/evely.ts — аргументы не нужны.
+    const world = new World()
     const user1 = world.createUser()
     const answer1 = await user1.posts.create({
         body: { title: "Hello", content: "World" },
