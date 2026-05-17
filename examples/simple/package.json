@@ -1,8 +1,8 @@
 {
-  "name": "@evely-examples/simple",
+  "name": "@ebely-examples/simple",
   "version": "0.0.0",
   "private": true,
-  "description": "Простой пример использования библиотеки evely: тестовый бэкенд + сгенерированный типизированный клиент.",
+  "description": "Простой пример использования библиотеки ebely: тестовый бэкенд + сгенерированный типизированный клиент.",
   "type": "module",
   "scripts": {
     "backend:dev": "tsx watch test-backend/server.ts",

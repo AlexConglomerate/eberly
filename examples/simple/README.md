@@ -11,15 +11,15 @@
 сам слинкует `ebely` в этот пример.
 
 ```bash
-pnpm --filter @evely-examples/simple run backend:start    # тестовый бэкенд на :3000
-pnpm --filter @evely-examples/simple run client:generate  # сгенерировать src/world.ts из swagger
-pnpm --filter @evely-examples/simple run start            # запустить пример (src/index.ts)
+pnpm --filter @ebely-examples/simple run backend:start    # тестовый бэкенд на :3000
+pnpm --filter @ebely-examples/simple run client:generate  # сгенерировать src/world.ts из swagger
+pnpm --filter @ebely-examples/simple run start            # запустить пример (src/index.ts)
 ```
 
 ## Что где
 
 - `test-backend/` — игрушечный oRPC-бэкенд и его swagger-схема.
-- `src/evely.ts` — конфиг evely (пути генерации, url, класс хранилища).
+- `src/ebely.ts` — конфиг ebely (пути генерации, url, класс хранилища).
 - `src/internalVariable.ts` — пользовательские внутренние переменные.
 - `src/world.ts` — сгенерированный типизированный клиент (не редактировать).
 - `src/index.ts` — пример того, как пишутся тесты поверх клиента.

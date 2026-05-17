@@ -1,4 +1,4 @@
-Это библиотека evely (npm-пакет «ebely») для создания типизированного клиента,
+Это библиотека ebely для создания типизированного клиента,
 с помощью которого можно тестировать бэкэнд.
 
 ## Структура
@@ -13,7 +13,7 @@
 - `examples/simple` — самостоятельный проект-пример.
   - Тестовый бэкенд: `examples/simple/test-backend`
   - Схема бэкенда: `examples/simple/test-backend/swagger.json`
-  - Конфиг evely: `examples/simple/src/evely.ts`
+  - Конфиг ebely: `examples/simple/src/ebely.ts`
   - Сгенерированный клиент: `examples/simple/src/world.ts`
   - Пример того, как должны выглядеть тесты: `examples/simple/src/index.ts`
 
@@ -21,7 +21,7 @@
 
 В корне (библиотека): `pnpm build`, `pnpm lint`, `pnpm release`.
 
-В `examples/simple` (`pnpm --filter @evely-examples/simple run <script>`):
+В `examples/simple` (`pnpm --filter @ebely-examples/simple run <script>`):
 - `client:generate` — генерирует типизированный клиент в `src/world.ts`.
 - `backend:dev` / `backend:start` — поднять тестовый бэкенд.
 - `backend:swagger` — перегенерировать `test-backend/swagger.json`.

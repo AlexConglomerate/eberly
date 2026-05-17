@@ -1,6 +1,6 @@
 import { AppStore } from "./internalVariable";
 
-export const evely = {
+export const ebely = {
     forGen: {
         swaggerSchema: 'test-backend/swagger.json', // свагер бакэнда
         generateClientTo: 'src/world.ts', // сюда будет генерироваться типизированный клиент для тестов
