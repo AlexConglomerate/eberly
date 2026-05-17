@@ -2,7 +2,7 @@
 // его НЕ трогает. Здесь описывается набор внутренних переменных пользователя
 // и производные методы поверх get/set.
 
-import { InternalStore } from "./internal-store"
+import { InternalStore } from "ebely"
 
 export type InternalVariable = {
     email: string

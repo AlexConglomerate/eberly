@@ -3,6 +3,8 @@
     /* Base Options: */
     "esModuleInterop": true,
     "skipLibCheck": true,
+    // tsup-овский dts-плагин (TS 6) внутренне выставляет deprecated baseUrl.
+    "ignoreDeprecations": "6.0",
     "target": "es2022",
     "verbatimModuleSyntax": true,
     "allowJs": true,

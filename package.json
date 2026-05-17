@@ -5,26 +5,27 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
   "scripts": {
     "build": "tsup index.ts --format cjs,esm --dts",
     "release": "pnpm run build && changeset publish",
-    "lint": "tsc",
-    "backend:dev": "tsx watch src/test-backend/server.ts",
-    "backend:start": "tsx src/test-backend/server.ts",
-    "backend:swagger": "tsx src/test-backend/generate-swagger.ts",
-    "client:generate": "tsx src/client/generate-client.ts"
+    "prepublishOnly": "pnpm run build",
+    "lint": "tsc"
   },
   "devDependencies": {
     "@changesets/cli": "^2.26.0",
     "@types/node": "^25.8.0",
     "tsup": "^6.5.0",
-    "tsx": "^4.22.1",
     "typescript": "^6.0.3"
-  },
-  "dependencies": {
-    "@orpc/openapi": "^1.14.3",
-    "@orpc/server": "^1.14.3",
-    "@orpc/zod": "^1.14.3",
-    "zod": "^4.4.3"
   }
 }
