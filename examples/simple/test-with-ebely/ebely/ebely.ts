@@ -1,6 +1,6 @@
 import type { EbelyConfig } from "ebely";
-import { AppStore } from "./internalVariable";
 import { generateClient } from 'ebely'
+import { AppStore } from "./internalVariable";
 
 export const ebely = {
     internalStore: AppStore, // внутренние переменные
@@ -8,8 +8,10 @@ export const ebely = {
     swagger: { pathToFile: 'swagger.json', }, // путь к swagger-схеме
     generateClientTo: 'ebely/generated.ts', // путь к генерируемому клиенту
 
-    configImport: './ebely', // путь до этого файла. это очень странно.
-    internalStoreImport: 'ebely', // название этой библиотеки.
+    // internalStoreImport / configImport здесь НЕ нужны: их дефолты
+    // ('ebely' и './ebely') уже подходят для этой раскладки.
+    // Указывать их вручную надо только в нестандартных случаях —
+    // см. описание полей в EbelyConfig.
 } satisfies EbelyConfig
 
 // запустить в другом файле для генерации клиента

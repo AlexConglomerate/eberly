@@ -1,10 +1,9 @@
 // Тип пользовательского ebely-конфига (объект `ebely`, который импортирует
-// сгенерированный world.ts). Пользователь применяет его через `satisfies`,
+// сгенерированный клиент). Пользователь применяет его через `satisfies`,
 // чтобы не потерять конкретный тип своего `internalStore`.
 
-import type { SwaggerSource } from './generate-client'
+import type { SwaggerSource } from './generator/swagger'
 import type { InternalStore } from './internal-store'
-
 
 /** Конфиг ebely, который пользователь объявляет в своём `ebely.ts`. */
 export type EbelyConfig = {
@@ -21,16 +20,21 @@ export type EbelyConfig = {
 
   /** Путь, куда писать сгенерированный клиент (резолвится от process.cwd()). */
   generateClientTo: `${string}.ts`
-  /**
-   * Откуда сгенерированный файл импортирует `InternalStore`.
-   * По умолчанию — имя пакета библиотеки.
-   */
-  internalStoreImport: string
-  /**
-   * Откуда сгенерированный файл импортирует `ebely`-конфиг.
-   * По умолчанию — соседний модуль `./ebely`.
-   */
-  configImport: string
 
+  /**
+   * Из какого модуля СГЕНЕРИРОВАННЫЙ файл импортирует `InternalStore`.
+   * По умолчанию `'ebely'` — имя npm-пакета библиотеки. Менять нужно
+   * только в нестандартной раскладке (монорепо без публикации,
+   * импорт по относительному пути или по alias из tsconfig).
+   * @default 'ebely'
+   */
+  internalStoreImport?: string
+  /**
+   * Из какого модуля СГЕНЕРИРОВАННЫЙ файл импортирует `ebely`-конфиг
+   * (нужен ему для значений по умолчанию: `ebely.url`, `ebely.internalStore`).
+   * Это путь ОТ сгенерированного файла К этому конфигу. По умолчанию
+   * `'./ebely'` — т.е. конфиг лежит рядом с генерируемым файлом.
+   * @default './ebely'
+   */
+  configImport?: string
 }
-
