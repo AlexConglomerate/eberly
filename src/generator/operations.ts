@@ -6,7 +6,7 @@
 // группа `posts`, метод `create`.
 
 import type { Json } from './types'
-import { pickResponseSchema, schemaToType } from './schema'
+import { collectResponseSchemas, pickResponseSchema, schemaToType } from './schema'
 
 export const HTTP_METHODS = ['get', 'post', 'put', 'patch', 'delete'] as const
 export type HttpMethod = (typeof HTTP_METHODS)[number]
@@ -20,7 +20,10 @@ export interface Operation {
   queryParams: string[]
   bodyType: string | null
   bodyRequired: boolean
+  /** Тип тела успешного 2xx-ответа (режим клиента `'frontend'`). */
   responseType: string
+  /** Все задекларированные ответы: статус → тип тела (режим `'test'`). */
+  responses: { status: number; bodyType: string }[]
   summary?: string
 }
 
@@ -45,6 +48,16 @@ export function collectOperations(args: { spec: Json }): Operation[] {
 
       const bodySchema = op.requestBody?.content?.['application/json']?.schema
       const responseSchema = pickResponseSchema({ responses: op.responses, spec })
+      const responseType = schemaToType({ schema: responseSchema, spec, indent: 3 })
+
+      const declared = collectResponseSchemas({ responses: op.responses, spec })
+      const responses =
+        declared.length > 0
+          ? declared.map((r) => ({
+              status: r.status,
+              bodyType: schemaToType({ schema: r.schema, spec, indent: 4 }),
+            }))
+          : [{ status: 200, bodyType: responseType }]
 
       operations.push({
         group,
@@ -55,7 +68,8 @@ export function collectOperations(args: { spec: Json }): Operation[] {
         queryParams,
         bodyType: bodySchema ? schemaToType({ schema: bodySchema, spec, indent: 4 }) : null,
         bodyRequired: Boolean(op.requestBody?.required),
-        responseType: schemaToType({ schema: responseSchema, spec, indent: 3 }),
+        responseType,
+        responses,
         summary: op.summary,
       })
     }

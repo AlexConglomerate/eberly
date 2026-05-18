@@ -8,6 +8,11 @@ export const ebely = {
     swagger: { pathToFile: 'swagger.json', }, // путь к swagger-схеме
     generateClientTo: 'ebely/generated.ts', // путь к генерируемому клиенту
 
+    // mode: 'test' (по умолчанию) — методы возвращают ApiResponse с
+    //   .status/.body/.assert(); не-2xx НЕ бросается.
+    // mode: 'frontend' — методы возвращают тело напрямую, не-2xx бросает
+    //   ошибку, .assert нет (клиент можно использовать из приложения).
+
     // internalStoreImport / configImport здесь НЕ нужны: их дефолты
     // ('ebely' и './ebely') уже подходят для этой раскладки.
     // Указывать их вручную надо только в нестандартных случаях —

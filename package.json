@@ -20,12 +20,14 @@
     "build": "tsup index.ts --format cjs,esm --dts",
     "release": "pnpm run build && changeset publish",
     "prepublishOnly": "pnpm run build",
-    "lint": "tsc"
+    "lint": "tsc",
+    "test": "tsx --test src/response.test.ts src/generator/render.test.ts"
   },
   "devDependencies": {
     "@changesets/cli": "^2.26.0",
     "@types/node": "^25.8.0",
     "tsup": "^6.5.0",
+    "tsx": "^4.22.1",
     "typescript": "^6.0.3"
   }
 }

@@ -4,16 +4,22 @@
 ## Структура
 
 Код библиотеки (попадает в npm-пакет, собирается в dist/):
-- `index.ts` — публичный API (`InternalStore`, `generateClient`, типы).
+- `index.ts` — публичный API (`InternalStore`, `ApiResponse`, `generateClient`, типы).
 - `src/internal-store.ts` — рантайм-ядро: базовый класс хранилища переменных.
-- `src/config.ts` — публичный тип `EbelyConfig`.
+- `src/response.ts` — рантайм-ядро: `ApiResponse` + чистая логика `assert`
+  (используется сгенерированным клиентом в режиме `'test'`).
+- `src/config.ts` — публичный тип `EbelyConfig` (+ `ClientMode`).
 - `src/generate-client.ts` — оркестратор: связывает шаги генератора и пишет файл.
 - `src/generator/` — внутренности генератора (НЕ публичные):
   - `swagger.ts` — `SwaggerSource` + загрузка схемы (`loadSpec`).
   - `schema.ts` — JSON-Schema → строка TS-типа.
   - `operations.ts` — разбор `paths` в плоский список операций.
-  - `render.ts` — рендер исходника клиента (класс `World`).
+  - `render.ts` — рендер исходника клиента (класс `World`), форма зависит
+    от `mode` (`'test'` / `'frontend'`).
   - `types.ts` — общий тип `Json`.
+
+Юнит-тесты библиотеки: `src/*.test.ts`, `src/generator/*.test.ts`
+(чистые функции, без сети). Запуск — `pnpm test` в корне.
 
 Подробный разбор архитектуры — в `ARCHITECTURE.md`.
 
@@ -36,7 +42,7 @@
 
 ## Команды
 
-В корне (библиотека): `pnpm build`, `pnpm lint`, `pnpm release`.
+В корне (библиотека): `pnpm build`, `pnpm lint`, `pnpm test`, `pnpm release`.
 
 `your-app` (`pnpm --filter @ebely-examples/your-app run <script>`):
 - `start` / `dev` — поднять бэкенд (`:3000`).

@@ -30,6 +30,7 @@ export async function generateClient(
   const {
     swagger,
     generateClientTo,
+    mode = 'test',
     internalStoreImport = 'ebely',
     configImport = './ebely',
   } = args
@@ -41,6 +42,7 @@ export async function generateClient(
   const source = renderClient({
     spec,
     operations,
+    mode,
     internalStoreImport,
     configImport,
   })

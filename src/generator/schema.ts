@@ -82,3 +82,25 @@ export function pickResponseSchema(args: { responses: Json; spec: Json }): Json 
   const status = Object.keys(responses ?? {}).find((s) => s.startsWith('2')) ?? 'default'
   return responses?.[status]?.content?.['application/json']?.schema
 }
+
+/**
+ * Собирает ВСЕ задекларированные ответы с числовым статусом и их
+ * JSON-схемой (нечисловые ключи вроде `default` пропускаются). Нужно
+ * для карты «статус → тело» в режиме клиента `'test'`.
+ */
+export function collectResponseSchemas(args: {
+  responses: Json
+  spec: Json
+}): Array<{ status: number; schema: Json | undefined }> {
+  const { responses } = args
+  const out: Array<{ status: number; schema: Json | undefined }> = []
+  for (const key of Object.keys(responses ?? {})) {
+    const status = Number(key)
+    if (!Number.isInteger(status)) continue
+    out.push({
+      status,
+      schema: responses[key]?.content?.['application/json']?.schema,
+    })
+  }
+  return out
+}

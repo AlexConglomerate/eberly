@@ -21,9 +21,18 @@ const user = world.createUser()
 // типизировано по swagger: тело, ответ, path-параметры
 const post = await user.posts.create({ body: { title: "Hi", content: "yo" } })
 
+// режим 'test' (по умолчанию): проверяем статус и часть тела.
+// статус подсказывается интеллисенсом; post.body — типизировано.
+post.assert(200, { title: "Hi" })
+
 // и тут же — хранилище внутренних переменных пользователя
-user.set({ key: "lastPostId", value: post.id })
+user.set({ key: "lastPostId", value: post.body.id })
 ```
+
+Форма возвращаемого значения зависит от режима клиента (поле `mode` в
+конфиге, см. §6): в `'test'` метод возвращает `ApiResponse` с
+`.status` / `.body` / `.assert(...)`; в `'frontend'` — тело напрямую
+(`post.id`), а не-2xx бросает ошибку.
 
 Две половины библиотеки:
 
@@ -47,7 +56,8 @@ user.set({ key: "lastPostId", value: post.id })
 ```
 src/
 ├── internal-store.ts        # рантайм-ядро (публичное): класс InternalStore
-├── config.ts                # публичный тип EbelyConfig
+├── response.ts              # рантайм-ядро (публичное): ApiResponse + assert
+├── config.ts                # публичный тип EbelyConfig (+ ClientMode)
 ├── generate-client.ts       # ОРКЕСТРАТОР: публичная generateClient()
 └── generator/               # внутренности генератора (не публичные)
     ├── types.ts             #   общий тип Json
@@ -88,10 +98,11 @@ loadSpec (swagger.ts)  →  collectOperations (operations.ts)  →  renderClient
   потому что это публичная поверхность (реэкспортится из `index.ts`),
   а не внутренности генератора.
 
-Публичный API (`index.ts`) не изменился — наружу по-прежнему торчат
-`InternalStore`, `generateClient`, типы `EbelyConfig` и `SwaggerSource`.
-`generate-client.ts` реэкспортит `SwaggerSource`, чтобы внешние
-импорты и `config.ts` не зависели от внутренней раскладки папки.
+Публичный API (`index.ts`): `InternalStore`, `ApiResponse`,
+`EbelyAssertionError`, `generateClient`, типы `EbelyConfig`,
+`ClientMode`, `DeepPartial`, `SwaggerSource`. `generate-client.ts`
+реэкспортит `SwaggerSource`, чтобы внешние импорты и `config.ts` не
+зависели от внутренней раскладки папки.
 
 ## 3. Про «странные» поля `configImport` и `internalStoreImport`
 
@@ -176,5 +187,36 @@ import { ebely } from "./ebely"          // ← configImport
   `dist/index.d.ts`, поэтому после правок типов пакет надо пересобрать,
   иначе примеры будут видеть старый тип `EbelyConfig`).
 - `pnpm lint` — `tsc` по всему репозиторию (включая примеры).
+- `pnpm test` — юнит-тесты библиотеки (`src/**/*.test.ts`, `tsx --test`):
+  чистые функции `assertResponse` / `matchPartial` и генератор
+  `renderClient` — без сети и без записи на диск.
 - `pnpm --filter @ebely-examples/test-with-ebely run client:generate` —
-  перегенерировать клиент и убедиться, что вывод не изменился.
+  перегенерировать клиент.
+
+## 6. Режимы клиента (`mode`) и `ApiResponse`
+
+Поле `mode` в конфиге (`EbelyConfig.mode`, тип `ClientMode`, по умолчанию
+`'test'`) выбирается на **этапе генерации** и задаёт форму
+сгенерированного файла — никаких рантайм-условий и conditional-типов:
+
+- **`'test'`** — метод возвращает `Promise<ApiResponse<{ <статус>: <тело> }>>`.
+  Карта «статус → тело» собирается из всех задекларированных в swagger
+  ответов (`collectResponseSchemas`). `request` НЕ бросает на не-2xx —
+  любой статус доступен через `res.status` / `res.body`, проверка
+  делается явным `res.assert(status, body?)`:
+  - первый аргумент типизирован как `keyof` карты статусов → IDE
+    подсказывает доступные коды, а несуществующий литерал
+    (`assert(201)` при наличии только `200`) — ошибка типов;
+    незадекларированный статус проверяется через `assert(400 as any)`;
+  - второй аргумент опционален и имеет тип `DeepPartial<тело>` —
+    проверяются только переданные поля (глубоко-частично).
+- **`'frontend'`** — метод возвращает тело 2xx-ответа напрямую
+  (`Promise<тело>`), не-2xx бросает `Error`; `ApiResponse` / `.assert`
+  отсутствуют. Такой клиент можно использовать из приложения, а не
+  только в тестах.
+
+Логика проверки (`assertResponse`, `matchPartial`) живёт в `src/response.ts`
+**чистыми функциями** — без `fetch` и без I/O, поэтому покрыта обычными
+юнит-тестами (`src/response.test.ts`). Генератор `renderClient` тоже
+чистая функция «модель → текст» и тестируется на форму вывода по режимам
+(`src/generator/render.test.ts`).

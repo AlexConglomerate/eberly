@@ -5,6 +5,19 @@
 import type { SwaggerSource } from './generator/swagger'
 import type { InternalStore } from './internal-store'
 
+/**
+ * Режим генерируемого клиента (решается на этапе генерации, влияет на
+ * форму сгенерированного файла):
+ *
+ * - `'test'` — методы возвращают объект-ответ с `.status` / `.body` и
+ *   методом `.assert(status, body?)`. Не-2xx НЕ бросает исключение —
+ *   проверка делается явным `res.assert(...)`.
+ * - `'frontend'` — методы возвращают тело ответа напрямую; не-2xx
+ *   бросает ошибку; метода `.assert` нет. Подходит для использования
+ *   клиента из приложения (фронтенд/сервис), а не только в тестах.
+ */
+export type ClientMode = 'test' | 'frontend'
+
 /** Конфиг ebely, который пользователь объявляет в своём `ebely.ts`. */
 export type EbelyConfig = {
   /** URL бэкенда, который нужно тестировать. */
@@ -20,6 +33,12 @@ export type EbelyConfig = {
 
   /** Путь, куда писать сгенерированный клиент (резолвится от process.cwd()). */
   generateClientTo: `${string}.ts`
+
+  /**
+   * Режим генерируемого клиента — см. {@link ClientMode}.
+   * @default 'test'
+   */
+  mode?: ClientMode
 
   /**
    * Из какого модуля СГЕНЕРИРОВАННЫЙ файл импортирует `InternalStore`.
