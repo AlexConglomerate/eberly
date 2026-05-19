@@ -1,0 +1,113 @@
+// Рантайм-ядро (НЕ генерируется). Реестр хуков before/after + типы
+// контекста. Попадает в npm-пакет и импортируется сгенерированным
+// клиентом — по аналогии с InternalStore / ApiResponse. Здесь НЕТ сети и
+// fetch: реестр и его «прогонщики» — чистые функции, их легко
+// юнит-тестировать в изоляции (src/hooks.test.ts).
+
+/**
+ * Изменяемое описание исходящего запроса, доступное хукам. `before`-хук
+ * МОЖЕТ его править (`headers` / `query` / `body` / `pathParams`) —
+ * изменения уедут в реальный fetch. `path` — это ШАБЛОН из swagger
+ * (`/posts/{id}`); подстановка `pathParams` происходит уже после хуков.
+ */
+export type HookRequest = {
+  method: string
+  path: string
+  pathParams: Record<string, string>
+  query: Record<string, string | number | boolean | undefined>
+  body: unknown
+  headers: Record<string, string>
+}
+
+/** Ответ эндпоинта в том виде, в каком его видит `after`-хук (read-only). */
+export type HookResponse = { status: number; body: unknown }
+
+/** Аргумент `before`-хука. `Body` уточняется генератором на каждую операцию. */
+export type BeforeHookArgs<Ctx, Body = unknown> = {
+  request: HookRequest & { body: Body }
+  ctx: Ctx
+}
+
+/** Аргумент `after`-хука. `Body` / `ResBody` уточняются генератором. */
+export type AfterHookArgs<Ctx, Body = unknown, ResBody = unknown> = {
+  request: HookRequest & { body: Body }
+  response: { status: number; body: ResBody }
+  ctx: Ctx
+}
+
+/** `before`-хук: вызывается ДО запроса; может мутировать `request`. */
+export type BeforeHook<Ctx, Body = unknown> = (
+  args: BeforeHookArgs<Ctx, Body>,
+) => void | Promise<void>
+
+/** `after`-хук: вызывается ПОСЛЕ ответа; `response` — только на чтение. */
+export type AfterHook<Ctx, Body = unknown, ResBody = unknown> = (
+  args: AfterHookArgs<Ctx, Body, ResBody>,
+) => void | Promise<void>
+
+/**
+ * Регистратор хуков, который пользователь передаёт в конфиг одной
+ * переменной (`EbelyConfig.hooks`). Точную типизированную форму аргумента
+ * (`h.<группа>.<метод>.before/after`) задаёт СГЕНЕРИРОВАННЫЙ клиент —
+ * он экспортирует конкретный тип `Hooks`. В библиотеке тип намеренно
+ * широкий (`any`): здесь ещё не известны ни операции, ни класс store.
+ */
+export type HooksRegistrar = (registrar: any) => void
+
+/**
+ * Реестр хуков. Ключ — `"<группа>.<метод>"` (как `operationId`, напр.
+ * `posts.create`). Несколько хуков на один ключ выполняются ПО ОЧЕРЕДИ в
+ * порядке регистрации.
+ *
+ * Реестр ОБЩИЙ (живёт на экземпляре `World`), но `ctx` подставляется не
+ * при регистрации, а в момент запроса — это store КОНКРЕТНОГО
+ * пользователя, сделавшего вызов. Поэтому запись хуком во внутренние
+ * переменные не «течёт» между пользователями: изоляция получается
+ * бесплатно из того, что `ctx` приходит из инстанса в момент вызова.
+ *
+ * Реестр НЕ знает ни про сеть, ни про то, ЧЕЙ это store — это и есть
+ * архитектурный шов: добавить позже второй уровень контекста (общий
+ * account/session для «один юзер с двух устройств») можно аддитивно,
+ * не меняя этот класс.
+ */
+export class HookRegistry {
+  private beforeMap = new Map<string, BeforeHook<unknown>[]>()
+  private afterMap = new Map<string, AfterHook<unknown>[]>()
+
+  /** Зарегистрировать `before`-хук на ключ `"<группа>.<метод>"`. */
+  before(args: { key: string; fn: BeforeHook<any> }): void {
+    const list = this.beforeMap.get(args.key) ?? []
+    list.push(args.fn)
+    this.beforeMap.set(args.key, list)
+  }
+
+  /** Зарегистрировать `after`-хук на ключ `"<группа>.<метод>"`. */
+  after(args: { key: string; fn: AfterHook<any> }): void {
+    const list = this.afterMap.get(args.key) ?? []
+    list.push(args.fn)
+    this.afterMap.set(args.key, list)
+  }
+
+  /** Прогнать все `before`-хуки ключа по очереди (await на async). */
+  async runBefore(args: {
+    key: string
+    request: HookRequest
+    ctx: unknown
+  }): Promise<void> {
+    for (const fn of this.beforeMap.get(args.key) ?? []) {
+      await fn({ request: args.request, ctx: args.ctx })
+    }
+  }
+
+  /** Прогнать все `after`-хуки ключа по очереди (await на async). */
+  async runAfter(args: {
+    key: string
+    request: HookRequest
+    response: HookResponse
+    ctx: unknown
+  }): Promise<void> {
+    for (const fn of this.afterMap.get(args.key) ?? []) {
+      await fn({ request: args.request, response: args.response, ctx: args.ctx })
+    }
+  }
+}

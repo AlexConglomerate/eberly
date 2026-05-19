@@ -99,8 +99,10 @@ loadSpec (swagger.ts)  →  collectOperations (operations.ts)  →  renderClient
   а не внутренности генератора.
 
 Публичный API (`index.ts`): `InternalStore`, `ApiResponse`,
-`EbelyAssertionError`, `generateClient`, типы `EbelyConfig`,
-`ClientMode`, `DeepPartial`, `SwaggerSource`. `generate-client.ts`
+`EbelyAssertionError`, `HookRegistry`, `generateClient`, типы
+`EbelyConfig`, `ClientMode`, `DeepPartial`, `SwaggerSource`,
+`HooksRegistrar`, `BeforeHook`, `AfterHook`, `BeforeHookArgs`,
+`AfterHookArgs`, `HookRequest`, `HookResponse`. `generate-client.ts`
 реэкспортит `SwaggerSource`, чтобы внешние импорты и `config.ts` не
 зависели от внутренней раскладки папки.
 
@@ -220,3 +222,43 @@ import { ebely } from "./ebely"          // ← configImport
 юнит-тестами (`src/response.test.ts`). Генератор `renderClient` тоже
 чистая функция «модель → текст» и тестируется на форму вывода по режимам
 (`src/generator/render.test.ts`).
+
+## 7. Хуки `before` / `after`
+
+Хук — это код, который выполняется ДО запроса (может править запрос) и
+ПОСЛЕ ответа (может, например, записать что-то во внутренние переменные).
+Дизайн узкий по `ROADMAP §7`: только две точки, без права переписать
+движок, одна опция конфига.
+
+Разделение «чистое ядро / генератор», как и везде:
+
+- **`src/hooks.ts`** (рантайм-ядро, в npm-пакете, без сети) —
+  `HookRegistry`: реестр с ключом `"<группа>.<метод>"`, очередь хуков на
+  ключ, `runBefore` / `runAfter` (await на async). Чистый класс →
+  юнит-тесты в `src/hooks.test.ts`. Плюс типы `BeforeHook` / `AfterHook`
+  / `HookRequest` / `HookResponse` / `HooksRegistrar`.
+- **`src/generator/render.ts`** эмитит две вещи: типизированное дерево
+  `EbelyHookTree` + экспортируемый `Hooks` (форма `h.<группа>.<метод>.
+  before/after`, тело/ответ из swagger той же операции) и рантайм-сборку
+  `buildHookTree`, связывающую имена с одним `HookRegistry` на `World`.
+
+Поток: `new World()` один раз вызывает `ebely.hooks` (если задан),
+регистрируя функции в общий `HookRegistry`. Общий `request` прогоняет
+`runBefore` ДО fetch (по мутируемому `hookReq`: `headers` / `query` /
+`body` / `pathParams`) и `runAfter` ПОСЛЕ разбора ответа. Работает в
+обоих режимах (`'test'` / `'frontend'`).
+
+**Изоляция между пользователями — бесплатно.** Реестр общий и ключуется
+по операции, но `ctx` подставляется не при регистрации, а в момент
+запроса = store КОНКРЕТНОГО `createUser()`. Поэтому `ctx.set(...)` из
+хука пишет в переменные именно того юзера, что сделал вызов.
+
+**Цикл типов `ebely` ⇄ `Hooks`.** `hooks` лежит ВНУТРИ объекта `ebely`,
+поэтому тип `Hooks` НЕ может выводить store из `typeof
+ebely.internalStore` (как это делает `World`) — иначе `ebely` ссылается
+сам на себя. Решение: `Hooks<Store extends InternalStore =
+InternalStore>` без `ebely`-дефолта; пользователь передаёт свой класс
+явно — `Hooks<AppStore>` в отдельном файле `ebely/hooks.ts`. Это и есть
+заложенный шов: добавить позже второй уровень контекста (общий
+account/session для «один юзер с двух устройств») можно аддитивно, не
+трогая `HookRegistry`.

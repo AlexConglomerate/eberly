@@ -1,14 +1,28 @@
-const api = createClient(spec)
+// Хуки before/after для этого бэкенда. Файл ПОЛНОСТЬЮ типизирован: тип
+// `Hooks` экспортирует сгенерированный клиент (`generated.ts`), поэтому
+// `h.posts.create` автокомплитится, `response.body.id` типизирован, а
+// `ctx` — это твой `AppStore`.
+//
+// Регистрировать можно где угодно (это просто функция) — кладётся одной
+// переменной в конфиг (`ebely.ts`). Вызывается один раз при `new World()`.
+// Важно: `ctx` внутри хука — store КОНКРЕТНОГО пользователя, сделавшего
+// запрос, поэтому запись в переменные не «течёт» между пользователями.
 
-// регистрировать можно где угодно — в setup-файле, в beforeAll, в модуле сценария
-api.hooks.post.create.after(({ request, response, ctx }) => {
-  ctx.set('lastPostId', response.body.id)
-})
+import type { Hooks } from './generated'
+import type { AppStore } from './internalVariable'
+import { logResponse } from './handlers'
 
-api.hooks.get.list.before(({ ctx, query }) => {
-  query.afterId = ctx.get('lastPostId')
-})
+export const hooks: Hooks<AppStore> = (h) => {
+  // после создания поста — сохранить id в переменные ИМЕННО этого юзера
+  h.posts.create.after(({ response, ctx }) => {
+    ctx.set({ key: 'lastPostId', value: response.body.id })
+  })
 
-// несколько хуков на один endpoint складываются в очередь
-api.hooks.post.create.after(logResponse)
-api.hooks.post.create.after(updateMetrics)
+  // перед получением поста — подставить заголовок (before может править запрос)
+  h.posts.get.before(({ request }) => {
+    request.headers['x-trace'] = 'demo'
+  })
+
+  // несколько хуков на один endpoint складываются в очередь
+  h.posts.create.after(logResponse)
+}

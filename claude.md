@@ -8,6 +8,8 @@
 - `src/internal-store.ts` — рантайм-ядро: базовый класс хранилища переменных.
 - `src/response.ts` — рантайм-ядро: `ApiResponse` + чистая логика `assert`
   (используется сгенерированным клиентом в режиме `'test'`).
+- `src/hooks.ts` — рантайм-ядро: `HookRegistry` + типы хуков `before` /
+  `after` (чистый класс без сети; см. `ARCHITECTURE.md §7`).
 - `src/config.ts` — публичный тип `EbelyConfig` (+ `ClientMode`).
 - `src/generate-client.ts` — оркестратор: связывает шаги генератора и пишет файл.
 - `src/generator/` — внутренности генератора (НЕ публичные):
@@ -36,6 +38,8 @@
   - Конфиг ebely: `test-with-ebely/ebely/ebely.ts`
   - Скрипт генерации: `test-with-ebely/ebely/generate-client.ts`
   - Пользовательские переменные: `test-with-ebely/ebely/internalVariable.ts`
+  - Хуки before/after: `test-with-ebely/ebely/hooks.ts` (типизированы,
+    `Hooks<AppStore>`), переиспользуемые хендлеры — `ebely/handlers.ts`
   - Сгенерированный клиент: `test-with-ebely/ebely/generated.ts` (не редактировать)
   - Свагер бэкенда (копия из your-app): `test-with-ebely/swagger.json`
   - Пример тестов: `test-with-ebely/tests/test1.ts`

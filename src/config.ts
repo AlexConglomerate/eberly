@@ -2,6 +2,7 @@
 // сгенерированный клиент). Пользователь применяет его через `satisfies`,
 // чтобы не потерять конкретный тип своего `internalStore`.
 
+import type { HooksRegistrar } from './hooks'
 import type { SwaggerSource } from './generator/swagger'
 import type { InternalStore } from './internal-store'
 
@@ -39,6 +40,31 @@ export type EbelyConfig = {
    * @default 'test'
    */
   mode?: ClientMode
+
+  /**
+   * Регистратор хуков `before` / `after`. Объявляется в ОТДЕЛЬНОМ
+   * типизированном файле (тип `Hooks` экспортирует сгенерированный
+   * клиент) и передаётся сюда одной переменной:
+   *
+   * ```ts
+   * // ebely/hooks.ts
+   * import type { Hooks } from './generated'
+   * export const hooks: Hooks = (h) => {
+   *   h.posts.create.after(({ response, ctx }) => {
+   *     ctx.set({ key: 'lastPostId', value: response.body.id })
+   *   })
+   * }
+   * // ebely/ebely.ts
+   * import { hooks } from './hooks'
+   * export const ebely = { …, hooks } satisfies EbelyConfig
+   * ```
+   *
+   * Регистратор вызывается ОДИН раз при `new World()`. Внутри хука `ctx`
+   * — это store КОНКРЕТНОГО пользователя, сделавшего запрос, поэтому
+   * запись в переменные не «течёт» между пользователями.
+   * @default undefined
+   */
+  hooks?: HooksRegistrar
 
   /**
    * Из какого модуля СГЕНЕРИРОВАННЫЙ файл импортирует `InternalStore`.

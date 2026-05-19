@@ -17,7 +17,8 @@ const test1 = async () => {
     created.assert(200)
     console.log("created", created.body)
 
-    user1.set({ key: "lastPostId", value: created.body.id })
+    // lastPostId НЕ выставляется вручную: его положил after-хук
+    // (ebely/hooks.ts → posts.create.after) в store ИМЕННО user1.
     const lastPostId = user1.get({ key: "lastPostId" })!
 
     const res = await user1.posts.get({ path: { id: lastPostId } })
@@ -37,7 +38,10 @@ const test1 = async () => {
         body: { title: "Hello", content: "World" },
     })
     created2.assert(200)
-    user2.set({ key: "lastPostId", value: created2.body.id })
+
+    // Изоляция: тот же хук, но ctx = store user2 → у каждого свой lastPostId.
+    console.log("user1.lastPostId", user1.get({ key: "lastPostId" }))
+    console.log("user2.lastPostId", user2.get({ key: "lastPostId" }))
 }
 
 test1()

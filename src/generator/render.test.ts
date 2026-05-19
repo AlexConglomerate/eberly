@@ -34,7 +34,7 @@ const render = (mode: ClientMode) =>
 
 test("режим 'test': ApiResponse, карта статусов, request не бросает", () => {
   const out = render('test')
-  assert.match(out, /import \{ InternalStore, ApiResponse \} from "ebely"/)
+  assert.match(out, /import \{ InternalStore, ApiResponse, HookRegistry \} from "ebely"/)
   assert.match(out, /Promise<ApiResponse<\{ 200: \{ "id": string \} \}>>/)
   assert.match(out, /return \{ status: response\.status, body: data \}/)
   assert.doesNotMatch(out, /throw new Error\(/)
@@ -42,10 +42,29 @@ test("режим 'test': ApiResponse, карта статусов, request не 
 
 test("режим 'frontend': тело напрямую, без ApiResponse, request бросает", () => {
   const out = render('frontend')
-  assert.match(out, /import \{ InternalStore \} from "ebely"/)
+  assert.match(out, /import \{ InternalStore, HookRegistry \} from "ebely"/)
   assert.doesNotMatch(out, /ApiResponse/)
   assert.match(out, /Promise<\{ "id": string \}>/)
   assert.match(out, /throw new Error\(/)
+})
+
+test('оба режима: типизированное дерево хуков + проводка в request', () => {
+  for (const mode of ['test', 'frontend'] as const) {
+    const out = render(mode)
+    // публичный тип регистратора и дерево
+    assert.match(out, /export type Hooks</)
+    assert.match(out, /type EbelyHookTree<Store extends InternalStore> = \{/)
+    assert.match(out, /before\(fn: BeforeHook<Store, undefined>\): void/)
+    assert.match(out, /after\(fn: AfterHook<Store, undefined, \{ "id": string \}>\): void/)
+    assert.match(out, /import type \{ BeforeHook, AfterHook \} from "ebely"/)
+    // реестр на World и применение конфиг-регистратора
+    assert.match(out, /private hookRegistry = new HookRegistry\(\)/)
+    assert.match(out, /if \(registrar\) registrar\(this\.buildHookTree\(\)\)/)
+    // ключ операции и прогон до/после в общем request
+    assert.match(out, /opKey: "posts\.get"/)
+    assert.match(out, /await registry\.runBefore\(\{ key: opKey, request: hookReq, ctx: store \}\)/)
+    assert.match(out, /await registry\.runAfter\(\{/)
+  }
 })
 
 test('оба режима: путь, метод и summary на месте', () => {

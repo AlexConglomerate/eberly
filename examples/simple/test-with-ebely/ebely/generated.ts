@@ -3,7 +3,8 @@
 // Режим клиента: test
 // Перегенерация: pnpm run client:generate
 
-import { InternalStore, ApiResponse } from "ebely"
+import { InternalStore, ApiResponse, HookRegistry } from "ebely"
+import type { BeforeHook, AfterHook } from "ebely"
 import { ebely } from "./ebely"
 
 type RequestInput = {
@@ -17,9 +18,95 @@ export type CreateUserArgs = {
   headers?: Record<string, string>
 }
 
+type EbelyHookTree<Store extends InternalStore> = {
+    "posts": {
+      "list": {
+        before(fn: BeforeHook<Store, undefined>): void
+        after(fn: AfterHook<Store, undefined, Array<{
+        "id": string
+        "title": string
+        "content": string
+        "createdAt": string
+        "updatedAt": string
+      }>>): void
+      }
+      "create": {
+        before(fn: BeforeHook<Store, {
+          "title": string
+          "content": string
+        }>): void
+        after(fn: AfterHook<Store, {
+          "title": string
+          "content": string
+        }, {
+        "id": string
+        "title": string
+        "content": string
+        "createdAt": string
+        "updatedAt": string
+      }>): void
+      }
+      "get": {
+        before(fn: BeforeHook<Store, undefined>): void
+        after(fn: AfterHook<Store, undefined, {
+        "id": string
+        "title": string
+        "content": string
+        "createdAt": string
+        "updatedAt": string
+      }>): void
+      }
+      "update": {
+        before(fn: BeforeHook<Store, {
+          "title"?: string
+          "content"?: string
+        }>): void
+        after(fn: AfterHook<Store, {
+          "title"?: string
+          "content"?: string
+        }, {
+        "id": string
+        "title": string
+        "content": string
+        "createdAt": string
+        "updatedAt": string
+      }>): void
+      }
+      "delete": {
+        before(fn: BeforeHook<Store, undefined>): void
+        after(fn: AfterHook<Store, undefined, {
+        "success": boolean
+      }>): void
+      }
+    }
+}
+
+/**
+ * Тип регистратора хуков для ЭТОГО бэкенда. Объявите хуки в отдельном
+ * файле и положите одной переменной в конфиг (`EbelyConfig.hooks`).
+ * Передайте СВОЙ класс store параметром, чтобы `ctx` был типизирован:
+ *
+ *   import type { AppStore } from './internalVariable'
+ *   export const hooks: Hooks<AppStore> = (h) => {
+ *     h.posts.create.after(({ response, ctx }) => { … })
+ *   }
+ *
+ * (Параметр НЕ выводится из `ebely.internalStore` намеренно: это создало
+ * бы цикл типов `ebely` ⇄ `Hooks`, т.к. `hooks` лежит внутри `ebely`.)
+ */
+export type Hooks<Store extends InternalStore = InternalStore> = (
+  h: EbelyHookTree<Store>,
+) => void
+
 export class World<
   Store extends InternalStore = InstanceType<typeof ebely.internalStore>,
 > {
+  /**
+   * Общий реестр хуков. Регистрация — статическая (один раз из конфига),
+   * но `ctx` подставляется в момент запроса = store конкретного юзера.
+   */
+  private hookRegistry = new HookRegistry()
+
   constructor(
     public args: {
       /** URL бэкенда. Если не задан — берётся ebely.url из конфига. */
@@ -27,11 +114,42 @@ export class World<
       /** Класс-хранилище. Если не задан — берётся ebely.internalStore. */
       store?: new () => Store
     } = {},
-  ) {}
+  ) {
+    const registrar = (ebely as { hooks?: (h: unknown) => void }).hooks
+    if (registrar) registrar(this.buildHookTree())
+  }
 
   /** Базовый URL с учётом server.url из схемы. */
   private baseUrl(): string {
     return (this.args.url ?? ebely.url).replace(/\/$/, '') + "/api"
+  }
+
+  private buildHookTree(): EbelyHookTree<Store> {
+    const r = this.hookRegistry
+    return {
+      "posts": {
+        "list": {
+          before: (fn: BeforeHook<Store>) => r.before({ key: "posts.list", fn }),
+          after: (fn: AfterHook<Store>) => r.after({ key: "posts.list", fn }),
+        },
+        "create": {
+          before: (fn: BeforeHook<Store>) => r.before({ key: "posts.create", fn }),
+          after: (fn: AfterHook<Store>) => r.after({ key: "posts.create", fn }),
+        },
+        "get": {
+          before: (fn: BeforeHook<Store>) => r.before({ key: "posts.get", fn }),
+          after: (fn: AfterHook<Store>) => r.after({ key: "posts.get", fn }),
+        },
+        "update": {
+          before: (fn: BeforeHook<Store>) => r.before({ key: "posts.update", fn }),
+          after: (fn: AfterHook<Store>) => r.after({ key: "posts.update", fn }),
+        },
+        "delete": {
+          before: (fn: BeforeHook<Store>) => r.before({ key: "posts.delete", fn }),
+          after: (fn: AfterHook<Store>) => r.after({ key: "posts.delete", fn }),
+        },
+      },
+    } as unknown as EbelyHookTree<Store>
   }
 
   /**
@@ -40,6 +158,7 @@ export class World<
    */
   createUser(userArgs: CreateUserArgs = {}) {
     const baseUrl = this.baseUrl()
+    const registry = this.hookRegistry
     const StoreClass =
       this.args.store ?? (ebely.internalStore as unknown as new () => Store)
     const store = new StoreClass()
@@ -47,31 +166,42 @@ export class World<
     const request = async (req: {
       method: string
       path: string
+      opKey: string
       input?: RequestInput
     }): Promise<{ status: number; body: unknown }> => {
-      const { method, path, input } = req
+      const { method, path, opKey, input } = req
+
+      const hookReq = {
+        method,
+        path,
+        pathParams: { ...(input?.path ?? {}) },
+        query: { ...(input?.query ?? {}) },
+        body: input?.body,
+        headers: { ...userArgs.headers },
+      }
+      await registry.runBefore({ key: opKey, request: hookReq, ctx: store })
 
       let resolvedPath = path
-      for (const [key, value] of Object.entries(input?.path ?? {})) {
+      for (const [k, v] of Object.entries(hookReq.pathParams)) {
         resolvedPath = resolvedPath.replace(
-          `{${key}}`,
-          encodeURIComponent(String(value)),
+          `{${k}}`,
+          encodeURIComponent(String(v)),
         )
       }
 
       const url = new URL(baseUrl + resolvedPath)
-      for (const [key, value] of Object.entries(input?.query ?? {})) {
-        if (value !== undefined) url.searchParams.set(key, String(value))
+      for (const [k, v] of Object.entries(hookReq.query)) {
+        if (v !== undefined) url.searchParams.set(k, String(v))
       }
 
-      const hasBody = input?.body !== undefined
+      const hasBody = hookReq.body !== undefined
       const response = await fetch(url, {
         method,
         headers: {
           ...(hasBody ? { 'content-type': 'application/json' } : {}),
-          ...userArgs.headers,
+          ...hookReq.headers,
         },
-        body: hasBody ? JSON.stringify(input!.body) : undefined,
+        body: hasBody ? JSON.stringify(hookReq.body) : undefined,
       })
 
       const text = await response.text()
@@ -81,6 +211,13 @@ export class World<
       } catch {
         data = text
       }
+
+      await registry.runAfter({
+        key: opKey,
+        request: hookReq,
+        response: { status: response.status, body: data },
+        ctx: store,
+      })
 
       return { status: response.status, body: data }
     }
@@ -99,6 +236,7 @@ export class World<
           const res = await request({
             method: "GET",
             path: "/posts",
+            opKey: "posts.list",
             input: input as RequestInput,
           })
           return new ApiResponse(res) as unknown as ApiResponse<{ 200: Array<{
@@ -124,6 +262,7 @@ export class World<
           const res = await request({
             method: "POST",
             path: "/posts",
+            opKey: "posts.create",
             input: input as RequestInput,
           })
           return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
@@ -146,6 +285,7 @@ export class World<
           const res = await request({
             method: "GET",
             path: "/posts/{id}",
+            opKey: "posts.get",
             input: input as RequestInput,
           })
           return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
@@ -171,6 +311,7 @@ export class World<
           const res = await request({
             method: "PATCH",
             path: "/posts/{id}",
+            opKey: "posts.update",
             input: input as RequestInput,
           })
           return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
@@ -189,6 +330,7 @@ export class World<
           const res = await request({
             method: "DELETE",
             path: "/posts/{id}",
+            opKey: "posts.delete",
             input: input as RequestInput,
           })
           return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
