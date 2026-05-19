@@ -9,8 +9,8 @@ describe("posts", () => {
 
     beforeAll(async () => {
         await world.clearDatabase()
-        await user1.auth.register({ email: "a@x.com", password: "password" })
-        await user1.auth.register({ email: "b@x.com", password: "password" })
+        await user1.fullRegister({ email: "a@x.com", password: "password" })
+        await user1.fullRegister({ email: "b@x.com", password: "password" })
     })
 
     test("user1 создаёт пост", async () => {
