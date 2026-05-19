@@ -25,14 +25,6 @@ const test1 = async () => {
     // сверяется только переданное поле, остальные игнорируются.
     res.assert(200, { id: lastPostId })
 
-    // // На будущее.
-    // const wsAnswer = await user1.ws.getAndClear({
-    //     topic: 'created.post',
-    //     // count: 2 // Если ожидаем два сообщения. Если ничего не указано, то по умолчанию ждем одно сообщение.
-    //     // под капотом мы постоянно ожидаем ответы. Как только ответ дан, мы сразу же возвращаемся сюда.
-    // })
-    // wsAnswer.assert({ id: lastPostId, title: "Hello", })
-
     console.log("res", res.body)
 
     // Незадекларированный в схеме статус — через `as any`.
@@ -49,3 +41,13 @@ const test1 = async () => {
 }
 
 test1()
+
+
+
+// // На будущее.
+// const wsAnswer = await user1.ws.getAndClear({
+//     topic: 'created.post',
+//     // count: 2 // Если ожидаем два сообщения. Если ничего не указано, то по умолчанию ждем одно сообщение.
+//     // под капотом мы постоянно ожидаем ответы. Как только ответ дан, мы сразу же возвращаемся сюда.
+// })
+// wsAnswer.assert({ id: lastPostId, title: "Hello", })
