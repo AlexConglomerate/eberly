@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "client:generate": "tsx ebely/generate-client.ts",
-    "test": "tsx tests/test1.ts"
+    "test": "vitest run"
   },
   "dependencies": {
     "ebely": "workspace:*"
@@ -14,6 +14,7 @@
   "devDependencies": {
     "@types/node": "^25.8.0",
     "tsx": "^4.22.1",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.6"
   }
 }

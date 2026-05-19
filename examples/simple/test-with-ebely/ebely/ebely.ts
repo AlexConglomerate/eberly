@@ -8,10 +8,8 @@ export const ebely = {
     url: 'http://localhost:3000', // url бекенда, который нужно тестировать
     swagger: { pathToFile: 'swagger.json', }, // путь к swagger-схеме
     generateClientTo: 'ebely/generated.ts', // путь к генерируемому клиенту
-
     hooks, // before/after-хуки (объявлены в ./hooks.ts, типизированы)
-
-    mode: 'test',
+    mode: 'test', // test - не-2xx статусы не бросаются.
 
     // mode: 'test' (по умолчанию) — методы возвращают ApiResponse с
     //   .status/.body/.assert(); не-2xx НЕ бросается.
