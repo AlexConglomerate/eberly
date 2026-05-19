@@ -4,7 +4,7 @@
 
 import type { HooksRegistrar } from './hooks'
 import type { SwaggerSource } from './generator/swagger'
-import type { InternalStore } from './internal-store'
+import type { BaseStore } from './base-store'
 
 /**
  * Режим генерируемого клиента (решается на этапе генерации, влияет на
@@ -25,22 +25,22 @@ export type EbelyConfig = {
   url: string
   /**
    * Класс-хранилище внутренних переменных ОДНОГО пользователя — наследник
-   * `InternalStore`. Передаётся сам класс (конструктор), не его экземпляр.
+   * `BaseStore`. Передаётся сам класс (конструктор), не его экземпляр.
    * Может содержать методы-сценарии (`async fullRegister(...)`), которые
    * через `this.api.<группа>.<метод>` дёргают эндпоинты от лица этого
    * пользователя (его заголовки, его переменные, его `ctx` в хуках).
    */
-  userStore: new () => InternalStore<any, any>
+  userStore: new () => BaseStore<any, any>
 
   /**
    * Класс-хранилище переменных/сценариев УРОВНЯ WORLD (необязательно).
-   * Тот же `InternalStore`, но его экземпляр — не «один пользователь», а
+   * Тот же `BaseStore`, но его экземпляр — не «один пользователь», а
    * весь мир: сюда кладут глобальные сценарии подготовки/очистки
    * (`clearDatabase`, `seed`), доступные как `world.<метод>()`. Внутри
    * `this.api` — анонимный клиент (без per-user заголовков).
    * @default undefined — у `World` нет доп. методов
    */
-  worldStore?: new () => InternalStore<any, any>
+  worldStore?: new () => BaseStore<any, any>
 
   /** Откуда брать swagger-схему: из файла (`pathToFile`) или по `url`. */
   swagger: SwaggerSource
@@ -80,13 +80,13 @@ export type EbelyConfig = {
   hooks?: HooksRegistrar
 
   /**
-   * Из какого модуля СГЕНЕРИРОВАННЫЙ файл импортирует `InternalStore`.
+   * Из какого модуля СГЕНЕРИРОВАННЫЙ файл импортирует `BaseStore`.
    * По умолчанию `'ebely'` — имя npm-пакета библиотеки. Менять нужно
    * только в нестандартной раскладке (монорепо без публикации,
    * импорт по относительному пути или по alias из tsconfig).
    * @default 'ebely'
    */
-  internalStoreImport?: string
+  userStoreImport?: string
   /**
    * Из какого модуля СГЕНЕРИРОВАННЫЙ файл импортирует `ebely`-конфиг
    * (нужен ему для значений по умолчанию: `ebely.url`, `ebely.userStore`).

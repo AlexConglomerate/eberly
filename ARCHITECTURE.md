@@ -2,7 +2,7 @@
 
 Документ объясняет на русском, что делает библиотека, как устроен код в
 `src/` после реорганизации и почему в конфиге раньше были «странные»
-поля `configImport` / `internalStoreImport`.
+поля `configImport` / `userStoreImport`.
 
 ## 1. Что вообще делает библиотека
 
@@ -36,7 +36,7 @@ user.set({ key: "lastPostId", value: post.body.id })
 
 Две половины библиотеки:
 
-1. **Рантайм-ядро** — класс `InternalStore` (`src/internal-store.ts`).
+1. **Рантайм-ядро** — класс `BaseStore` (`src/base-store.ts`).
    Это хранилище «внутренних переменных» одного пользователя
    (`get` / `set`). Оно НЕ зависит от схемы и попадает в npm-пакет как
    есть. Пользователь наследуется от него и добавляет свои поля и методы
@@ -55,7 +55,7 @@ user.set({ key: "lastPostId", value: post.body.id })
 
 ```
 src/
-├── internal-store.ts        # рантайм-ядро (публичное): класс InternalStore
+├── base-store.ts        # рантайм-ядро (публичное): класс BaseStore
 ├── response.ts              # рантайм-ядро (публичное): ApiResponse + assert
 ├── config.ts                # публичный тип EbelyConfig (+ ClientMode)
 ├── generate-client.ts       # ОРКЕСТРАТОР: публичная generateClient()
@@ -94,11 +94,11 @@ src/
 loadSpec (swagger.ts)  →  collectOperations (operations.ts)  →  renderClient (render.ts)  →  writeFile
 ```
 
-- **`config.ts`** и **`internal-store.ts`** оставлены в корне `src/`,
+- **`config.ts`** и **`base-store.ts`** оставлены в корне `src/`,
   потому что это публичная поверхность (реэкспортится из `index.ts`),
   а не внутренности генератора.
 
-Публичный API (`index.ts`): `InternalStore`, `ApiResponse`,
+Публичный API (`index.ts`): `BaseStore`, `ApiResponse`,
 `EbelyAssertionError`, `HookRegistry`, `generateClient`, типы
 `EbelyConfig`, `ClientMode`, `DeepPartial`, `SwaggerSource`,
 `HooksRegistrar`, `BeforeHook`, `AfterHook`, `BeforeHookArgs`,
@@ -106,7 +106,7 @@ loadSpec (swagger.ts)  →  collectOperations (operations.ts)  →  renderClient
 реэкспортит `SwaggerSource`, чтобы внешние импорты и `config.ts` не
 зависели от внутренней раскладки папки.
 
-## 3. Про «странные» поля `configImport` и `internalStoreImport`
+## 3. Про «странные» поля `configImport` и `userStoreImport`
 
 Это поле тебя справедливо смущало. Разберём, **почему они вообще
 существуют** и почему теперь их можно не писать.
@@ -117,12 +117,12 @@ loadSpec (swagger.ts)  →  collectOperations (operations.ts)  →  renderClient
 (`generated.ts`). А этому новому файлу нужно импортировать две вещи:
 
 ```ts
-import { InternalStore } from "ebely"   // ← internalStoreImport
+import { BaseStore } from "ebely"   // ← userStoreImport
 import { ebely } from "./ebely"          // ← configImport
 ```
 
-- `InternalStore` нужен сгенерированному классу `World` как тип-ограничение
-  (`Store extends InternalStore`).
+- `BaseStore` нужен сгенерированному классу `World` как тип-ограничение
+  (`Store extends BaseStore`).
 - `ebely` (твой конфиг) нужен ему для значений по умолчанию: `ebely.url`
   (адрес бэкенда) и `ebely.userStore` (класс хранилища), чтобы можно
   было писать просто `new World()` без аргументов.
@@ -131,7 +131,7 @@ import { ebely } from "./ebely"          // ← configImport
 что они зависят от того, *где* окажется сгенерированный файл и *как* из
 этого места резолвится библиотека:
 
-- `internalStoreImport` — обычно это имя npm-пакета `'ebely'`. Но в
+- `userStoreImport` — обычно это имя npm-пакета `'ebely'`. Но в
   монорепо без публикации, при импорте по относительному пути или по
   alias из `tsconfig` строка будет другой. Библиотека не знает, как она
   «видна» из произвольной папки.
@@ -146,7 +146,7 @@ import { ebely } from "./ebely"          // ← configImport
 ### Что изменено
 
 В коде у этих полей **уже были значения по умолчанию**
-(`internalStoreImport = 'ebely'`, `configImport = './ebely'`), но в типе
+(`userStoreImport = 'ebely'`, `configImport = './ebely'`), но в типе
 `EbelyConfig` они были помечены как **обязательные** — поэтому пример был
 вынужден их указывать, хотя значения совпадали с дефолтами один в один.
 
@@ -160,7 +160,7 @@ import { ebely } from "./ebely"          // ← configImport
 
 ### Когда их всё-таки указывать
 
-- `internalStoreImport` — если в сгенерированном файле `import ... from
+- `userStoreImport` — если в сгенерированном файле `import ... from
   "ebely"` не резолвится: монорепо без публикации, импорт по
   относительному пути, alias в `tsconfig`. Тогда поставь сюда ту строку,
   которой реально резолвится библиотека из места `generateClientTo`.
@@ -181,7 +181,7 @@ import { ebely } from "./ebely"          // ← configImport
    `ebely/generated.ts` с классом `World`.
 5. **`tests/test1.ts`** импортирует `World`, создаёт пользователей и
    дёргает типизированные методы (`user.posts.create(...)`), попутно
-   складывая данные в `InternalStore` (`user.set/get`).
+   складывая данные в `BaseStore` (`user.set/get`).
 
 ## 5. Проверка
 
@@ -256,8 +256,8 @@ import { ebely } from "./ebely"          // ← configImport
 **Цикл типов `ebely` ⇄ `Hooks`.** `hooks` лежит ВНУТРИ объекта `ebely`,
 поэтому тип `Hooks` НЕ может выводить store из `typeof
 ebely.userStore` (как это делает `World`) — иначе `ebely` ссылается
-сам на себя. Решение: `Hooks<Store extends InternalStore =
-InternalStore>` без `ebely`-дефолта; пользователь передаёт свой класс
+сам на себя. Решение: `Hooks<Store extends BaseStore =
+BaseStore>` без `ebely`-дефолта; пользователь передаёт свой класс
 явно — `Hooks<UserStore>` в отдельном файле `ebely/hooks.ts`. Это и есть
 заложенный шов: добавить позже второй уровень контекста (общий
 account/session для «один юзер с двух устройств») можно аддитивно, не
@@ -277,8 +277,8 @@ account/session для «один юзер с двух устройств») м�
 `this.api`», т.к. он 1-в-1 повторяет `userStore.ts`, который
 пользователь уже пишет):
 
-- **`src/internal-store.ts`** получил второй дженерик и `protected api`:
-  `InternalStore<Vars, Api>`. Значение НЕ инициализируется в ядре — его
+- **`src/base-store.ts`** получил второй дженерик и `protected api`:
+  `BaseStore<Vars, Api>`. Значение НЕ инициализируется в ядре — его
   подставляет генерируемый `World`. Тип `Api` пользователь задаёт сам,
   подставляя сгенерированный `WorldApi` (как `Hooks<UserStore>` для хуков).
 - **`src/generator/render.ts`** эмитит ТИП `export type WorldApi` —
@@ -295,7 +295,7 @@ account/session для «один юзер с двух устройств») м�
 
 **World-scoped** (`world.clearDatabase`, `world.seed`): не привязано к
 юзеру — глобальная подготовка/очистка. Введён необязательный
-`EbelyConfig.worldStore` (тот же `InternalStore`, но «весь мир»).
+`EbelyConfig.worldStore` (тот же `BaseStore`, но «весь мир»).
 Генерируемый `World` **наследует** сконфигурированный `worldStore`
 (`class World … extends WorldStoreBase`), поэтому `world.<сценарий>()` и
 `world.get/set` доступны и типизированы ровно как у юзера. `this.api`

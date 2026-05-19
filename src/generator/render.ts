@@ -19,7 +19,7 @@
 //
 // Сценарии (actions): генератор эмитит ТИП `WorldApi` — дерево
 // типизированных вызовов эндпоинтов. Пользователь подставляет его вторым
-// дженериком в свой store (`InternalStore<Vars, WorldApi>`) и из методов
+// дженериком в свой store (`BaseStore<Vars, WorldApi>`) и из методов
 // дёргает `this.api.<группа>.<метод>()`. Значение `this.api` подставляет
 // `World`: для user-store — клиент этого юзера, для world-store —
 // анонимный клиент. См. ARCHITECTURE.md §8.
@@ -101,14 +101,14 @@ function renderMethod(args: { op: Operation; mode: ClientMode }): string {
 }
 
 /** Импорты сгенерированного файла. В 'test' дополнительно нужен ApiResponse. */
-function renderImports(args: { mode: ClientMode; internalStoreImport: string; configImport: string }): string {
-  const { mode, internalStoreImport, configImport } = args
+function renderImports(args: { mode: ClientMode; userStoreImport: string; configImport: string }): string {
+  const { mode, userStoreImport, configImport } = args
   const values =
     mode === 'frontend'
-      ? 'InternalStore, HookRegistry'
-      : 'InternalStore, ApiResponse, HookRegistry'
-  return `import { ${values} } from ${JSON.stringify(internalStoreImport)}
-import type { BeforeHook, AfterHook } from ${JSON.stringify(internalStoreImport)}
+      ? 'BaseStore, HookRegistry'
+      : 'BaseStore, ApiResponse, HookRegistry'
+  return `import { ${values} } from ${JSON.stringify(userStoreImport)}
+import type { BeforeHook, AfterHook } from ${JSON.stringify(userStoreImport)}
 import { ebely } from ${JSON.stringify(configImport)}`
 }
 
@@ -151,7 +151,7 @@ function groupOperations(operations: Operation[]): Map<string, Operation[]> {
 /**
  * Тип дерева типизированных вызовов эндпоинтов (`this.api` в методах-
  * сценариях). Пользователь подставляет его вторым дженериком в свой
- * store: `class UserStore extends InternalStore<Vars, WorldApi>`.
+ * store: `class UserStore extends BaseStore<Vars, WorldApi>`.
  */
 function renderApiType(args: { groups: Map<string, Operation[]>; mode: ClientMode }): string {
   const { groups, mode } = args
@@ -178,7 +178,7 @@ function renderHookTreeType(groups: Map<string, Operation[]>): string {
     })
     return `    ${JSON.stringify(group)}: {\n${leaves.join('\n')}\n    }`
   })
-  return `type EbelyHookTree<Store extends InternalStore> = {\n${blocks.join('\n')}\n}`
+  return `type EbelyHookTree<Store extends BaseStore> = {\n${blocks.join('\n')}\n}`
 }
 
 /** Рантайм-строитель дерева хуков: связывает имена с общим HookRegistry. */
@@ -221,10 +221,10 @@ export function renderClient(args: {
   spec: Json
   operations: Operation[]
   mode: ClientMode
-  internalStoreImport: string
+  userStoreImport: string
   configImport: string
 }): string {
-  const { spec, operations, mode, internalStoreImport, configImport } = args
+  const { spec, operations, mode, userStoreImport, configImport } = args
   const basePath: string = spec.servers?.[0]?.url ?? ''
 
   const groups = groupOperations(operations)
@@ -235,7 +235,7 @@ export function renderClient(args: {
 // Режим клиента: ${mode}
 // Перегенерация: pnpm run client:generate
 
-${renderImports({ mode, internalStoreImport, configImport })}
+${renderImports({ mode, userStoreImport, configImport })}
 
 type RequestInput = {
   path?: Record<string, string>
@@ -272,26 +272,26 @@ ${renderHookTreeType(groups)}
  * (Параметр НЕ выводится из \`ebely.userStore\` намеренно: это создало
  * бы цикл типов \`ebely\` ⇄ \`Hooks\`, т.к. \`hooks\` лежит внутри \`ebely\`.)
  */
-export type Hooks<Store extends InternalStore = InternalStore> = (
+export type Hooks<Store extends BaseStore = BaseStore> = (
   h: EbelyHookTree<Store>,
 ) => void
 
 /**
  * База \`World\` — это сконфигурированный \`ebely.worldStore\` (или пустой
- * \`InternalStore\`, если не задан). Поэтому \`world.<сценарий>()\` и
+ * \`BaseStore\`, если не задан). Поэтому \`world.<сценарий>()\` и
  * \`world.get/set\` доступны и типизированы ровно как у пользователя,
  * только область — весь мир. Тип берётся из \`ebely\` тем же приёмом, что
  * и \`Store\` (никаких рантайм-условий — см. ARCHITECTURE.md §8).
  */
 type ConfiguredWorldStore =
-  typeof ebely extends { worldStore: new () => infer I extends InternalStore }
+  typeof ebely extends { worldStore: new () => infer I extends BaseStore }
     ? I
-    : InternalStore
-const WorldStoreBase = ((ebely as { worldStore?: new () => InternalStore })
-  .worldStore ?? InternalStore) as new () => ConfiguredWorldStore
+    : BaseStore
+const WorldStoreBase = ((ebely as { worldStore?: new () => BaseStore })
+  .worldStore ?? BaseStore) as new () => ConfiguredWorldStore
 
 export class World<
-  Store extends InternalStore = InstanceType<typeof ebely.userStore>,
+  Store extends BaseStore = InstanceType<typeof ebely.userStore>,
 > extends WorldStoreBase {
   /**
    * Общий реестр хуков. Регистрация — статическая (один раз из конфига),
@@ -330,7 +330,7 @@ ${renderHookTreeBuilder(groups)}
    */
   private makeRequest(cfg: {
     headers: Record<string, string>
-    store: InternalStore
+    store: BaseStore
   }): RequestFn {
     const baseUrl = this.baseUrl()
     const registry = this.hookRegistry

@@ -4,8 +4,8 @@
 ## Структура
 
 Код библиотеки (попадает в npm-пакет, собирается в dist/):
-- `index.ts` — публичный API (`InternalStore`, `ApiResponse`, `generateClient`, типы).
-- `src/internal-store.ts` — рантайм-ядро: базовый класс хранилища переменных.
+- `index.ts` — публичный API (`BaseStore`, `ApiResponse`, `generateClient`, типы).
+- `src/base-store.ts` — рантайм-ядро: базовый класс хранилища переменных.
 - `src/response.ts` — рантайм-ядро: `ApiResponse` + чистая логика `assert`
   (используется сгенерированным клиентом в режиме `'test'`).
 - `src/hooks.ts` — рантайм-ядро: `HookRegistry` + типы хуков `before` /
@@ -38,7 +38,7 @@
   - Конфиг ebely: `test-with-ebely/ebely/ebely.ts`
   - Скрипт генерации: `test-with-ebely/ebely/generate-client.ts`
   - Переменные/сценарии юзера: `test-with-ebely/ebely/userStore.ts`
-    (`UserStore`, `InternalStore<Vars, WorldApi>` + методы-сценарии вроде
+    (`UserStore`, `BaseStore<Vars, WorldApi>` + методы-сценарии вроде
     `fullRegister`, см. `ARCHITECTURE.md §8`)
   - Переменные/сценарии world: `test-with-ebely/ebely/worldStore.ts`
     (`WorldStore`; кладётся в конфиг как `worldStore`; даёт

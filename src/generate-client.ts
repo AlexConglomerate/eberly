@@ -31,7 +31,7 @@ export async function generateClient(
     swagger,
     generateClientTo,
     mode = 'test',
-    internalStoreImport = 'ebely',
+    userStoreImport = 'ebely',
     configImport = './ebely',
   } = args
 
@@ -43,7 +43,7 @@ export async function generateClient(
     spec,
     operations,
     mode,
-    internalStoreImport,
+    userStoreImport,
     configImport,
   })
 

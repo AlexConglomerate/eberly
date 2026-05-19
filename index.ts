@@ -1,5 +1,5 @@
 // Публичный API библиотеки ebely (npm-пакет «ebely»).
-export { InternalStore } from './src/internal-store'
+export { BaseStore } from './src/base-store'
 export { ApiResponse, EbelyAssertionError } from './src/response'
 export type { DeepPartial } from './src/response'
 export { HookRegistry } from './src/hooks'

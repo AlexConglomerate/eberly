@@ -1,13 +1,13 @@
 // Внутренние переменные и СЦЕНАРИИ одного пользователя.
 //
-// Второй дженерик `InternalStore<Vars, WorldApi>` даёт `this.api` —
+// Второй дженерик `BaseStore<Vars, WorldApi>` даёт `this.api` —
 // типизированное дерево вызовов эндпоинтов ОТ ЛИЦА ЭТОГО пользователя
 // (его заголовки, его переменные, его `ctx` в хуках). Поэтому
 // многошаговую подготовку (регистрация → подтверждение по коду) можно
 // спрятать за одним методом `fullRegister`, а в тестах звать его одной
 // строкой. `WorldApi` — `import type` → рантайм-цикла нет (как hooks.ts).
 
-import { InternalStore } from "ebely"
+import { BaseStore } from "ebely"
 import type { WorldApi } from "./generated"
 
 export type InternalVariable = {
@@ -20,7 +20,7 @@ export type InternalVariable = {
     lastPostId: string
 }
 
-export class UserStore extends InternalStore<InternalVariable, WorldApi> {
+export class UserStore extends BaseStore<InternalVariable, WorldApi> {
     /** Пример производного метода: id первого созданного поста. */
     public getFirstPostId(): string | undefined {
         const createdPosts = this.get({ key: "createdPosts" })

@@ -4,14 +4,14 @@
 //
 // Это схемо-независимая обвязка — она НЕ выводится из swagger. Конкретный
 // набор переменных задаёт пользователь библиотеки: он наследуется от
-// InternalStore в своём (не генерируемом) файле, передаёт тип переменных
+// BaseStore в своём (не генерируемом) файле, передаёт тип переменных
 // дженериком и может добавлять производные методы поверх this.get/this.set.
 
-export class InternalStore<
+export class BaseStore<
   Vars extends Record<string, unknown> = Record<string, never>,
   Api = unknown,
 > {
-  private internalStore = new Map<keyof Vars, unknown>()
+  private store = new Map<keyof Vars, unknown>()
 
   /**
    * Типизированный доступ к эндпоинтам ИЗНУТРИ методов-сценариев
@@ -22,7 +22,7 @@ export class InternalStore<
    * дженериком, передавая сгенерированный `WorldApi`:
    *
    *   import type { WorldApi } from './generated'
-   *   class UserStore extends InternalStore<Vars, WorldApi> {
+   *   class UserStore extends BaseStore<Vars, WorldApi> {
    *     async fullRegister(args: { email: string; password: string }) {
    *       await this.api.auth.register({ body: args })
    *       await this.api.auth.confirm({ body: { code: '0000' } })
@@ -36,11 +36,11 @@ export class InternalStore<
 
   /** Сохранить внутреннюю переменную пользователя. */
   set<K extends keyof Vars>(args: { key: K; value: Vars[K] }): void {
-    this.internalStore.set(args.key, args.value)
+    this.store.set(args.key, args.value)
   }
 
   /** Прочитать внутреннюю переменную пользователя (undefined, если не задана). */
   get<K extends keyof Vars>(args: { key: K }): Vars[K] | undefined {
-    return this.internalStore.get(args.key) as Vars[K] | undefined
+    return this.store.get(args.key) as Vars[K] | undefined
   }
 }

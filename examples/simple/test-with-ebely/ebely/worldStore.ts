@@ -8,7 +8,7 @@
 // импортируется как `import type` → рантайм-цикла нет (см. hooks.ts /
 // ARCHITECTURE.md §8).
 
-import { InternalStore } from "ebely"
+import { BaseStore } from "ebely"
 import type { WorldApi } from "./generated"
 
 export type WorldVariable = {
@@ -16,7 +16,7 @@ export type WorldVariable = {
     resets: number
 }
 
-export class WorldStore extends InternalStore<WorldVariable, WorldApi> {
+export class WorldStore extends BaseStore<WorldVariable, WorldApi> {
     /** Сценарий: очистить базу одним вызовом `world.clearDatabase()`. */
     public async clearDatabase(): Promise<void> {
         const res = await this.api.admin.clearDatabase()

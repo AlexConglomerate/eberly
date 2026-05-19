@@ -3,7 +3,7 @@
 // Режим клиента: test
 // Перегенерация: pnpm run client:generate
 
-import { InternalStore, ApiResponse, HookRegistry } from "ebely"
+import { BaseStore, ApiResponse, HookRegistry } from "ebely"
 import type { BeforeHook, AfterHook } from "ebely"
 import { ebely } from "./ebely"
 
@@ -86,7 +86,7 @@ export type WorldApi = {
     }
 }
 
-type EbelyHookTree<Store extends InternalStore> = {
+type EbelyHookTree<Store extends BaseStore> = {
     "posts": {
       "list": {
         before(fn: BeforeHook<Store, undefined>): void
@@ -195,26 +195,26 @@ type EbelyHookTree<Store extends InternalStore> = {
  * (Параметр НЕ выводится из `ebely.userStore` намеренно: это создало
  * бы цикл типов `ebely` ⇄ `Hooks`, т.к. `hooks` лежит внутри `ebely`.)
  */
-export type Hooks<Store extends InternalStore = InternalStore> = (
+export type Hooks<Store extends BaseStore = BaseStore> = (
   h: EbelyHookTree<Store>,
 ) => void
 
 /**
  * База `World` — это сконфигурированный `ebely.worldStore` (или пустой
- * `InternalStore`, если не задан). Поэтому `world.<сценарий>()` и
+ * `BaseStore`, если не задан). Поэтому `world.<сценарий>()` и
  * `world.get/set` доступны и типизированы ровно как у пользователя,
  * только область — весь мир. Тип берётся из `ebely` тем же приёмом, что
  * и `Store` (никаких рантайм-условий — см. ARCHITECTURE.md §8).
  */
 type ConfiguredWorldStore =
-  typeof ebely extends { worldStore: new () => infer I extends InternalStore }
+  typeof ebely extends { worldStore: new () => infer I extends BaseStore }
     ? I
-    : InternalStore
-const WorldStoreBase = ((ebely as { worldStore?: new () => InternalStore })
-  .worldStore ?? InternalStore) as new () => ConfiguredWorldStore
+    : BaseStore
+const WorldStoreBase = ((ebely as { worldStore?: new () => BaseStore })
+  .worldStore ?? BaseStore) as new () => ConfiguredWorldStore
 
 export class World<
-  Store extends InternalStore = InstanceType<typeof ebely.userStore>,
+  Store extends BaseStore = InstanceType<typeof ebely.userStore>,
 > extends WorldStoreBase {
   /**
    * Общий реестр хуков. Регистрация — статическая (один раз из конфига),
@@ -295,7 +295,7 @@ export class World<
    */
   private makeRequest(cfg: {
     headers: Record<string, string>
-    store: InternalStore
+    store: BaseStore
   }): RequestFn {
     const baseUrl = this.baseUrl()
     const registry = this.hookRegistry
