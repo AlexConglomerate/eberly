@@ -70,4 +70,10 @@ export const db = {
     posts.splice(index, 1)
     return true
   },
+
+  /** Полная очистка «базы»: опустошает массив и сбрасывает счётчик id. */
+  clear(): void {
+    posts.length = 0
+    nextId = 1
+  },
 }

@@ -1,10 +1,12 @@
 import type { EbelyConfig } from "ebely";
 import { generateClient } from 'ebely'
 import { AppStore } from "./internalVariable";
+import { AppWorldStore } from "./worldVariable";
 import { hooks } from "./hooks";
 
 export const ebely = {
-    internalStore: AppStore, // внутренние переменные
+    internalStore: AppStore, // внутренние переменные одного пользователя
+    worldStore: AppWorldStore, // внутренние переменные/сценарии всего world
     url: 'http://localhost:3000', // url бекенда, который нужно тестировать
     swagger: { pathToFile: 'swagger.json', }, // путь к swagger-схеме
     generateClientTo: 'ebely/generated.ts', // путь к генерируемому клиенту

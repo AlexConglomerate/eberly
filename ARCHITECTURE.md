@@ -262,3 +262,49 @@ InternalStore>` без `ebely`-дефолта; пользователь пере
 заложенный шов: добавить позже второй уровень контекста (общий
 account/session для «один юзер с двух устройств») можно аддитивно, не
 трогая `HookRegistry`.
+
+## 8. Сценарии (actions): `this.api` и world-store
+
+Хук реагирует на ОДИН запрос. Сценарий — наоборот: один именованный
+метод, который ПОД КАПОТОМ дёргает один или несколько эндпоинтов и
+складывает результат во внутренние переменные. Пример — `fullRegister`:
+`auth.register` → `auth.confirm` → сохранить `accessToken`. В тесте это
+одна строка `await user.fullRegister({ email, password })`, без копипасты
+многошаговой подготовки.
+
+Решение — **не новый слой, а доращивание существующего класса-store**
+(см. оценку вариантов в истории; выбран «методы на классе + типизированный
+`this.api`», т.к. он 1-в-1 повторяет `internalVariable.ts`, который
+пользователь уже пишет):
+
+- **`src/internal-store.ts`** получил второй дженерик и `protected api`:
+  `InternalStore<Vars, Api>`. Значение НЕ инициализируется в ядре — его
+  подставляет генерируемый `World`. Тип `Api` пользователь задаёт сам,
+  подставляя сгенерированный `WorldApi` (как `Hooks<AppStore>` для хуков).
+- **`src/generator/render.ts`** эмитит ТИП `export type WorldApi` —
+  дерево типизированных вызовов (`{ posts: { create(input) =>
+  Promise<…> } }`, форма зависит от `mode`, как у методов). Рантайм-
+  дерево строит общий `buildApiTree(request)`, а `request` —
+  `makeRequest({ headers, store })` (один движок и для юзера, и для
+  world; `store` = он же `ctx` хуков).
+- **User-scoped** (`user.fullRegister`): `createUser()` строит дерево с
+  заголовками этого юзера и кладёт его И в `Object.assign(store, tree)`
+  (внешний вызов `user.posts.create`), И в `store.api` (вызов изнутри
+  методов-сценариев). Один и тот же `tree` → сценарий ходит от лица
+  именно этого пользователя (его заголовки, его переменные, его `ctx`).
+
+**World-scoped** (`world.clearDatabase`, `world.seed`): не привязано к
+юзеру — глобальная подготовка/очистка. Введён необязательный
+`EbelyConfig.worldStore` (тот же `InternalStore`, но «весь мир»).
+Генерируемый `World` **наследует** сконфигурированный `worldStore`
+(`class World … extends WorldStoreBase`), поэтому `world.<сценарий>()` и
+`world.get/set` доступны и типизированы ровно как у юзера. `this.api`
+world-store — АНОНИМНЫЙ клиент (без per-user заголовков), `ctx` хуков для
+таких вызовов = сам world.
+
+**Тот же приём против цикла, что у хуков (§7).** `WorldApi`
+импортируется в `internalVariable.ts` / `worldVariable.ts` как
+`import type` → рантайм-цикла нет (тип стирается). Тип базы `World`
+берётся из `ebely` тем же conditional-приёмом, что и `Store`
+(`typeof ebely extends { worldStore: new () => infer I … } ? I : …`) —
+никаких рантайм-условий, форма решается на этапе генерации.

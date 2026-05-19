@@ -99,6 +99,53 @@ const deletePost = os
     return { success: true }
   })
 
+// --- Эндпоинты-«заглушки» для демонстрации сценариев (actions) ---------
+// Реальной авторизации тут НЕТ: эндпоинты просто логируют и возвращают
+// то же, что приняли. Нужны только чтобы показать `user.fullRegister`,
+// который под капотом дёргает register → confirm одним методом.
+
+const register = os
+  .route({
+    method: 'POST',
+    path: '/auth/register',
+    summary: 'Register (stub: echoes input)',
+    tags: ['Auth'],
+  })
+  .input(z.object({ email: z.string(), password: z.string() }))
+  .output(z.object({ email: z.string(), password: z.string() }))
+  .handler(({ input }) => {
+    console.log('[auth.register]', input)
+    return input
+  })
+
+const confirm = os
+  .route({
+    method: 'POST',
+    path: '/auth/confirm',
+    summary: 'Confirm registration code (stub: echoes input)',
+    tags: ['Auth'],
+  })
+  .input(z.object({ code: z.string() }))
+  .output(z.object({ code: z.string() }))
+  .handler(({ input }) => {
+    console.log('[auth.confirm]', input)
+    return input
+  })
+
+const clearDatabase = os
+  .route({
+    method: 'POST',
+    path: '/admin/clear-database',
+    summary: 'Wipe all in-memory data',
+    tags: ['Admin'],
+  })
+  .output(z.object({ success: z.boolean() }))
+  .handler(() => {
+    console.log('[admin.clearDatabase] wiping database')
+    db.clear()
+    return { success: true }
+  })
+
 export const router = {
   posts: {
     list: listPosts,
@@ -106,5 +153,12 @@ export const router = {
     create: createPost,
     update: updatePost,
     delete: deletePost,
+  },
+  auth: {
+    register,
+    confirm,
+  },
+  admin: {
+    clearDatabase,
   },
 }

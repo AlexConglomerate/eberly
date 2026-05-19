@@ -13,9 +13,77 @@ type RequestInput = {
   body?: unknown
 }
 
+type RequestFn = (req: {
+  method: string
+  path: string
+  opKey: string
+  input?: RequestInput
+}) => Promise<{ status: number; body: unknown }>
+
 export type CreateUserArgs = {
   /** Заголовки, которые будут добавляться ко всем запросам этого пользователя. */
   headers?: Record<string, string>
+}
+
+export type WorldApi = {
+    "posts": {
+      "list": (input?: {}) => Promise<ApiResponse<{ 200: Array<{
+          "id": string
+          "title": string
+          "content": string
+          "createdAt": string
+          "updatedAt": string
+        }> }>>
+      "create": (input: { body: {
+          "title": string
+          "content": string
+        } }) => Promise<ApiResponse<{ 200: {
+          "id": string
+          "title": string
+          "content": string
+          "createdAt": string
+          "updatedAt": string
+        } }>>
+      "get": (input: { path: { "id": string } }) => Promise<ApiResponse<{ 200: {
+          "id": string
+          "title": string
+          "content": string
+          "createdAt": string
+          "updatedAt": string
+        } }>>
+      "update": (input: { path: { "id": string }; body?: {
+          "title"?: string
+          "content"?: string
+        } }) => Promise<ApiResponse<{ 200: {
+          "id": string
+          "title": string
+          "content": string
+          "createdAt": string
+          "updatedAt": string
+        } }>>
+      "delete": (input: { path: { "id": string } }) => Promise<ApiResponse<{ 200: {
+          "success": boolean
+        } }>>
+    }
+    "auth": {
+      "register": (input: { body: {
+          "email": string
+          "password": string
+        } }) => Promise<ApiResponse<{ 200: {
+          "email": string
+          "password": string
+        } }>>
+      "confirm": (input: { body: {
+          "code": string
+        } }) => Promise<ApiResponse<{ 200: {
+          "code": string
+        } }>>
+    }
+    "admin": {
+      "clearDatabase": (input?: {}) => Promise<ApiResponse<{ 200: {
+          "success": boolean
+        } }>>
+    }
 }
 
 type EbelyHookTree<Store extends InternalStore> = {
@@ -79,6 +147,39 @@ type EbelyHookTree<Store extends InternalStore> = {
       }>): void
       }
     }
+    "auth": {
+      "register": {
+        before(fn: BeforeHook<Store, {
+          "email": string
+          "password": string
+        }>): void
+        after(fn: AfterHook<Store, {
+          "email": string
+          "password": string
+        }, {
+        "email": string
+        "password": string
+      }>): void
+      }
+      "confirm": {
+        before(fn: BeforeHook<Store, {
+          "code": string
+        }>): void
+        after(fn: AfterHook<Store, {
+          "code": string
+        }, {
+        "code": string
+      }>): void
+      }
+    }
+    "admin": {
+      "clearDatabase": {
+        before(fn: BeforeHook<Store, undefined>): void
+        after(fn: AfterHook<Store, undefined, {
+        "success": boolean
+      }>): void
+      }
+    }
 }
 
 /**
@@ -98,9 +199,23 @@ export type Hooks<Store extends InternalStore = InternalStore> = (
   h: EbelyHookTree<Store>,
 ) => void
 
+/**
+ * База `World` — это сконфигурированный `ebely.worldStore` (или пустой
+ * `InternalStore`, если не задан). Поэтому `world.<сценарий>()` и
+ * `world.get/set` доступны и типизированы ровно как у пользователя,
+ * только область — весь мир. Тип берётся из `ebely` тем же приёмом, что
+ * и `Store` (никаких рантайм-условий — см. ARCHITECTURE.md §8).
+ */
+type ConfiguredWorldStore =
+  typeof ebely extends { worldStore: new () => infer I extends InternalStore }
+    ? I
+    : InternalStore
+const WorldStoreBase = ((ebely as { worldStore?: new () => InternalStore })
+  .worldStore ?? InternalStore) as new () => ConfiguredWorldStore
+
 export class World<
   Store extends InternalStore = InstanceType<typeof ebely.internalStore>,
-> {
+> extends WorldStoreBase {
   /**
    * Общий реестр хуков. Регистрация — статическая (один раз из конфига),
    * но `ctx` подставляется в момент запроса = store конкретного юзера.
@@ -115,8 +230,14 @@ export class World<
       store?: new () => Store
     } = {},
   ) {
+    super()
     const registrar = (ebely as { hooks?: (h: unknown) => void }).hooks
     if (registrar) registrar(this.buildHookTree())
+    // world-store ходит АНОНИМНЫМ клиентом (без per-user заголовков);
+    // ctx хуков для таких вызовов = сам world.
+    ;(this as unknown as { api: unknown }).api = this.buildApiTree(
+      this.makeRequest({ headers: {}, store: this }),
+    )
   }
 
   /** Базовый URL с учётом server.url из схемы. */
@@ -149,26 +270,38 @@ export class World<
           after: (fn: AfterHook<Store>) => r.after({ key: "posts.delete", fn }),
         },
       },
+      "auth": {
+        "register": {
+          before: (fn: BeforeHook<Store>) => r.before({ key: "auth.register", fn }),
+          after: (fn: AfterHook<Store>) => r.after({ key: "auth.register", fn }),
+        },
+        "confirm": {
+          before: (fn: BeforeHook<Store>) => r.before({ key: "auth.confirm", fn }),
+          after: (fn: AfterHook<Store>) => r.after({ key: "auth.confirm", fn }),
+        },
+      },
+      "admin": {
+        "clearDatabase": {
+          before: (fn: BeforeHook<Store>) => r.before({ key: "admin.clearDatabase", fn }),
+          after: (fn: AfterHook<Store>) => r.after({ key: "admin.clearDatabase", fn }),
+        },
+      },
     } as unknown as EbelyHookTree<Store>
   }
 
   /**
-   * Создаёт «пользователя» — изолированный набор типизированных вызовов
-   * эндпоинтов, который под капотом ходит fetch-запросами.
+   * Создаёт `request`, замкнутый на заголовки и `store` (он же `ctx`
+   * хуков). Один и тот же движок и для пользователя, и для world.
    */
-  createUser(userArgs: CreateUserArgs = {}) {
+  private makeRequest(cfg: {
+    headers: Record<string, string>
+    store: InternalStore
+  }): RequestFn {
     const baseUrl = this.baseUrl()
     const registry = this.hookRegistry
-    const StoreClass =
-      this.args.store ?? (ebely.internalStore as unknown as new () => Store)
-    const store = new StoreClass()
+    const { headers: baseHeaders, store } = cfg
 
-    const request = async (req: {
-      method: string
-      path: string
-      opKey: string
-      input?: RequestInput
-    }): Promise<{ status: number; body: unknown }> => {
+    return async (req): Promise<{ status: number; body: unknown }> => {
       const { method, path, opKey, input } = req
 
       const hookReq = {
@@ -177,7 +310,7 @@ export class World<
         pathParams: { ...(input?.path ?? {}) },
         query: { ...(input?.query ?? {}) },
         body: input?.body,
-        headers: { ...userArgs.headers },
+        headers: { ...baseHeaders },
       }
       await registry.runBefore({ key: opKey, request: hookReq, ctx: store })
 
@@ -221,8 +354,11 @@ export class World<
 
       return { status: response.status, body: data }
     }
+  }
 
-    return Object.assign(store, {
+  /** Дерево типизированных вызовов эндпоинтов поверх одного `request`. */
+  private buildApiTree(request: RequestFn) {
+    return {
       "posts": {
 
         /** List all posts */
@@ -338,6 +474,79 @@ export class World<
         } }>
         },
       },
-    })
+      "auth": {
+
+        /** Register (stub: echoes input) */
+        "register": async (input: { body: {
+          "email": string
+          "password": string
+        } }): Promise<ApiResponse<{ 200: {
+          "email": string
+          "password": string
+        } }>> => {
+          const res = await request({
+            method: "POST",
+            path: "/auth/register",
+            opKey: "auth.register",
+            input: input as RequestInput,
+          })
+          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
+          "email": string
+          "password": string
+        } }>
+        },
+
+        /** Confirm registration code (stub: echoes input) */
+        "confirm": async (input: { body: {
+          "code": string
+        } }): Promise<ApiResponse<{ 200: {
+          "code": string
+        } }>> => {
+          const res = await request({
+            method: "POST",
+            path: "/auth/confirm",
+            opKey: "auth.confirm",
+            input: input as RequestInput,
+          })
+          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
+          "code": string
+        } }>
+        },
+      },
+      "admin": {
+
+        /** Wipe all in-memory data */
+        "clearDatabase": async (input?: {}): Promise<ApiResponse<{ 200: {
+          "success": boolean
+        } }>> => {
+          const res = await request({
+            method: "POST",
+            path: "/admin/clear-database",
+            opKey: "admin.clearDatabase",
+            input: input as RequestInput,
+          })
+          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
+          "success": boolean
+        } }>
+        },
+      },
+    }
+  }
+
+  /**
+   * Создаёт «пользователя» — изолированный набор типизированных вызовов
+   * эндпоинтов, который под капотом ходит fetch-запросами. `store.api`
+   * указывает на то же дерево, поэтому методы-сценарии этого store
+   * (`fullRegister` и т.п.) ходят от лица именно этого пользователя.
+   */
+  createUser(userArgs: CreateUserArgs = {}) {
+    const StoreClass =
+      this.args.store ?? (ebely.internalStore as unknown as new () => Store)
+    const store = new StoreClass()
+    const tree = this.buildApiTree(
+      this.makeRequest({ headers: { ...userArgs.headers }, store }),
+    )
+    ;(store as unknown as { api: unknown }).api = tree
+    return Object.assign(store, tree)
   }
 }

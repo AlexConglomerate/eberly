@@ -75,3 +75,46 @@ test('оба режима: путь, метод и summary на месте', () 
     assert.match(out, /path: "\/posts\/\{id\}"/)
   }
 })
+
+test('сценарии: экспортируется тип WorldApi (дерево вызовов для this.api)', () => {
+  const t = render('test')
+  assert.match(t, /export type WorldApi = \{/)
+  assert.match(
+    t,
+    /"get": \(input: \{ path: \{ "id": string \} \}\) => Promise<ApiResponse<\{ 200: \{ "id": string \} \}>>/,
+  )
+  const f = render('frontend')
+  assert.match(
+    f,
+    /"get": \(input: \{ path: \{ "id": string \} \}\) => Promise<\{ "id": string \}>/,
+  )
+})
+
+test('world-store: World наследует сконфигурированный worldStore', () => {
+  for (const mode of ['test', 'frontend'] as const) {
+    const out = render(mode)
+    assert.match(out, /type ConfiguredWorldStore =/)
+    assert.match(out, /const WorldStoreBase = \(\(ebely as \{ worldStore\?:/)
+    assert.match(out, /> extends WorldStoreBase \{/)
+    // конструктор инициализирует super() и анонимный api для world
+    assert.match(out, /super\(\)/)
+    assert.match(
+      out,
+      /;\(this as unknown as \{ api: unknown \}\)\.api = this\.buildApiTree\(/,
+    )
+  }
+})
+
+test('сценарии: один движок request, общий buildApiTree, store.api', () => {
+  for (const mode of ['test', 'frontend'] as const) {
+    const out = render(mode)
+    assert.match(out, /private makeRequest\(cfg: \{/)
+    assert.match(out, /private buildApiTree\(request: RequestFn\)/)
+    // user-store получает то же дерево в .api (сценарии ходят от его лица)
+    assert.match(
+      out,
+      /;\(store as unknown as \{ api: unknown \}\)\.api = tree/,
+    )
+    assert.match(out, /return Object\.assign\(store, tree\)/)
+  }
+})
