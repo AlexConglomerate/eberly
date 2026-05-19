@@ -7,10 +7,10 @@ describe("posts", () => {
     const user1 = world.createUser()
     const user2 = world.createUser()
 
-    beforeAll(() => {
-        // world.clearDatabase()
-        // user1.auth.register({ email: "a@x.com", password: "password" })
-        // user1.auth.register({ email: "b@x.com", password: "password" })
+    beforeAll(async () => {
+        await world.clearDatabase()
+        await user1.auth.register({ email: "a@x.com", password: "password" })
+        await user1.auth.register({ email: "b@x.com", password: "password" })
     })
 
     test("user1 создаёт пост", async () => {
