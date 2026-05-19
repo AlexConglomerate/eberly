@@ -1,6 +1,6 @@
 // Ядро библиотеки (НЕ генерируется). Базовый класс хранилища внутренних
 // переменных одного пользователя. Вынесен из генерируемого world.ts, чтобы
-// разорвать цикл импортов world.ts → ebely.ts → internalVariable.ts → world.ts.
+// разорвать цикл импортов world.ts → ebely.ts → userStore.ts → world.ts.
 //
 // Это схемо-независимая обвязка — она НЕ выводится из swagger. Конкретный
 // набор переменных задаёт пользователь библиотеки: он наследуется от
@@ -22,7 +22,7 @@ export class InternalStore<
    * дженериком, передавая сгенерированный `WorldApi`:
    *
    *   import type { WorldApi } from './generated'
-   *   class AppStore extends InternalStore<Vars, WorldApi> {
+   *   class UserStore extends InternalStore<Vars, WorldApi> {
    *     async fullRegister(args: { email: string; password: string }) {
    *       await this.api.auth.register({ body: args })
    *       await this.api.auth.confirm({ body: { code: '0000' } })

@@ -1,5 +1,5 @@
 // Внутренние переменные и СЦЕНАРИИ уровня WORLD — то же, что
-// `internalVariable.ts`, но область не «один пользователь», а весь мир.
+// `userStore.ts`, но область не «один пользователь», а весь мир.
 // Экземпляр этого класса и есть `world` (генерируемый `World` наследует
 // его), поэтому всё объявленное здесь доступно как `world.<...>()`.
 //
@@ -16,7 +16,7 @@ export type WorldVariable = {
     resets: number
 }
 
-export class AppWorldStore extends InternalStore<WorldVariable, WorldApi> {
+export class WorldStore extends InternalStore<WorldVariable, WorldApi> {
     /** Сценарий: очистить базу одним вызовом `world.clearDatabase()`. */
     public async clearDatabase(): Promise<void> {
         const res = await this.api.admin.clearDatabase()

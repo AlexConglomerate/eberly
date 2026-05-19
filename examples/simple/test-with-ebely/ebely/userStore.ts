@@ -20,7 +20,7 @@ export type InternalVariable = {
     lastPostId: string
 }
 
-export class AppStore extends InternalStore<InternalVariable, WorldApi> {
+export class UserStore extends InternalStore<InternalVariable, WorldApi> {
     /** Пример производного метода: id первого созданного поста. */
     public getFirstPostId(): string | undefined {
         const createdPosts = this.get({ key: "createdPosts" })

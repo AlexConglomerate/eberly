@@ -151,7 +151,7 @@ function groupOperations(operations: Operation[]): Map<string, Operation[]> {
 /**
  * Тип дерева типизированных вызовов эндпоинтов (`this.api` в методах-
  * сценариях). Пользователь подставляет его вторым дженериком в свой
- * store: `class AppStore extends InternalStore<Vars, WorldApi>`.
+ * store: `class UserStore extends InternalStore<Vars, WorldApi>`.
  */
 function renderApiType(args: { groups: Map<string, Operation[]>; mode: ClientMode }): string {
   const { groups, mode } = args
@@ -264,12 +264,12 @@ ${renderHookTreeType(groups)}
  * файле и положите одной переменной в конфиг (\`EbelyConfig.hooks\`).
  * Передайте СВОЙ класс store параметром, чтобы \`ctx\` был типизирован:
  *
- *   import type { AppStore } from './internalVariable'
- *   export const hooks: Hooks<AppStore> = (h) => {
+ *   import type { UserStore } from './userStore'
+ *   export const hooks: Hooks<UserStore> = (h) => {
  *     h.posts.create.after(({ response, ctx }) => { … })
  *   }
  *
- * (Параметр НЕ выводится из \`ebely.internalStore\` намеренно: это создало
+ * (Параметр НЕ выводится из \`ebely.userStore\` намеренно: это создало
  * бы цикл типов \`ebely\` ⇄ \`Hooks\`, т.к. \`hooks\` лежит внутри \`ebely\`.)
  */
 export type Hooks<Store extends InternalStore = InternalStore> = (
@@ -291,7 +291,7 @@ const WorldStoreBase = ((ebely as { worldStore?: new () => InternalStore })
   .worldStore ?? InternalStore) as new () => ConfiguredWorldStore
 
 export class World<
-  Store extends InternalStore = InstanceType<typeof ebely.internalStore>,
+  Store extends InternalStore = InstanceType<typeof ebely.userStore>,
 > extends WorldStoreBase {
   /**
    * Общий реестр хуков. Регистрация — статическая (один раз из конфига),
@@ -303,7 +303,7 @@ export class World<
     public args: {
       /** URL бэкенда. Если не задан — берётся ebely.url из конфига. */
       url?: string
-      /** Класс-хранилище. Если не задан — берётся ebely.internalStore. */
+      /** Класс-хранилище. Если не задан — берётся ebely.userStore. */
       store?: new () => Store
     } = {},
   ) {
@@ -401,7 +401,7 @@ ${renderApiTreeBuilder({ groups, mode })}
    */
   createUser(userArgs: CreateUserArgs = {}) {
     const StoreClass =
-      this.args.store ?? (ebely.internalStore as unknown as new () => Store)
+      this.args.store ?? (ebely.userStore as unknown as new () => Store)
     const store = new StoreClass()
     const tree = this.buildApiTree(
       this.makeRequest({ headers: { ...userArgs.headers }, store }),

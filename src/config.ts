@@ -1,6 +1,6 @@
 // Тип пользовательского ebely-конфига (объект `ebely`, который импортирует
 // сгенерированный клиент). Пользователь применяет его через `satisfies`,
-// чтобы не потерять конкретный тип своего `internalStore`.
+// чтобы не потерять конкретный тип своего `userStore`.
 
 import type { HooksRegistrar } from './hooks'
 import type { SwaggerSource } from './generator/swagger'
@@ -30,7 +30,7 @@ export type EbelyConfig = {
    * через `this.api.<группа>.<метод>` дёргают эндпоинты от лица этого
    * пользователя (его заголовки, его переменные, его `ctx` в хуках).
    */
-  internalStore: new () => InternalStore<any, any>
+  userStore: new () => InternalStore<any, any>
 
   /**
    * Класс-хранилище переменных/сценариев УРОВНЯ WORLD (необязательно).
@@ -89,7 +89,7 @@ export type EbelyConfig = {
   internalStoreImport?: string
   /**
    * Из какого модуля СГЕНЕРИРОВАННЫЙ файл импортирует `ebely`-конфиг
-   * (нужен ему для значений по умолчанию: `ebely.url`, `ebely.internalStore`).
+   * (нужен ему для значений по умолчанию: `ebely.url`, `ebely.userStore`).
    * Это путь ОТ сгенерированного файла К этому конфигу. По умолчанию
    * `'./ebely'` — т.е. конфиг лежит рядом с генерируемым файлом.
    * @default './ebely'

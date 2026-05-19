@@ -40,7 +40,7 @@ user.set({ key: "lastPostId", value: post.body.id })
    Это хранилище «внутренних переменных» одного пользователя
    (`get` / `set`). Оно НЕ зависит от схемы и попадает в npm-пакет как
    есть. Пользователь наследуется от него и добавляет свои поля и методы
-   (см. пример `internalVariable.ts` → `AppStore`).
+   (см. пример `userStore.ts` → `UserStore`).
 
 2. **Генератор** — функция `generateClient` и всё в `src/generator/`.
    Запускается один раз (скриптом `client:generate`), читает swagger и
@@ -124,7 +124,7 @@ import { ebely } from "./ebely"          // ← configImport
 - `InternalStore` нужен сгенерированному классу `World` как тип-ограничение
   (`Store extends InternalStore`).
 - `ebely` (твой конфиг) нужен ему для значений по умолчанию: `ebely.url`
-  (адрес бэкенда) и `ebely.internalStore` (класс хранилища), чтобы можно
+  (адрес бэкенда) и `ebely.userStore` (класс хранилища), чтобы можно
   было писать просто `new World()` без аргументов.
 
 Проблема: генератор **не может сам угадать строки этих импортов**, потому
@@ -175,7 +175,7 @@ import { ebely } from "./ebely"          // ← configImport
    собирает `your-app/swagger/swagger.json`. От `ebely` не зависит.
 2. Схема копируется в `test-with-ebely/swagger.json`.
 3. **`test-with-ebely/ebely/ebely.ts`** — конфиг: адрес бэкенда, класс
-   хранилища (`AppStore`), источник схемы, куда писать клиент.
+   хранилища (`UserStore`), источник схемы, куда писать клиент.
 4. **`client:generate`** запускает `generate-client.ts`, тот вызывает
    `generateClient(ebely)` → конвейер из §2 → пишется
    `ebely/generated.ts` с классом `World`.
@@ -255,10 +255,10 @@ import { ebely } from "./ebely"          // ← configImport
 
 **Цикл типов `ebely` ⇄ `Hooks`.** `hooks` лежит ВНУТРИ объекта `ebely`,
 поэтому тип `Hooks` НЕ может выводить store из `typeof
-ebely.internalStore` (как это делает `World`) — иначе `ebely` ссылается
+ebely.userStore` (как это делает `World`) — иначе `ebely` ссылается
 сам на себя. Решение: `Hooks<Store extends InternalStore =
 InternalStore>` без `ebely`-дефолта; пользователь передаёт свой класс
-явно — `Hooks<AppStore>` в отдельном файле `ebely/hooks.ts`. Это и есть
+явно — `Hooks<UserStore>` в отдельном файле `ebely/hooks.ts`. Это и есть
 заложенный шов: добавить позже второй уровень контекста (общий
 account/session для «один юзер с двух устройств») можно аддитивно, не
 трогая `HookRegistry`.
@@ -274,13 +274,13 @@ account/session для «один юзер с двух устройств») м�
 
 Решение — **не новый слой, а доращивание существующего класса-store**
 (см. оценку вариантов в истории; выбран «методы на классе + типизированный
-`this.api`», т.к. он 1-в-1 повторяет `internalVariable.ts`, который
+`this.api`», т.к. он 1-в-1 повторяет `userStore.ts`, который
 пользователь уже пишет):
 
 - **`src/internal-store.ts`** получил второй дженерик и `protected api`:
   `InternalStore<Vars, Api>`. Значение НЕ инициализируется в ядре — его
   подставляет генерируемый `World`. Тип `Api` пользователь задаёт сам,
-  подставляя сгенерированный `WorldApi` (как `Hooks<AppStore>` для хуков).
+  подставляя сгенерированный `WorldApi` (как `Hooks<UserStore>` для хуков).
 - **`src/generator/render.ts`** эмитит ТИП `export type WorldApi` —
   дерево типизированных вызовов (`{ posts: { create(input) =>
   Promise<…> } }`, форма зависит от `mode`, как у методов). Рантайм-
@@ -303,7 +303,7 @@ world-store — АНОНИМНЫЙ клиент (без per-user заголов�
 таких вызовов = сам world.
 
 **Тот же приём против цикла, что у хуков (§7).** `WorldApi`
-импортируется в `internalVariable.ts` / `worldVariable.ts` как
+импортируется в `userStore.ts` / `worldStore.ts` как
 `import type` → рантайм-цикла нет (тип стирается). Тип базы `World`
 берётся из `ebely` тем же conditional-приёмом, что и `Store`
 (`typeof ebely extends { worldStore: new () => infer I … } ? I : …`) —

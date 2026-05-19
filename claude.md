@@ -37,14 +37,14 @@
 - `examples/simple/test-with-ebely` — пример использования библиотеки.
   - Конфиг ebely: `test-with-ebely/ebely/ebely.ts`
   - Скрипт генерации: `test-with-ebely/ebely/generate-client.ts`
-  - Переменные/сценарии юзера: `test-with-ebely/ebely/internalVariable.ts`
-    (`AppStore`, `InternalStore<Vars, WorldApi>` + методы-сценарии вроде
+  - Переменные/сценарии юзера: `test-with-ebely/ebely/userStore.ts`
+    (`UserStore`, `InternalStore<Vars, WorldApi>` + методы-сценарии вроде
     `fullRegister`, см. `ARCHITECTURE.md §8`)
-  - Переменные/сценарии world: `test-with-ebely/ebely/worldVariable.ts`
-    (`AppWorldStore`; кладётся в конфиг как `worldStore`; даёт
+  - Переменные/сценарии world: `test-with-ebely/ebely/worldStore.ts`
+    (`WorldStore`; кладётся в конфиг как `worldStore`; даёт
     `world.clearDatabase()` и т.п.)
   - Хуки before/after: `test-with-ebely/ebely/hooks.ts` (типизированы,
-    `Hooks<AppStore>`), переиспользуемые хендлеры — `ebely/handlers.ts`
+    `Hooks<UserStore>`), переиспользуемые хендлеры — `ebely/handlers.ts`
   - Сгенерированный клиент: `test-with-ebely/ebely/generated.ts` (не редактировать)
   - Свагер бэкенда (копия из your-app): `test-with-ebely/swagger.json`
   - Пример тестов: `test-with-ebely/tests/test1.ts`

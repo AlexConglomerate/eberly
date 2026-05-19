@@ -1,7 +1,7 @@
 // Хуки before/after для этого бэкенда. Файл ПОЛНОСТЬЮ типизирован: тип
 // `Hooks` экспортирует сгенерированный клиент (`generated.ts`), поэтому
 // `h.posts.create` автокомплитится, `response.body.id` типизирован, а
-// `ctx` — это твой `AppStore`.
+// `ctx` — это твой `UserStore`.
 //
 // Регистрировать можно где угодно (это просто функция) — кладётся одной
 // переменной в конфиг (`ebely.ts`). Вызывается один раз при `new World()`.
@@ -9,10 +9,10 @@
 // запрос, поэтому запись в переменные не «течёт» между пользователями.
 
 import type { Hooks } from './generated'
-import type { AppStore } from './internalVariable'
+import type { UserStore } from './userStore'
 import { logResponse } from './handlers'
 
-export const hooks: Hooks<AppStore> = (h) => {
+export const hooks: Hooks<UserStore> = (h) => {
   // после создания поста — сохранить id в переменные ИМЕННО этого юзера
   h.posts.create.after(({ response, ctx }) => {
     ctx.set({ key: 'lastPostId', value: response.body.id })
