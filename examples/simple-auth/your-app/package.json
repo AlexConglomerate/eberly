@@ -1,0 +1,26 @@
+{
+  "name": "@ebely-examples/auth-your-app",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Тестируемое приложение с авторизацией через BetterAuth (email+пароль, роли, фейковый Google OAuth) поверх oRPC и SQLite.",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "swagger": "tsx swagger/generate-swagger.ts"
+  },
+  "dependencies": {
+    "better-auth": "^1.6.11",
+    "better-sqlite3": "^12.10.0"
+  },
+  "devDependencies": {
+    "@orpc/openapi": "^1.14.3",
+    "@orpc/server": "^1.14.3",
+    "@orpc/zod": "^1.14.3",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.8.0",
+    "tsx": "^4.22.1",
+    "typescript": "^6.0.3",
+    "zod": "^4.4.3"
+  }
+}
