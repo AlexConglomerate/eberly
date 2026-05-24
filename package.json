@@ -12,8 +12,13 @@
       "require": "./dist/index.js"
     }
   },
+  "bin": {
+    "ebely": "bin/ebely.mjs"
+  },
   "files": [
-    "dist"
+    "dist",
+    "bin",
+    "skills"
   ],
   "sideEffects": false,
   "scripts": {
