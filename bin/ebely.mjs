@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { cp, mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
-import { basename, dirname, join, resolve, sep } from 'node:path'
+import { basename, dirname, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -97,9 +97,13 @@ async function createProject({ dir }) {
   }
 
   // Копируем шаблон целиком, кроме node_modules.
+  // Важно: фильтруем по пути ОТНОСИТЕЛЬНО шаблона, а не по абсолютному —
+  // иначе при установке через npx/npm весь путь пакета лежит внутри
+  // node_modules, фильтр отбрасывает корень шаблона и не копируется ничего.
   await cp(templateSrc, target, {
     recursive: true,
-    filter: (src) => !src.split(sep).includes('node_modules'),
+    filter: (src) =>
+      !relative(templateSrc, src).split(sep).includes('node_modules'),
   })
 
   // package.json: имя по папке + реальная версия ebely вместо workspace:*.
