@@ -24,6 +24,12 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
+  clone/tests:
+    dependencies:
+      ebely:
+        specifier: workspace:*
+        version: link:../..
+
   examples/simple-auth/test-with-ebely:
     dependencies:
       ebely:
