@@ -57,10 +57,10 @@ test('оба режима: типизированное дерево хуков 
     assert.match(out, /before\(fn: BeforeHook<Store, undefined>\): void/)
     assert.match(out, /after\(fn: AfterHook<Store, undefined, \{ "id": string \}>\): void/)
     // глобальные хуки на все операции
-    assert.match(out, /allBefore\(fn: BeforeHook<Store>\): void/)
-    assert.match(out, /allAfter\(fn: AfterHook<Store>\): void/)
-    assert.match(out, /allBefore: \(fn: BeforeHook<Store>\) => r\.allBefore\(\{ fn \}\)/)
-    assert.match(out, /allAfter: \(fn: AfterHook<Store>\) => r\.allAfter\(\{ fn \}\)/)
+    assert.match(out, /globalBefore\(fn: BeforeHook<Store>\): void/)
+    assert.match(out, /globalAfter\(fn: AfterHook<Store>\): void/)
+    assert.match(out, /globalBefore: \(fn: BeforeHook<Store>\) => r\.globalBefore\(\{ fn \}\)/)
+    assert.match(out, /globalAfter: \(fn: AfterHook<Store>\) => r\.globalAfter\(\{ fn \}\)/)
     assert.match(out, /import type \{ BeforeHook, AfterHook \} from "ebely"/)
     // реестр на World и применение конфиг-регистратора
     assert.match(out, /private hookRegistry = new HookRegistry\(\)/)

@@ -98,8 +98,8 @@ test('глобальные хуки срабатывают на любой кл�
   const reg = new HookRegistry()
   const calls: string[] = []
 
-  reg.allBefore({ fn: () => void calls.push('gb') })
-  reg.allAfter({ fn: () => void calls.push('ga') })
+  reg.globalBefore({ fn: () => void calls.push('gb') })
+  reg.globalAfter({ fn: () => void calls.push('ga') })
 
   await reg.runBefore({ key: 'posts.create', request: makeRequest(), ctx: {} })
   await reg.runBefore({ key: 'users.list', request: makeRequest(), ctx: {} })
@@ -119,8 +119,8 @@ test('порядок: global before → per-key before; per-key after → global
 
   reg.before({ key: 'posts.create', fn: () => void calls.push('keyBefore') })
   reg.after({ key: 'posts.create', fn: () => void calls.push('keyAfter') })
-  reg.allBefore({ fn: () => void calls.push('globalBefore') })
-  reg.allAfter({ fn: () => void calls.push('globalAfter') })
+  reg.globalBefore({ fn: () => void calls.push('globalBefore') })
+  reg.globalAfter({ fn: () => void calls.push('globalAfter') })
 
   await reg.runBefore({ key: 'posts.create', request: makeRequest(), ctx: {} })
   await reg.runAfter({
@@ -140,7 +140,7 @@ test('порядок: global before → per-key before; per-key after → global
 
 test('глобальный before может мутировать запрос (напр. заголовок авторизации)', async () => {
   const reg = new HookRegistry()
-  reg.allBefore({
+  reg.globalBefore({
     fn: ({ request, ctx }) => {
       const token = (ctx as { token: string }).token
       request.headers.Authorization = `Bearer ${token}`

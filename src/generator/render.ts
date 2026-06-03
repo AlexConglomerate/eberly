@@ -180,8 +180,8 @@ function renderHookTreeType(groups: Map<string, Operation[]>): string {
   })
   // Глобальные хуки на ВСЕ операции: `Body`/`ResBody` неизвестны заранее,
   // поэтому без уточнения (по умолчанию `unknown`).
-  const global = `    allBefore(fn: BeforeHook<Store>): void
-    allAfter(fn: AfterHook<Store>): void`
+  const global = `    globalBefore(fn: BeforeHook<Store>): void
+    globalAfter(fn: AfterHook<Store>): void`
   return `type EbelyHookTree<Store extends BaseStore> = {\n${global}\n${blocks.join('\n')}\n}`
 }
 
@@ -200,8 +200,8 @@ function renderHookTreeBuilder(groups: Map<string, Operation[]>): string {
   return `  private buildHookTree(): EbelyHookTree<Store> {
     const r = this.hookRegistry
     return {
-      allBefore: (fn: BeforeHook<Store>) => r.allBefore({ fn }),
-      allAfter: (fn: AfterHook<Store>) => r.allAfter({ fn }),
+      globalBefore: (fn: BeforeHook<Store>) => r.globalBefore({ fn }),
+      globalAfter: (fn: AfterHook<Store>) => r.globalAfter({ fn }),
 ${blocks.join('\n')}
     } as unknown as EbelyHookTree<Store>
   }`

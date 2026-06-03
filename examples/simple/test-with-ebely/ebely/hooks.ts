@@ -18,7 +18,7 @@ export const hooks: Hooks<UserStore> = (h) => {
   // `fullRegister` кладёт `accessToken` в стор → дальше все запросы юзера
   // автоматически несут заголовок. У разных юзеров — свои токены (ctx — это
   // store того, кто сделал запрос), так что они не «текут» между собой.
-  h.allBefore(({ request, ctx }) => {
+  h.globalBefore(({ request, ctx }) => {
     const token = ctx.get({ key: 'accessToken' })
     if (token) request.headers.Authorization = `Bearer ${token}`
   })
@@ -26,7 +26,7 @@ export const hooks: Hooks<UserStore> = (h) => {
   // ГЛОБАЛЬНЫЙ after — место для сквозной обработки статуса. Например, на
   // 401 здесь можно сходить за refresh и положить новый токен в стор
   // (логику пишет пользователь библиотеки под свой бэкенд):
-  //   h.allAfter(async ({ response, ctx }) => {
+  //   h.globalAfter(async ({ response, ctx }) => {
   //     if (response.status === 401) await ctx.refreshToken()
   //   })
 

@@ -76,8 +76,8 @@ export class HookRegistry {
   // Глобальные хуки — срабатывают на КАЖДУЮ операцию (вне зависимости от
   // ключа). Удобны для сквозных задач: подстановка `Authorization` из
   // `ctx` во все запросы, логирование, обработка 401 и т.п.
-  private globalBefore: BeforeHook<unknown>[] = []
-  private globalAfter: AfterHook<unknown>[] = []
+  private globalBeforeHooks: BeforeHook<unknown>[] = []
+  private globalAfterHooks: AfterHook<unknown>[] = []
 
   /** Зарегистрировать `before`-хук на ключ `"<группа>.<метод>"`. */
   before(args: { key: string; fn: BeforeHook<any> }): void {
@@ -94,13 +94,13 @@ export class HookRegistry {
   }
 
   /** Зарегистрировать ГЛОБАЛЬНЫЙ `before`-хук (на все операции). */
-  allBefore(args: { fn: BeforeHook<any> }): void {
-    this.globalBefore.push(args.fn)
+  globalBefore(args: { fn: BeforeHook<any> }): void {
+    this.globalBeforeHooks.push(args.fn)
   }
 
   /** Зарегистрировать ГЛОБАЛЬНЫЙ `after`-хук (на все операции). */
-  allAfter(args: { fn: AfterHook<any> }): void {
-    this.globalAfter.push(args.fn)
+  globalAfter(args: { fn: AfterHook<any> }): void {
+    this.globalAfterHooks.push(args.fn)
   }
 
   /**
@@ -113,7 +113,7 @@ export class HookRegistry {
     request: HookRequest
     ctx: unknown
   }): Promise<void> {
-    const hooks = [...this.globalBefore, ...(this.beforeMap.get(args.key) ?? [])]
+    const hooks = [...this.globalBeforeHooks, ...(this.beforeMap.get(args.key) ?? [])]
     for (const fn of hooks) {
       await fn({ request: args.request, ctx: args.ctx })
     }
@@ -130,7 +130,7 @@ export class HookRegistry {
     response: HookResponse
     ctx: unknown
   }): Promise<void> {
-    const hooks = [...(this.afterMap.get(args.key) ?? []), ...this.globalAfter]
+    const hooks = [...(this.afterMap.get(args.key) ?? []), ...this.globalAfterHooks]
     for (const fn of hooks) {
       await fn({ request: args.request, response: args.response, ctx: args.ctx })
     }
