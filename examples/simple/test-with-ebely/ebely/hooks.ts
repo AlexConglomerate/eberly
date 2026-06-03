@@ -13,6 +13,23 @@ import type { UserStore } from './userStore'
 import { logResponse } from './handlers'
 
 export const hooks: Hooks<UserStore> = (h) => {
+  // ГЛОБАЛЬНЫЙ before — срабатывает на КАЖДЫЙ запрос. Прикручивает токен
+  // авторизации из переменных ИМЕННО этого юзера ко всем эндпоинтам разом.
+  // `fullRegister` кладёт `accessToken` в стор → дальше все запросы юзера
+  // автоматически несут заголовок. У разных юзеров — свои токены (ctx — это
+  // store того, кто сделал запрос), так что они не «текут» между собой.
+  h.allBefore(({ request, ctx }) => {
+    const token = ctx.get({ key: 'accessToken' })
+    if (token) request.headers.Authorization = `Bearer ${token}`
+  })
+
+  // ГЛОБАЛЬНЫЙ after — место для сквозной обработки статуса. Например, на
+  // 401 здесь можно сходить за refresh и положить новый токен в стор
+  // (логику пишет пользователь библиотеки под свой бэкенд):
+  //   h.allAfter(async ({ response, ctx }) => {
+  //     if (response.status === 401) await ctx.refreshToken()
+  //   })
+
   // после создания поста — сохранить id в переменные ИМЕННО этого юзера
   h.posts.create.after(({ response, ctx }) => {
     ctx.set({ key: 'lastPostId', value: response.body.id })

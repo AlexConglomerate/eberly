@@ -94,6 +94,65 @@ test('after получает response и тот же ctx, что и запрос
   assert.equal(ctx.store.get('lastPostId'), 'p_42')
 })
 
+test('глобальные хуки срабатывают на любой ключ', async () => {
+  const reg = new HookRegistry()
+  const calls: string[] = []
+
+  reg.allBefore({ fn: () => void calls.push('gb') })
+  reg.allAfter({ fn: () => void calls.push('ga') })
+
+  await reg.runBefore({ key: 'posts.create', request: makeRequest(), ctx: {} })
+  await reg.runBefore({ key: 'users.list', request: makeRequest(), ctx: {} })
+  await reg.runAfter({
+    key: 'anything.else',
+    request: makeRequest(),
+    response: { status: 200, body: {} },
+    ctx: {},
+  })
+
+  assert.deepEqual(calls, ['gb', 'gb', 'ga'])
+})
+
+test('порядок: global before → per-key before; per-key after → global after', async () => {
+  const reg = new HookRegistry()
+  const calls: string[] = []
+
+  reg.before({ key: 'posts.create', fn: () => void calls.push('keyBefore') })
+  reg.after({ key: 'posts.create', fn: () => void calls.push('keyAfter') })
+  reg.allBefore({ fn: () => void calls.push('globalBefore') })
+  reg.allAfter({ fn: () => void calls.push('globalAfter') })
+
+  await reg.runBefore({ key: 'posts.create', request: makeRequest(), ctx: {} })
+  await reg.runAfter({
+    key: 'posts.create',
+    request: makeRequest(),
+    response: { status: 200, body: {} },
+    ctx: {},
+  })
+
+  assert.deepEqual(calls, [
+    'globalBefore',
+    'keyBefore',
+    'keyAfter',
+    'globalAfter',
+  ])
+})
+
+test('глобальный before может мутировать запрос (напр. заголовок авторизации)', async () => {
+  const reg = new HookRegistry()
+  reg.allBefore({
+    fn: ({ request, ctx }) => {
+      const token = (ctx as { token: string }).token
+      request.headers.Authorization = `Bearer ${token}`
+    },
+  })
+
+  const request = makeRequest()
+  await reg.runBefore({ key: 'posts.create', request, ctx: { token: 't_1' } })
+
+  assert.equal(request.headers.Authorization, 'Bearer t_1')
+})
+
 test('незарегистрированный ключ — no-op, без ошибок', async () => {
   const reg = new HookRegistry()
   await reg.runBefore({ key: 'unknown.op', request: makeRequest(), ctx: {} })

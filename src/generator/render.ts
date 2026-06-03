@@ -178,7 +178,11 @@ function renderHookTreeType(groups: Map<string, Operation[]>): string {
     })
     return `    ${JSON.stringify(group)}: {\n${leaves.join('\n')}\n    }`
   })
-  return `type EbelyHookTree<Store extends BaseStore> = {\n${blocks.join('\n')}\n}`
+  // Глобальные хуки на ВСЕ операции: `Body`/`ResBody` неизвестны заранее,
+  // поэтому без уточнения (по умолчанию `unknown`).
+  const global = `    allBefore(fn: BeforeHook<Store>): void
+    allAfter(fn: AfterHook<Store>): void`
+  return `type EbelyHookTree<Store extends BaseStore> = {\n${global}\n${blocks.join('\n')}\n}`
 }
 
 /** Рантайм-строитель дерева хуков: связывает имена с общим HookRegistry. */
@@ -196,6 +200,8 @@ function renderHookTreeBuilder(groups: Map<string, Operation[]>): string {
   return `  private buildHookTree(): EbelyHookTree<Store> {
     const r = this.hookRegistry
     return {
+      allBefore: (fn: BeforeHook<Store>) => r.allBefore({ fn }),
+      allAfter: (fn: AfterHook<Store>) => r.allAfter({ fn }),
 ${blocks.join('\n')}
     } as unknown as EbelyHookTree<Store>
   }`

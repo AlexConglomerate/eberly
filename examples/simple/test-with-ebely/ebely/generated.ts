@@ -97,6 +97,8 @@ export type WorldApi = {
 }
 
 type EbelyHookTree<Store extends BaseStore> = {
+    allBefore(fn: BeforeHook<Store>): void
+    allAfter(fn: AfterHook<Store>): void
     "posts": {
       "list": {
         before(fn: BeforeHook<Store, undefined>): void
@@ -276,6 +278,8 @@ export class World<
   private buildHookTree(): EbelyHookTree<Store> {
     const r = this.hookRegistry
     return {
+      allBefore: (fn: BeforeHook<Store>) => r.allBefore({ fn }),
+      allAfter: (fn: AfterHook<Store>) => r.allAfter({ fn }),
       "posts": {
         "list": {
           before: (fn: BeforeHook<Store>) => r.before({ key: "posts.list", fn }),

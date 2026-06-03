@@ -73,6 +73,11 @@ export type HooksRegistrar = (registrar: any) => void
 export class HookRegistry {
   private beforeMap = new Map<string, BeforeHook<unknown>[]>()
   private afterMap = new Map<string, AfterHook<unknown>[]>()
+  // Глобальные хуки — срабатывают на КАЖДУЮ операцию (вне зависимости от
+  // ключа). Удобны для сквозных задач: подстановка `Authorization` из
+  // `ctx` во все запросы, логирование, обработка 401 и т.п.
+  private globalBefore: BeforeHook<unknown>[] = []
+  private globalAfter: AfterHook<unknown>[] = []
 
   /** Зарегистрировать `before`-хук на ключ `"<группа>.<метод>"`. */
   before(args: { key: string; fn: BeforeHook<any> }): void {
@@ -88,25 +93,45 @@ export class HookRegistry {
     this.afterMap.set(args.key, list)
   }
 
-  /** Прогнать все `before`-хуки ключа по очереди (await на async). */
+  /** Зарегистрировать ГЛОБАЛЬНЫЙ `before`-хук (на все операции). */
+  allBefore(args: { fn: BeforeHook<any> }): void {
+    this.globalBefore.push(args.fn)
+  }
+
+  /** Зарегистрировать ГЛОБАЛЬНЫЙ `after`-хук (на все операции). */
+  allAfter(args: { fn: AfterHook<any> }): void {
+    this.globalAfter.push(args.fn)
+  }
+
+  /**
+   * Прогнать `before`-хуки по очереди (await на async): сначала глобальные,
+   * затем поименные для ключа — так общая подготовка (напр. заголовок
+   * авторизации) ложится раньше, а точечный хук может её переопределить.
+   */
   async runBefore(args: {
     key: string
     request: HookRequest
     ctx: unknown
   }): Promise<void> {
-    for (const fn of this.beforeMap.get(args.key) ?? []) {
+    const hooks = [...this.globalBefore, ...(this.beforeMap.get(args.key) ?? [])]
+    for (const fn of hooks) {
       await fn({ request: args.request, ctx: args.ctx })
     }
   }
 
-  /** Прогнать все `after`-хуки ключа по очереди (await на async). */
+  /**
+   * Прогнать `after`-хуки по очереди (await на async): сначала поименные
+   * для ключа, затем глобальные — так глобальный «оборачивает» точечные
+   * (видит итоговый эффект, удобно для логирования/обработки статуса).
+   */
   async runAfter(args: {
     key: string
     request: HookRequest
     response: HookResponse
     ctx: unknown
   }): Promise<void> {
-    for (const fn of this.afterMap.get(args.key) ?? []) {
+    const hooks = [...(this.afterMap.get(args.key) ?? []), ...this.globalAfter]
+    for (const fn of hooks) {
       await fn({ request: args.request, response: args.response, ctx: args.ctx })
     }
   }
