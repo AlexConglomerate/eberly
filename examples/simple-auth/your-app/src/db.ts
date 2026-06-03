@@ -138,4 +138,20 @@ export const adminDb = {
       .run(role, email)
     return info.changes > 0
   },
+
+  /**
+   * Отозвать ВСЕ сессии пользователя по email — его bearer-токен сразу
+   * «протухает» (`getSession` по нему вернёт null → защищённые эндпоинты
+   * ответят 401). Тест-helper, чтобы на стороне ebely показать сценарий
+   * «401 → refresh» в globalAfter-хуке. Чистим session-строки напрямую
+   * (как `setRole`/`clearAll` — это тест-обвязка, не прод-логика авторизации).
+   */
+  revokeSessions({ email }: { email: string }): boolean {
+    const user = sqlite
+      .prepare('SELECT id FROM "user" WHERE email = ?')
+      .get(email) as { id: string } | undefined
+    if (!user) return false
+    sqlite.prepare('DELETE FROM session WHERE userId = ?').run(user.id)
+    return true
+  },
 }

@@ -153,6 +153,91 @@ test('глобальный before может мутировать запрос (
   assert.equal(request.headers.Authorization, 'Bearer t_1')
 })
 
+test('runRetry: первый хук, вернувший true, выигрывает (остальные не зовутся)', async () => {
+  const reg = new HookRegistry()
+  const calls: string[] = []
+
+  reg.globalRetry({
+    fn: () => {
+      calls.push('r1')
+      return false
+    },
+  })
+  reg.globalRetry({
+    fn: () => {
+      calls.push('r2')
+      return true
+    },
+  })
+  reg.globalRetry({
+    fn: () => {
+      calls.push('r3')
+      return true
+    },
+  })
+
+  const retry = await reg.runRetry({
+    key: 'posts.list',
+    request: makeRequest(),
+    response: { status: 401, body: {} },
+    ctx: {},
+  })
+
+  assert.equal(retry, true)
+  // r3 не должен вызваться — r2 уже сказал «повтор».
+  assert.deepEqual(calls, ['r1', 'r2'])
+})
+
+test('runRetry: без истинных возвратов → false (повтора нет)', async () => {
+  const reg = new HookRegistry()
+  reg.globalRetry({ fn: () => false })
+  reg.globalRetry({ fn: () => undefined })
+
+  const retry = await reg.runRetry({
+    key: 'posts.list',
+    request: makeRequest(),
+    response: { status: 200, body: {} },
+    ctx: {},
+  })
+
+  assert.equal(retry, false)
+})
+
+test('runRetry: async-хук ожидается, видит response и ctx', async () => {
+  const reg = new HookRegistry()
+  const seen: { status?: number; token?: string } = {}
+  reg.globalRetry({
+    fn: async ({ response, ctx }) => {
+      await new Promise((r) => setTimeout(r, 5))
+      seen.status = response.status
+      seen.token = (ctx as { token: string }).token
+      return response.status === 401
+    },
+  })
+
+  const retry = await reg.runRetry({
+    key: 'posts.list',
+    request: makeRequest(),
+    response: { status: 401, body: {} },
+    ctx: { token: 't_1' },
+  })
+
+  assert.equal(retry, true)
+  assert.equal(seen.status, 401)
+  assert.equal(seen.token, 't_1')
+})
+
+test('runRetry: нет зарегистрированных retry-хуков → false', async () => {
+  const reg = new HookRegistry()
+  const retry = await reg.runRetry({
+    key: 'posts.list',
+    request: makeRequest(),
+    response: { status: 401, body: {} },
+    ctx: {},
+  })
+  assert.equal(retry, false)
+})
+
 test('незарегистрированный ключ — no-op, без ошибок', async () => {
   const reg = new HookRegistry()
   await reg.runBefore({ key: 'unknown.op', request: makeRequest(), ctx: {} })

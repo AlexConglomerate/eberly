@@ -27,4 +27,14 @@ export class WorldStore extends BaseStore<WorldVars, WorldApi> {
     const res = await this.api.admin.promote({ body: args })
     res.assert(200, { success: true })
   }
+
+  /**
+   * Отозвать все сессии пользователя — его bearer-токен «протухает».
+   * Нужно тесту refresh: после revoke первый защищённый вызов вернёт 401,
+   * глобальный after-хук сходит за свежим токеном (см. `tests/refresh.test.ts`).
+   */
+  public async revoke(args: { email: string }): Promise<void> {
+    const res = await this.api.admin.revoke({ body: args })
+    res.assert(200, { success: true })
+  }
 }

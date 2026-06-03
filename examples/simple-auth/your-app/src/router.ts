@@ -309,6 +309,21 @@ const promote = base
     return { success: true }
   })
 
+const revoke = base
+  .route({
+    method: 'POST',
+    path: '/admin/revoke',
+    summary: 'Revoke all sessions of a user by email (тест-хелпер: «протухание» токена)',
+    tags: ['Admin'],
+  })
+  .input(z.object({ email: z.string() }))
+  .output(SuccessSchema)
+  .handler(({ input }) => {
+    const ok = adminDb.revokeSessions({ email: input.email })
+    if (!ok) throw new ORPCError('NOT_FOUND', { message: 'User not found' })
+    return { success: true }
+  })
+
 // ---------- Router -------------------------------------------------------
 
 export const router = {
@@ -329,5 +344,6 @@ export const router = {
   admin: {
     clearDatabase,
     promote,
+    revoke,
   },
 }

@@ -4,7 +4,7 @@
 // Перегенерация: pnpm run client:generate
 
 import { BaseStore, ApiResponse, HookRegistry } from "ebely"
-import type { BeforeHook, AfterHook } from "ebely"
+import type { BeforeHook, AfterHook, RetryHook } from "ebely"
 import { ebely } from "./ebely"
 
 type RequestInput = {
@@ -124,10 +124,18 @@ export type WorldApi = {
         } }) => Promise<ApiResponse<{ 200: {
           "success": boolean
         } }>>
+      "revoke": (input: { body: {
+          "email": string
+        } }) => Promise<ApiResponse<{ 200: {
+          "success": boolean
+        } }>>
     }
 }
 
 type EbelyHookTree<Store extends BaseStore> = {
+    globalBefore(fn: BeforeHook<Store>): void
+    globalAfter(fn: AfterHook<Store>): void
+    globalRetry(fn: RetryHook<Store>): void
     "auth": {
       "signUp": {
         before(fn: BeforeHook<Store, {
@@ -278,6 +286,16 @@ type EbelyHookTree<Store extends BaseStore> = {
         "success": boolean
       }>): void
       }
+      "revoke": {
+        before(fn: BeforeHook<Store, {
+          "email": string
+        }>): void
+        after(fn: AfterHook<Store, {
+          "email": string
+        }, {
+        "success": boolean
+      }>): void
+      }
     }
 }
 
@@ -347,6 +365,9 @@ export class World<
   private buildHookTree(): EbelyHookTree<Store> {
     const r = this.hookRegistry
     return {
+      globalBefore: (fn: BeforeHook<Store>) => r.globalBefore({ fn }),
+      globalAfter: (fn: AfterHook<Store>) => r.globalAfter({ fn }),
+      globalRetry: (fn: RetryHook<Store>) => r.globalRetry({ fn }),
       "auth": {
         "signUp": {
           before: (fn: BeforeHook<Store>) => r.before({ key: "auth.signUp", fn }),
@@ -400,6 +421,10 @@ export class World<
           before: (fn: BeforeHook<Store>) => r.before({ key: "admin.promote", fn }),
           after: (fn: AfterHook<Store>) => r.after({ key: "admin.promote", fn }),
         },
+        "revoke": {
+          before: (fn: BeforeHook<Store>) => r.before({ key: "admin.revoke", fn }),
+          after: (fn: AfterHook<Store>) => r.after({ key: "admin.revoke", fn }),
+        },
       },
     } as unknown as EbelyHookTree<Store>
   }
@@ -415,59 +440,84 @@ export class World<
     const baseUrl = this.baseUrl()
     const registry = this.hookRegistry
     const { headers: baseHeaders, store } = cfg
+    // Потолок ПОВТОРОВ (сверх первой попытки) для globalRetry-хуков —
+    // защита от бесконечного цикла, если хук упрямо просит повтор.
+    const maxRetries = (ebely as { maxRetries?: number }).maxRetries ?? 3
 
     return async (req): Promise<{ status: number; body: unknown }> => {
       const { method, path, opKey, input } = req
 
-      const hookReq = {
-        method,
-        path,
-        pathParams: { ...(input?.path ?? {}) },
-        query: { ...(input?.query ?? {}) },
-        body: input?.body,
-        headers: { ...baseHeaders },
+      // Retry-цикл: каждую попытку hookReq собирается ЗАНОВО и заново
+      // прогоняются before-хуки, поэтому правки из retry-хука (напр.
+      // свежий токен в ctx) подхватываются повторным before. `for (;;)`
+      // крутится, пока не сработает return/throw в хвосте или `continue`.
+      let attempt = 0
+      for (;;) {
+        const hookReq = {
+          method,
+          path,
+          pathParams: { ...(input?.path ?? {}) },
+          query: { ...(input?.query ?? {}) },
+          body: input?.body,
+          headers: { ...baseHeaders },
+        }
+        await registry.runBefore({ key: opKey, request: hookReq, ctx: store })
+
+        let resolvedPath = path
+        for (const [k, v] of Object.entries(hookReq.pathParams)) {
+          resolvedPath = resolvedPath.replace(
+            `{${k}}`,
+            encodeURIComponent(String(v)),
+          )
+        }
+
+        const url = new URL(baseUrl + resolvedPath)
+        for (const [k, v] of Object.entries(hookReq.query)) {
+          if (v !== undefined) url.searchParams.set(k, String(v))
+        }
+
+        const hasBody = hookReq.body !== undefined
+        const response = await fetch(url, {
+          method,
+          headers: {
+            ...(hasBody ? { 'content-type': 'application/json' } : {}),
+            ...hookReq.headers,
+          },
+          body: hasBody ? JSON.stringify(hookReq.body) : undefined,
+        })
+
+        const text = await response.text()
+        let data: unknown
+        try {
+          data = text ? JSON.parse(text) : undefined
+        } catch {
+          data = text
+        }
+
+        await registry.runAfter({
+          key: opKey,
+          request: hookReq,
+          response: { status: response.status, body: data },
+          ctx: store,
+        })
+
+        // Пока есть бюджет повторов — спрашиваем retry-хуки. Вернули
+        // true → новый виток (заново before → fetch); иначе отдаём ответ.
+        if (attempt < maxRetries) {
+          const shouldRetry = await registry.runRetry({
+            key: opKey,
+            request: hookReq,
+            response: { status: response.status, body: data },
+            ctx: store,
+          })
+          if (shouldRetry) {
+            attempt++
+            continue
+          }
+        }
+
+        return { status: response.status, body: data }
       }
-      await registry.runBefore({ key: opKey, request: hookReq, ctx: store })
-
-      let resolvedPath = path
-      for (const [k, v] of Object.entries(hookReq.pathParams)) {
-        resolvedPath = resolvedPath.replace(
-          `{${k}}`,
-          encodeURIComponent(String(v)),
-        )
-      }
-
-      const url = new URL(baseUrl + resolvedPath)
-      for (const [k, v] of Object.entries(hookReq.query)) {
-        if (v !== undefined) url.searchParams.set(k, String(v))
-      }
-
-      const hasBody = hookReq.body !== undefined
-      const response = await fetch(url, {
-        method,
-        headers: {
-          ...(hasBody ? { 'content-type': 'application/json' } : {}),
-          ...hookReq.headers,
-        },
-        body: hasBody ? JSON.stringify(hookReq.body) : undefined,
-      })
-
-      const text = await response.text()
-      let data: unknown
-      try {
-        data = text ? JSON.parse(text) : undefined
-      } catch {
-        data = text
-      }
-
-      await registry.runAfter({
-        key: opKey,
-        request: hookReq,
-        response: { status: response.status, body: data },
-        ctx: store,
-      })
-
-      return { status: response.status, body: data }
     }
   }
 
@@ -751,6 +801,23 @@ export class World<
             method: "POST",
             path: "/admin/promote",
             opKey: "admin.promote",
+            input: input as RequestInput,
+          })
+          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
+          "success": boolean
+        } }>
+        },
+
+        /** Revoke all sessions of a user by email (тест-хелпер: «протухание» токена) */
+        "revoke": async (input: { body: {
+          "email": string
+        } }): Promise<ApiResponse<{ 200: {
+          "success": boolean
+        } }>> => {
+          const res = await request({
+            method: "POST",
+            path: "/admin/revoke",
+            opKey: "admin.revoke",
             input: input as RequestInput,
           })
           return new ApiResponse(res) as unknown as ApiResponse<{ 200: {

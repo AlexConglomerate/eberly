@@ -59,9 +59,14 @@ test('оба режима: типизированное дерево хуков 
     // глобальные хуки на все операции
     assert.match(out, /globalBefore\(fn: BeforeHook<Store>\): void/)
     assert.match(out, /globalAfter\(fn: AfterHook<Store>\): void/)
+    assert.match(out, /globalRetry\(fn: RetryHook<Store>\): void/)
     assert.match(out, /globalBefore: \(fn: BeforeHook<Store>\) => r\.globalBefore\(\{ fn \}\)/)
     assert.match(out, /globalAfter: \(fn: AfterHook<Store>\) => r\.globalAfter\(\{ fn \}\)/)
-    assert.match(out, /import type \{ BeforeHook, AfterHook \} from "ebely"/)
+    assert.match(out, /globalRetry: \(fn: RetryHook<Store>\) => r\.globalRetry\(\{ fn \}\)/)
+    assert.match(out, /import type \{ BeforeHook, AfterHook, RetryHook \} from "ebely"/)
+    // retry-цикл и обращение к runRetry в общем request
+    assert.match(out, /const maxRetries = \(ebely as \{ maxRetries\?: number \}\)\.maxRetries \?\? 3/)
+    assert.match(out, /await registry\.runRetry\(\{/)
     // реестр на World и применение конфиг-регистратора
     assert.match(out, /private hookRegistry = new HookRegistry\(\)/)
     assert.match(out, /if \(registrar\) registrar\(this\.buildHookTree\(\)\)/)

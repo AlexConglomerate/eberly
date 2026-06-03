@@ -7,6 +7,7 @@ export type {
   HooksRegistrar,
   BeforeHook,
   AfterHook,
+  RetryHook,
   BeforeHookArgs,
   AfterHookArgs,
   HookRequest,
