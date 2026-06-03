@@ -53,6 +53,24 @@ describe("posts", () => {
     })
 })
 
+// Два эндпоинта, отличающиеся ТОЛЬКО методом (GET/POST /auth/session с
+// общим operationId `auth.getSession`). Генератор развёл коллизию имён
+// префиксом метода: getGetSession / postGetSession.
+describe("эндпоинты, отличающиеся только методом", () => {
+    const world = new World()
+    const user = world.createUser()
+
+    test("GET /auth/session → getGetSession", async () => {
+        const res = await user.auth.getGetSession()
+        res.assert(200, { method: "GET" })
+    })
+
+    test("POST /auth/session → postGetSession", async () => {
+        const res = await user.auth.postGetSession({ body: { token: "t" } })
+        res.assert(200, { method: "POST" })
+    })
+})
+
 // // На будущее.
 // const wsAnswer = await user1.ws.getAndClear({
 //     topic: 'created.post',

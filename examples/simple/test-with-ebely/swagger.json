@@ -393,6 +393,88 @@
         }
       }
     },
+    "/auth/session": {
+      "get": {
+        "operationId": "auth.getSession",
+        "summary": "Read current session (stub)",
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "type": "string"
+                    },
+                    "method": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "user",
+                    "method"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "auth.getSession",
+        "summary": "Refresh current session (stub)",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "token"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "type": "string"
+                    },
+                    "method": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "user",
+                    "method"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/clear-database": {
       "post": {
         "operationId": "admin.clearDatabase",

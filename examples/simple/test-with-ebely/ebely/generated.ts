@@ -78,6 +78,16 @@ export type WorldApi = {
         } }) => Promise<ApiResponse<{ 200: {
           "code": string
         } }>>
+      "getGetSession": (input?: {}) => Promise<ApiResponse<{ 200: {
+          "user": string
+          "method": string
+        } }>>
+      "postGetSession": (input: { body: {
+          "token": string
+        } }) => Promise<ApiResponse<{ 200: {
+          "user": string
+          "method": string
+        } }>>
     }
     "admin": {
       "clearDatabase": (input?: {}) => Promise<ApiResponse<{ 200: {
@@ -169,6 +179,24 @@ type EbelyHookTree<Store extends BaseStore> = {
           "code": string
         }, {
         "code": string
+      }>): void
+      }
+      "getGetSession": {
+        before(fn: BeforeHook<Store, undefined>): void
+        after(fn: AfterHook<Store, undefined, {
+        "user": string
+        "method": string
+      }>): void
+      }
+      "postGetSession": {
+        before(fn: BeforeHook<Store, {
+          "token": string
+        }>): void
+        after(fn: AfterHook<Store, {
+          "token": string
+        }, {
+        "user": string
+        "method": string
       }>): void
       }
     }
@@ -278,6 +306,14 @@ export class World<
         "confirm": {
           before: (fn: BeforeHook<Store>) => r.before({ key: "auth.confirm", fn }),
           after: (fn: AfterHook<Store>) => r.after({ key: "auth.confirm", fn }),
+        },
+        "getGetSession": {
+          before: (fn: BeforeHook<Store>) => r.before({ key: "auth.getGetSession", fn }),
+          after: (fn: AfterHook<Store>) => r.after({ key: "auth.getGetSession", fn }),
+        },
+        "postGetSession": {
+          before: (fn: BeforeHook<Store>) => r.before({ key: "auth.postGetSession", fn }),
+          after: (fn: AfterHook<Store>) => r.after({ key: "auth.postGetSession", fn }),
         },
       },
       "admin": {
@@ -510,6 +546,42 @@ export class World<
           })
           return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
           "code": string
+        } }>
+        },
+
+        /** Read current session (stub) */
+        "getGetSession": async (input?: {}): Promise<ApiResponse<{ 200: {
+          "user": string
+          "method": string
+        } }>> => {
+          const res = await request({
+            method: "GET",
+            path: "/auth/session",
+            opKey: "auth.getGetSession",
+            input: input as RequestInput,
+          })
+          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
+          "user": string
+          "method": string
+        } }>
+        },
+
+        /** Refresh current session (stub) */
+        "postGetSession": async (input: { body: {
+          "token": string
+        } }): Promise<ApiResponse<{ 200: {
+          "user": string
+          "method": string
+        } }>> => {
+          const res = await request({
+            method: "POST",
+            path: "/auth/session",
+            opKey: "auth.postGetSession",
+            input: input as RequestInput,
+          })
+          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
+          "user": string
+          "method": string
         } }>
         },
       },

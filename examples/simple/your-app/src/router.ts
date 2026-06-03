@@ -132,6 +132,42 @@ const confirm = os
     return input
   })
 
+// --- Два эндпоинта, отличающиеся ТОЛЬКО методом (один путь) -----------
+// Намеренно задаём обоим один и тот же operationId `auth.getSession` —
+// это в точности воспроизводит кейс better-auth (GET и POST на
+// `/get-session` с общим operationId). Генератор ebely разводит такую
+// коллизию префиксом метода: `getSession` → `getGetSession` (GET) и
+// `postGetSession` (POST). Реальной авторизации тут НЕТ — стабы.
+
+const getSession = os
+  .route({
+    method: 'GET',
+    path: '/auth/session',
+    operationId: 'auth.getSession',
+    summary: 'Read current session (stub)',
+    tags: ['Auth'],
+  })
+  .output(z.object({ user: z.string(), method: z.string() }))
+  .handler(() => {
+    console.log('[auth.getSession GET]')
+    return { user: 'anonymous', method: 'GET' }
+  })
+
+const refreshSession = os
+  .route({
+    method: 'POST',
+    path: '/auth/session',
+    operationId: 'auth.getSession',
+    summary: 'Refresh current session (stub)',
+    tags: ['Auth'],
+  })
+  .input(z.object({ token: z.string() }))
+  .output(z.object({ user: z.string(), method: z.string() }))
+  .handler(({ input }) => {
+    console.log('[auth.getSession POST]', input)
+    return { user: 'anonymous', method: 'POST' }
+  })
+
 const clearDatabase = os
   .route({
     method: 'POST',
@@ -157,6 +193,8 @@ export const router = {
   auth: {
     register,
     confirm,
+    getSession,
+    refreshSession,
   },
   admin: {
     clearDatabase,

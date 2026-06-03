@@ -4,6 +4,15 @@
 // удобную промежуточную модель, по которой потом рендерится клиент.
 // Группа и имя метода берутся из operationId: `posts.create` →
 // группа `posts`, метод `create`.
+//
+// Коллизии имён. Один и тот же operationId может прийти на разные HTTP-
+// методы одного пути (классика — better-auth: GET и POST `/get-session`
+// с общим operationId `getSession`). Без разведения это даёт два
+// одноимённых свойства в объекте → TS2300 Duplicate identifier. Поэтому
+// после сбора имена внутри каждой группы дедуплицируются: если имя
+// встречается больше одного раза, к нему спереди добавляется HTTP-метод
+// (`getSession` → `getGetSession` / `postGetSession`). Уникальные имена
+// не трогаются. См. dedupeNames ниже.
 
 import type { Json } from './types'
 import { collectResponseSchemas, pickResponseSchema, schemaToType } from './schema'
@@ -75,5 +84,50 @@ export function collectOperations(args: { spec: Json }): Operation[] {
     }
   }
 
+  dedupeNames({ operations })
   return operations
+}
+
+/** `getSession` → `getGetSession`: метод спереди, имя с заглавной. */
+function prefixMethod(args: { method: HttpMethod; name: string }): string {
+  const { method, name } = args
+  return method + name.charAt(0).toUpperCase() + name.slice(1)
+}
+
+/**
+ * Разводит коллизии имён внутри каждой группы (мутирует `op.name`).
+ * Если имя встречается больше одного раза — ко всем таким операциям
+ * спереди дописывается HTTP-метод. Так результат не зависит от порядка:
+ * ни одна из конфликтующих операций не «выигрывает» исходное имя.
+ * Если после префикса коллизия всё ещё есть (один метод + одно имя на
+ * разных путях) — добавляется числовой суффикс.
+ */
+function dedupeNames(args: { operations: Operation[] }): void {
+  const { operations } = args
+
+  // group → name → count
+  const counts = new Map<string, Map<string, number>>()
+  for (const op of operations) {
+    const byName = counts.get(op.group) ?? new Map<string, number>()
+    byName.set(op.name, (byName.get(op.name) ?? 0) + 1)
+    counts.set(op.group, byName)
+  }
+
+  // Занятые итоговые имена в группе — чтобы давить остаточные коллизии.
+  const taken = new Map<string, Set<string>>()
+  const claim = (group: string, name: string): string => {
+    const used = taken.get(group) ?? new Set<string>()
+    let candidate = name
+    let i = 2
+    while (used.has(candidate)) candidate = `${name}${i++}`
+    used.add(candidate)
+    taken.set(group, used)
+    return candidate
+  }
+
+  for (const op of operations) {
+    const collides = (counts.get(op.group)?.get(op.name) ?? 0) > 1
+    const base = collides ? prefixMethod({ method: op.method, name: op.name }) : op.name
+    op.name = claim(op.group, base)
+  }
 }
