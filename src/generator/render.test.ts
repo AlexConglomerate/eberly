@@ -18,9 +18,27 @@ const op: Operation = {
   queryParams: [],
   bodyType: null,
   bodyRequired: false,
+  isMultipart: false,
+  fileFields: [],
   responseType: '{ "id": string }',
   responses: [{ status: 200, bodyType: '{ "id": string }' }],
   summary: 'Get a post',
+}
+
+// Файловая (multipart) операция — для проверки FILE_OPS и ветки в request.
+const fileOp: Operation = {
+  group: 'media',
+  name: 'upload',
+  method: 'post',
+  path: '/media',
+  pathParams: [],
+  queryParams: [],
+  bodyType: '{\n          "files": Array<FileInput>\n        }',
+  bodyRequired: true,
+  isMultipart: true,
+  fileFields: [{ name: 'files', array: true }],
+  responseType: '{ "ok": boolean }',
+  responses: [{ status: 200, bodyType: '{ "ok": boolean }' }],
 }
 
 const render = (mode: ClientMode) =>
@@ -34,7 +52,7 @@ const render = (mode: ClientMode) =>
 
 test("режим 'test': ApiResponse, карта статусов, request не бросает", () => {
   const out = render('test')
-  assert.match(out, /import \{ BaseStore, ApiResponse, HookRegistry \} from "ebely"/)
+  assert.match(out, /import \{ BaseStore, ApiResponse, HookRegistry, toMultipartFormData \} from "ebely"/)
   assert.match(out, /Promise<ApiResponse<\{ 200: \{ "id": string \} \}>>/)
   assert.match(out, /return \{ status: response\.status, body: data \}/)
   assert.doesNotMatch(out, /throw new Error\(/)
@@ -42,7 +60,7 @@ test("режим 'test': ApiResponse, карта статусов, request не 
 
 test("режим 'frontend': тело напрямую, без ApiResponse, request бросает", () => {
   const out = render('frontend')
-  assert.match(out, /import \{ BaseStore, HookRegistry \} from "ebely"/)
+  assert.match(out, /import \{ BaseStore, HookRegistry, toMultipartFormData \} from "ebely"/)
   assert.doesNotMatch(out, /ApiResponse/)
   assert.match(out, /Promise<\{ "id": string \}>/)
   assert.match(out, /throw new Error\(/)
@@ -127,4 +145,33 @@ test('сценарии: один движок request, общий buildApiTree, 
     )
     assert.match(out, /return Object\.assign\(store, tree\)/)
   }
+})
+
+test('multipart: FILE_OPS, ветка request, импорт файловых хелперов (оба режима)', () => {
+  for (const mode of ['test', 'frontend'] as const) {
+    const out = renderClient({
+      spec,
+      operations: [fileOp],
+      mode,
+      userStoreImport: 'ebely',
+      configImport: './ebely',
+    })
+    // импорты: значение toMultipartFormData + типы файлов
+    assert.match(out, /import type \{ FileInput, FileEncoding, FileFieldMeta \} from "ebely"/)
+    // статическая карта файловых операций
+    assert.match(out, /const FILE_OPS: Record<string, FileFieldMeta\[\]> = \{/)
+    assert.match(out, /"media\.upload": \[\{ name: "files", array: true \}\]/)
+    // ветка в общем request: дефолт 'repeat', чтение ebely.files.encoding
+    assert.match(out, /const fileFields = FILE_OPS\[opKey\]/)
+    assert.match(out, /await toMultipartFormData\(\{/)
+    assert.match(out, /\.files\?\.encoding \?\? 'repeat'/)
+    assert.match(out, /const isMultipart = form !== undefined/)
+    // тип поля в сигнатуре — FileInput, а не string
+    assert.match(out, /"files": Array<FileInput>/)
+  }
+})
+
+test('без файловых операций: FILE_OPS пустой', () => {
+  const out = render('test')
+  assert.match(out, /const FILE_OPS: Record<string, FileFieldMeta\[\]> = \{\}/)
 })

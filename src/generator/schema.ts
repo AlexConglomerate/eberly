@@ -6,6 +6,21 @@
 
 import type { Json } from './types'
 
+/**
+ * Узел схемы описывает ФАЙЛ? Ориентируемся на OpenAPI 3.1: строка с
+ * `contentMediaType` (именно так эмитит oRPC: `{ type: 'string',
+ * contentMediaType: 'image/*' }`). Это ровно `isFileSchema` из
+ * `@orpc/openapi`. (Задел 3.0 — `format === 'binary'`; пока НЕ
+ * поддерживаем, см. ARCHITECTURE.md §9.)
+ */
+export function isFileSchema(schema: Json | undefined): boolean {
+  return (
+    Boolean(schema) &&
+    schema!.type === 'string' &&
+    typeof schema!.contentMediaType === 'string'
+  )
+}
+
 /** Преобразует JSON-Schema в строку с типом TypeScript. */
 export function schemaToType(args: { schema: Json | undefined; spec: Json; indent?: number }): string {
   const { schema, spec, indent = 0 } = args
@@ -15,6 +30,12 @@ export function schemaToType(args: { schema: Json | undefined; spec: Json; inden
     const resolved = resolveRef({ ref: schema.$ref, spec })
     return schemaToType({ schema: resolved, spec, indent })
   }
+
+  // Файловый узел (3.1) → публичный тип FileInput (путь/URL/File/Blob/байты).
+  // Стоит ДО ветки `type: 'string'`, иначе файл затипизировался бы как string.
+  // Массив файлов получается автоматически: ветка `array` зовёт schemaToType
+  // на items → `Array<FileInput>`.
+  if (isFileSchema(schema)) return 'FileInput'
 
   for (const key of ['allOf', 'oneOf', 'anyOf'] as const) {
     if (Array.isArray(schema[key])) {

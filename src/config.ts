@@ -5,6 +5,7 @@
 import type { HooksRegistrar } from './hooks'
 import type { SwaggerSource } from './generator/swagger'
 import type { BaseStore } from './base-store'
+import type { FileEncoding } from './files'
 
 /**
  * Режим генерируемого клиента (решается на этапе генерации, влияет на
@@ -89,6 +90,24 @@ export type EbelyConfig = {
    * @default undefined
    */
   hooks?: HooksRegistrar
+
+  /**
+   * Настройки отправки файлов (multipart/form-data). `encoding` задаёт, как
+   * кодируются ИМЕНА полей формы для МАССИВА файлов (для одного файла не
+   * важно — всегда одно поле без скобок):
+   *  - `'repeat'`        — files, files, …    (busboy: Express/Nest/Fastify, Go, Rust) — ДЕФОЛТ
+   *  - `'bracket-index'` — files[0], files[1] (oRPC OpenAPI-хендлер, PHP, Rails)
+   *  - `'bracket-empty'` — files[], files[]   (PHP/Rails вариант)
+   *  - функция           — кастомная кодировка (escape hatch)
+   *
+   * Дефолт `'repeat'` — мейнстрим (веб-стандарт). Проектам на oRPC нужно
+   * явно поставить `files: { encoding: 'bracket-index' }`.
+   *
+   * Рантайм-настройка (как `maxRetries`): читается в момент запроса, для
+   * смены перегенерация клиента НЕ нужна.
+   * @default 'repeat'
+   */
+  files?: { encoding?: FileEncoding }
 
   /**
    * Из какого модуля СГЕНЕРИРОВАННЫЙ файл импортирует `BaseStore`.

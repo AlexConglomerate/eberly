@@ -3,9 +3,12 @@
 // Режим клиента: test
 // Перегенерация: pnpm run client:generate
 
-import { BaseStore, ApiResponse, HookRegistry } from "ebely"
-import type { BeforeHook, AfterHook } from "ebely"
+import { BaseStore, ApiResponse, HookRegistry, toMultipartFormData } from "ebely"
+import type { BeforeHook, AfterHook, RetryHook } from "ebely"
+import type { FileInput, FileEncoding, FileFieldMeta } from "ebely"
 import { ebely } from "./ebely"
+
+const FILE_OPS: Record<string, FileFieldMeta[]> = {}
 
 type RequestInput = {
   path?: Record<string, string>
@@ -99,6 +102,7 @@ export type WorldApi = {
 type EbelyHookTree<Store extends BaseStore> = {
     globalBefore(fn: BeforeHook<Store>): void
     globalAfter(fn: AfterHook<Store>): void
+    globalRetry(fn: RetryHook<Store>): void
     "posts": {
       "list": {
         before(fn: BeforeHook<Store, undefined>): void
@@ -280,6 +284,7 @@ export class World<
     return {
       globalBefore: (fn: BeforeHook<Store>) => r.globalBefore({ fn }),
       globalAfter: (fn: AfterHook<Store>) => r.globalAfter({ fn }),
+      globalRetry: (fn: RetryHook<Store>) => r.globalRetry({ fn }),
       "posts": {
         "list": {
           before: (fn: BeforeHook<Store>) => r.before({ key: "posts.list", fn }),
@@ -340,59 +345,102 @@ export class World<
     const baseUrl = this.baseUrl()
     const registry = this.hookRegistry
     const { headers: baseHeaders, store } = cfg
+    // Потолок ПОВТОРОВ (сверх первой попытки) для globalRetry-хуков —
+    // защита от бесконечного цикла, если хук упрямо просит повтор.
+    const maxRetries = (ebely as { maxRetries?: number }).maxRetries ?? 3
 
     return async (req): Promise<{ status: number; body: unknown }> => {
       const { method, path, opKey, input } = req
 
-      const hookReq = {
-        method,
-        path,
-        pathParams: { ...(input?.path ?? {}) },
-        query: { ...(input?.query ?? {}) },
-        body: input?.body,
-        headers: { ...baseHeaders },
+      // Retry-цикл: каждую попытку hookReq собирается ЗАНОВО и заново
+      // прогоняются before-хуки, поэтому правки из retry-хука (напр.
+      // свежий токен в ctx) подхватываются повторным before. `for (;;)`
+      // крутится, пока не сработает return/throw в хвосте или `continue`.
+      let attempt = 0
+      for (;;) {
+        const hookReq = {
+          method,
+          path,
+          pathParams: { ...(input?.path ?? {}) },
+          query: { ...(input?.query ?? {}) },
+          body: input?.body,
+          headers: { ...baseHeaders },
+        }
+        await registry.runBefore({ key: opKey, request: hookReq, ctx: store })
+
+        let resolvedPath = path
+        for (const [k, v] of Object.entries(hookReq.pathParams)) {
+          resolvedPath = resolvedPath.replace(
+            `{${k}}`,
+            encodeURIComponent(String(v)),
+          )
+        }
+
+        const url = new URL(baseUrl + resolvedPath)
+        for (const [k, v] of Object.entries(hookReq.query)) {
+          if (v !== undefined) url.searchParams.set(k, String(v))
+        }
+
+        const hasBody = hookReq.body !== undefined
+        // Файловые (multipart) операции: FormData собирается ПОСЛЕ before-хуков
+        // (тело к этому моменту — обычный объект, хуки видят/правят его как
+        // JSON). Кодировка имён полей для массива файлов — из ebely.files
+        // (дефолт 'repeat': веб-стандарт busboy/Go/Rust; oRPC ставит
+        // 'bracket-index'). На retry FormData пересобирается заново.
+        const fileFields = FILE_OPS[opKey]
+        const form =
+          fileFields && fileFields.length > 0 && hasBody
+            ? await toMultipartFormData({
+                body: hookReq.body as Record<string, unknown>,
+                fileFields,
+                encoding:
+                  (ebely as { files?: { encoding?: FileEncoding } }).files?.encoding ?? 'repeat',
+              })
+            : undefined
+        const isMultipart = form !== undefined
+
+        const response = await fetch(url, {
+          method,
+          headers: {
+            // multipart: content-type НЕ ставим — fetch сам выставит boundary.
+            ...(isMultipart ? {} : hasBody ? { 'content-type': 'application/json' } : {}),
+            ...hookReq.headers,
+          },
+          body: isMultipart ? form : hasBody ? JSON.stringify(hookReq.body) : undefined,
+        })
+
+        const text = await response.text()
+        let data: unknown
+        try {
+          data = text ? JSON.parse(text) : undefined
+        } catch {
+          data = text
+        }
+
+        await registry.runAfter({
+          key: opKey,
+          request: hookReq,
+          response: { status: response.status, body: data },
+          ctx: store,
+        })
+
+        // Пока есть бюджет повторов — спрашиваем retry-хуки. Вернули
+        // true → новый виток (заново before → fetch); иначе отдаём ответ.
+        if (attempt < maxRetries) {
+          const shouldRetry = await registry.runRetry({
+            key: opKey,
+            request: hookReq,
+            response: { status: response.status, body: data },
+            ctx: store,
+          })
+          if (shouldRetry) {
+            attempt++
+            continue
+          }
+        }
+
+        return { status: response.status, body: data }
       }
-      await registry.runBefore({ key: opKey, request: hookReq, ctx: store })
-
-      let resolvedPath = path
-      for (const [k, v] of Object.entries(hookReq.pathParams)) {
-        resolvedPath = resolvedPath.replace(
-          `{${k}}`,
-          encodeURIComponent(String(v)),
-        )
-      }
-
-      const url = new URL(baseUrl + resolvedPath)
-      for (const [k, v] of Object.entries(hookReq.query)) {
-        if (v !== undefined) url.searchParams.set(k, String(v))
-      }
-
-      const hasBody = hookReq.body !== undefined
-      const response = await fetch(url, {
-        method,
-        headers: {
-          ...(hasBody ? { 'content-type': 'application/json' } : {}),
-          ...hookReq.headers,
-        },
-        body: hasBody ? JSON.stringify(hookReq.body) : undefined,
-      })
-
-      const text = await response.text()
-      let data: unknown
-      try {
-        data = text ? JSON.parse(text) : undefined
-      } catch {
-        data = text
-      }
-
-      await registry.runAfter({
-        key: opKey,
-        request: hookReq,
-        response: { status: response.status, body: data },
-        ctx: store,
-      })
-
-      return { status: response.status, body: data }
     }
   }
 

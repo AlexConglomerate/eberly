@@ -341,3 +341,68 @@ world-store — АНОНИМНЫЙ клиент (без per-user заголов�
 берётся из `ebely` тем же conditional-приёмом, что и `Store`
 (`typeof ebely extends { worldStore: new () => infer I … } ? I : …`) —
 никаких рантайм-условий, форма решается на этапе генерации.
+
+## 9. Файлы / multipart
+
+Цель: отправлять файлы типизированным методом клиента, передав **путь к
+файлу** (или `File`/`Blob`), а не собирая `multipart/form-data` руками
+через `fetch`. Один или несколько файлов — генератор понимает из swagger.
+
+```ts
+const upload = await user.wordCard.wordCardUploadScreenshots({
+  body: { files: ["./a.jpg", new URL("./b.jpg", import.meta.url)] },
+})
+upload.assert(200)
+```
+
+**Детект файла (OpenAPI 3.1).** Файловый узел схемы — это
+`{ type: 'string', contentMediaType: '<mime>' }` (ровно `isFileSchema`
+из `@orpc/openapi`). `schema.ts → isFileSchema` детектит его, а
+`schemaToType` возвращает для него публичный тип `FileInput` (ДО ветки
+`type: 'string'`), поэтому массив файлов автоматически становится
+`Array<FileInput>`. 3.0 (`format: 'binary'`) и 2.0 (`in: formData`) —
+задел, пока НЕ поддерживаем (точка расширения — `isFileSchema` и источник
+схемы тела в `operations.ts`).
+
+**Две точки врезки** (как и для JSON):
+
+1. *Генератор знает, какие поля файловые.* `operations.ts` берёт схему
+   тела «multipart-aware» (`content['multipart/form-data'] ??
+   content['application/json']` — oRPC кладёт оба с одинаковой схемой) и
+   собирает плоские `fileFields` (`{ name, array }`) обходом top-level
+   свойств. `render.ts` эмитит статическую карту `FILE_OPS: opKey →
+   FileFieldMeta[]`.
+2. *Рантайм собирает FormData.* В общем `request` (после `runBefore`,
+   когда тело — обычный объект, и хуки уже его видели/правили как JSON):
+   если `FILE_OPS[opKey]` есть → `toMultipartFormData(...)` строит
+   `FormData`, а `content-type` НЕ ставится (fetch сам выставит boundary).
+   На retry форма пересобирается заново.
+
+**`src/files.ts` (рантайм-ядро, в npm-пакете).** Чистые функции:
+`toBlob(FileInput)` (путь читается через ленивый `import('node:fs/...')`,
+поэтому модуль импортируется и во фронтенд-сборке), `toMultipartFormData`
+и `mimeFromName` (mime по расширению — нужен для серверного барьера
+`image/*`). Тип `FileInput` — union: строка-путь (абсолютный как есть,
+относительный от `process.cwd()`), `URL`/`file://`, `{ path, name?,
+type? }`, `{ content, name, type? }`, `Blob`/`File`.
+
+**Кодировка имён полей для МАССИВА файлов (`EbelyConfig.files.encoding`).**
+Сам wire-формат multipart (RFC 7578) везде одинаков; различается ТОЛЬКО
+именование полей при массиве, и надёжно вытащить его из swagger нельзя
+(генераторы не эмитят `encoding`/`explode` для бинарей) — поэтому это
+**явная рантайм-настройка** (как `maxRetries`, перегенерация не нужна):
+
+| Конвенция | Имена полей | Кто ждёт |
+|---|---|---|
+| `'repeat'` (**дефолт**) | `files`, `files` | busboy: Express/Nest/Fastify, Go, Rust |
+| `'bracket-index'` | `files[0]`, `files[1]` | **oRPC OpenAPI-хендлер**, PHP, Rails |
+| `'bracket-empty'` | `files[]`, `files[]` | PHP/Rails вариант |
+| функция | — | кастомный escape hatch |
+
+Дефолт `'repeat'` — мейнстрим (веб-стандарт). Проекты на **oRPC** ставят
+`files: { encoding: 'bracket-index' }` одной строкой в конфиге. Для
+ОДНОГО файла вопрос не стоит — поле без скобок, кодировка игнорируется.
+
+Не делаем сейчас (задел): raw-body (тело — сам файл без объекта-обёртки),
+3.0/2.0-диалекты, глубокая bracket-сериализация ВЛОЖЕННЫХ объектов в
+смешанном теле (сейчас скаляры → `String()`, объекты → `JSON.stringify`).

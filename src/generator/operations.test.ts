@@ -79,3 +79,85 @@ test('остаточная коллизия (тот же метод + имя н�
     ['getPing', 'getPing2'],
   )
 })
+
+test('multipart (oRPC 3.1): isMultipart + fileFields для массива файлов', () => {
+  // oRPC кладёт СРАЗУ два content-типа с одинаковой схемой; файл в 3.1 —
+  // { type:'string', contentMediaType }.
+  const fileItem = { type: 'string', contentMediaType: 'image/*' }
+  const bodySchema = {
+    type: 'object',
+    required: ['files'],
+    properties: { files: { type: 'array', items: fileItem } },
+  }
+  const spec: Json = {
+    paths: {
+      '/word-cards/screenshots': {
+        post: {
+          operationId: 'wordCard.upload',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': { schema: bodySchema },
+              'multipart/form-data': { schema: bodySchema },
+            },
+          },
+          ...ok,
+        },
+      },
+    },
+  }
+  const op = collectOperations({ spec })[0]!
+  assert.equal(op.isMultipart, true)
+  assert.deepEqual(op.fileFields, [{ name: 'files', array: true }])
+  // тип тела — Array<FileInput>, а не Array<string>
+  assert.match(op.bodyType!, /"files": Array<FileInput>/)
+})
+
+test('multipart: одиночный файл → array:false', () => {
+  const spec: Json = {
+    paths: {
+      '/avatar': {
+        post: {
+          operationId: 'user.avatar',
+          requestBody: {
+            content: {
+              'multipart/form-data': {
+                schema: {
+                  type: 'object',
+                  properties: { avatar: { type: 'string', contentMediaType: 'image/png' } },
+                },
+              },
+            },
+          },
+          ...ok,
+        },
+      },
+    },
+  }
+  const op = collectOperations({ spec })[0]!
+  assert.equal(op.isMultipart, true)
+  assert.deepEqual(op.fileFields, [{ name: 'avatar', array: false }])
+})
+
+test('обычный JSON-эндпоинт: isMultipart false, fileFields пуст', () => {
+  const spec: Json = {
+    paths: {
+      '/posts': {
+        post: {
+          operationId: 'posts.create',
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: { type: 'object', properties: { title: { type: 'string' } } },
+              },
+            },
+          },
+          ...ok,
+        },
+      },
+    },
+  }
+  const op = collectOperations({ spec })[0]!
+  assert.equal(op.isMultipart, false)
+  assert.deepEqual(op.fileFields, [])
+})

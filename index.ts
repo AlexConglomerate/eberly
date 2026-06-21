@@ -16,3 +16,5 @@ export type {
 export { generateClient, } from './src/generate-client'
 export type { SwaggerSource } from './src/generate-client'
 export type { EbelyConfig, ClientMode } from './src/config'
+export { toMultipartFormData, toBlob, mimeFromName } from './src/files'
+export type { FileInput, FileEncoding, FileFieldMeta } from './src/files'

@@ -15,7 +15,13 @@
 // не трогаются. См. dedupeNames ниже.
 
 import type { Json } from './types'
-import { collectResponseSchemas, pickResponseSchema, schemaToType } from './schema'
+import {
+  collectResponseSchemas,
+  isFileSchema,
+  pickResponseSchema,
+  resolveRef,
+  schemaToType,
+} from './schema'
 
 export const HTTP_METHODS = ['get', 'post', 'put', 'patch', 'delete'] as const
 export type HttpMethod = (typeof HTTP_METHODS)[number]
@@ -29,6 +35,10 @@ export interface Operation {
   queryParams: string[]
   bodyType: string | null
   bodyRequired: boolean
+  /** Тело уходит как `multipart/form-data` (есть файловые поля). */
+  isMultipart: boolean
+  /** Плоские файловые поля тела — для рантайм-сборки FormData. */
+  fileFields: { name: string; array: boolean }[]
   /** Тип тела успешного 2xx-ответа (режим клиента `'frontend'`). */
   responseType: string
   /** Все задекларированные ответы: статус → тип тела (режим `'test'`). */
@@ -55,7 +65,16 @@ export function collectOperations(args: { spec: Json }): Operation[] {
       const pathParams = parameters.filter((p) => p.in === 'path').map((p) => p.name as string)
       const queryParams = parameters.filter((p) => p.in === 'query').map((p) => p.name as string)
 
-      const bodySchema = op.requestBody?.content?.['application/json']?.schema
+      // Тело берём «multipart-aware»: для файловых эндпоинтов oRPC кладёт
+      // СРАЗУ два content-типа (application/json + multipart/form-data) с
+      // одинаковой схемой; предпочитаем multipart, иначе обычный json.
+      const content: Json = op.requestBody?.content ?? {}
+      const bodySchema =
+        content['multipart/form-data']?.schema ?? content['application/json']?.schema
+
+      const fileFields = collectFileFields({ schema: bodySchema, spec })
+      const isMultipart = 'multipart/form-data' in content || fileFields.length > 0
+
       const responseSchema = pickResponseSchema({ responses: op.responses, spec })
       const responseType = schemaToType({ schema: responseSchema, spec, indent: 3 })
 
@@ -77,6 +96,8 @@ export function collectOperations(args: { spec: Json }): Operation[] {
         queryParams,
         bodyType: bodySchema ? schemaToType({ schema: bodySchema, spec, indent: 4 }) : null,
         bodyRequired: Boolean(op.requestBody?.required),
+        isMultipart,
+        fileFields,
         responseType,
         responses,
         summary: op.summary,
@@ -86,6 +107,35 @@ export function collectOperations(args: { spec: Json }): Operation[] {
 
   dedupeNames({ operations })
   return operations
+}
+
+/**
+ * Обходит top-level свойства схемы тела и собирает файловые поля: прямой
+ * файловый узел → `array: false`, массив файловых узлов → `array: true`.
+ * `$ref` на свойстве/items разворачивается. Вложенность глубже одного
+ * уровня не разбираем (типовой кейс — плоское тело; см. ARCHITECTURE.md §9).
+ */
+function collectFileFields(args: {
+  schema: Json | undefined
+  spec: Json
+}): { name: string; array: boolean }[] {
+  const { schema, spec } = args
+  const deref = (s: Json | undefined): Json | undefined =>
+    s && typeof s.$ref === 'string' ? resolveRef({ ref: s.$ref, spec }) : s
+
+  const root = deref(schema)
+  const props: Json = root?.properties ?? {}
+  const out: { name: string; array: boolean }[] = []
+
+  for (const [name, raw] of Object.entries<Json>(props)) {
+    const prop = deref(raw)
+    if (isFileSchema(prop)) {
+      out.push({ name, array: false })
+    } else if (prop?.type === 'array' && isFileSchema(deref(prop.items))) {
+      out.push({ name, array: true })
+    }
+  }
+  return out
 }
 
 /** `getSession` → `getGetSession`: метод спереди, имя с заглавной. */

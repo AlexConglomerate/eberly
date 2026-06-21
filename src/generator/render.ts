@@ -103,13 +103,32 @@ function renderMethod(args: { op: Operation; mode: ClientMode }): string {
 /** Импорты сгенерированного файла. В 'test' дополнительно нужен ApiResponse. */
 function renderImports(args: { mode: ClientMode; userStoreImport: string; configImport: string }): string {
   const { mode, userStoreImport, configImport } = args
-  const values =
+  const core =
     mode === 'frontend'
       ? 'BaseStore, HookRegistry'
       : 'BaseStore, ApiResponse, HookRegistry'
-  return `import { ${values} } from ${JSON.stringify(userStoreImport)}
+  return `import { ${core}, toMultipartFormData } from ${JSON.stringify(userStoreImport)}
 import type { BeforeHook, AfterHook, RetryHook } from ${JSON.stringify(userStoreImport)}
+import type { FileInput, FileEncoding, FileFieldMeta } from ${JSON.stringify(userStoreImport)}
 import { ebely } from ${JSON.stringify(configImport)}`
+}
+
+/**
+ * Статическая карта файловых операций `opKey → файловые поля тела`. Общий
+ * `request` берёт из неё `fileFields`, чтобы собрать FormData нужной
+ * кодировкой. Пустой объект, если в схеме нет multipart-эндпоинтов.
+ */
+function renderFileOps(operations: Operation[]): string {
+  const entries = operations
+    .filter((op) => op.isMultipart && op.fileFields.length > 0)
+    .map((op) => {
+      const fields = op.fileFields
+        .map((f) => `{ name: ${JSON.stringify(f.name)}, array: ${f.array} }`)
+        .join(', ')
+      return `  ${JSON.stringify(hookKey(op))}: [${fields}],`
+    })
+  if (entries.length === 0) return 'const FILE_OPS: Record<string, FileFieldMeta[]> = {}'
+  return `const FILE_OPS: Record<string, FileFieldMeta[]> = {\n${entries.join('\n')}\n}`
 }
 
 /**
@@ -253,6 +272,8 @@ export function renderClient(args: {
 
 ${renderImports({ mode, userStoreImport, configImport })}
 
+${renderFileOps(operations)}
+
 type RequestInput = {
   path?: Record<string, string>
   query?: Record<string, string | number | boolean | undefined>
@@ -388,13 +409,31 @@ ${renderHookTreeBuilder(groups)}
         }
 
         const hasBody = hookReq.body !== undefined
+        // Файловые (multipart) операции: FormData собирается ПОСЛЕ before-хуков
+        // (тело к этому моменту — обычный объект, хуки видят/правят его как
+        // JSON). Кодировка имён полей для массива файлов — из ebely.files
+        // (дефолт 'repeat': веб-стандарт busboy/Go/Rust; oRPC ставит
+        // 'bracket-index'). На retry FormData пересобирается заново.
+        const fileFields = FILE_OPS[opKey]
+        const form =
+          fileFields && fileFields.length > 0 && hasBody
+            ? await toMultipartFormData({
+                body: hookReq.body as Record<string, unknown>,
+                fileFields,
+                encoding:
+                  (ebely as { files?: { encoding?: FileEncoding } }).files?.encoding ?? 'repeat',
+              })
+            : undefined
+        const isMultipart = form !== undefined
+
         const response = await fetch(url, {
           method,
           headers: {
-            ...(hasBody ? { 'content-type': 'application/json' } : {}),
+            // multipart: content-type НЕ ставим — fetch сам выставит boundary.
+            ...(isMultipart ? {} : hasBody ? { 'content-type': 'application/json' } : {}),
             ...hookReq.headers,
           },
-          body: hasBody ? JSON.stringify(hookReq.body) : undefined,
+          body: isMultipart ? form : hasBody ? JSON.stringify(hookReq.body) : undefined,
         })
 
         const text = await response.text()

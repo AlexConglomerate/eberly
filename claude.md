@@ -10,6 +10,9 @@
   (используется сгенерированным клиентом в режиме `'test'`).
 - `src/hooks.ts` — рантайм-ядро: `HookRegistry` + типы хуков `before` /
   `after` (чистый класс без сети; см. `ARCHITECTURE.md §7`).
+- `src/files.ts` — рантайм-ядро: отправка файлов (multipart). `toBlob`,
+  `toMultipartFormData`, типы `FileInput` / `FileEncoding` / `FileFieldMeta`
+  (чистые функции, чтение пути через ленивый `node:fs`; `ARCHITECTURE.md §9`).
 - `src/config.ts` — публичный тип `EbelyConfig` (+ `ClientMode`).
 - `src/generate-client.ts` — оркестратор: связывает шаги генератора и пишет файл.
 - `src/generator/` — внутренности генератора (НЕ публичные):

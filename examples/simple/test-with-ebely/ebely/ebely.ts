@@ -14,6 +14,11 @@ export const ebely = {
     hooks, // before/after-хуки (объявлены в ./hooks.ts, типизированы)
     mode: 'test', // test - не-2xx статусы не бросаются.
 
+    // Отправка файлов (multipart). encoding задаёт кодировку имён полей для
+    // МАССИВА файлов; дефолт 'repeat' (веб-стандарт busboy/Go/Rust). Этот
+    // бэкенд на oRPC, поэтому при появлении файловых эндпоинтов нужно:
+    // files: { encoding: 'bracket-index' }, // files[0], files[1] — как ждёт oRPC
+
     // mode: 'test' (по умолчанию) — методы возвращают ApiResponse с
     //   .status/.body/.assert(); не-2xx НЕ бросается.
     // mode: 'frontend' — методы возвращают тело напрямую, не-2xx бросает
