@@ -1,5 +1,11 @@
 # ebely
 
+## 0.1.1
+
+### Patch Changes
+
+- the files feature
+
 ## 0.1.0
 
 ### Minor Changes
