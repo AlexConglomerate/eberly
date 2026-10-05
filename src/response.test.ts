@@ -51,7 +51,7 @@ test('assertResponse: статус не совпал → EbelyAssertionError', (
         expectedStatus: 200,
       }),
     (err: unknown) =>
-      err instanceof EbelyAssertionError && /Ожидался статус 200/.test(String(err)),
+      err instanceof EbelyAssertionError && /Expected status 200, got 500/.test(String(err)),
   )
 })
 

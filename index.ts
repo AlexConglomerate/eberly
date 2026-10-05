@@ -1,7 +1,8 @@
 // Публичный API библиотеки ebely (npm-пакет «ebely»).
 export { BaseStore } from './src/base-store'
 export { ApiResponse, EbelyAssertionError } from './src/response'
-export type { DeepPartial } from './src/response'
+export type { DeepPartial, UndeclaredErrorStatus } from './src/response'
+export { assertHostAllowed, EbelyUnsafeHostError } from './src/safety'
 export { HookRegistry } from './src/hooks'
 export type {
   HooksRegistrar,

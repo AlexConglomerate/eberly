@@ -150,13 +150,13 @@ function renderMethod(args: { op: Operation; mode: ClientMode }): string {
           new ApiResponse(await ${call}) as never,`
 }
 
-/** Импорты сгенерированного файла. В 'test' дополнительно нужен ApiResponse. */
+/** Импорты сгенерированного файла. В 'test' дополнительно нужны ApiResponse и assertHostAllowed. */
 function renderImports(args: { mode: ClientMode; userStoreImport: string; configImport: string }): string {
   const { mode, userStoreImport, configImport } = args
   const core =
     mode === 'frontend'
       ? 'BaseStore, HookRegistry'
-      : 'BaseStore, ApiResponse, HookRegistry'
+      : 'BaseStore, ApiResponse, HookRegistry, assertHostAllowed'
   return `import { ${core}, toMultipartFormData } from ${JSON.stringify(userStoreImport)}
 import type { BeforeHook, AfterHook, RetryHook } from ${JSON.stringify(userStoreImport)}
 import type { FileInput, FileEncoding, FileFieldMeta } from ${JSON.stringify(userStoreImport)}
@@ -204,6 +204,21 @@ function renderRequestTail(mode: ClientMode): { returnType: string; ret: string 
     returnType: '{ status: number; body: unknown }',
     ret: `      return { status: response.status, body: data }`,
   }
+}
+
+/**
+ * Проверка хоста (защита от прода) — только в 'test'. Стоит в `makeRequest`,
+ * который зовут `new World()` и `createUser()`, поэтому чужой хост падает
+ * до первого запроса. `allowedHosts` читается в рантайме, как `maxRetries`.
+ */
+function renderHostCheck(mode: ClientMode): string {
+  if (mode === 'frontend') return ''
+  return `
+    // Защита от прода: loopback можно всегда, остальное — из ebely.allowedHosts.
+    assertHostAllowed({
+      url: baseUrl,
+      allowedHosts: (ebely as { allowedHosts?: string[] }).allowedHosts,
+    })`
 }
 
 /** Группирует операции по `op.group`, сохраняя порядок появления. */
@@ -422,7 +437,7 @@ ${renderHookTreeBuilder(groups)}
     headers: Record<string, string>
     store: BaseStore
   }): RequestFn {
-    const baseUrl = this.baseUrl()
+    const baseUrl = this.baseUrl()${renderHostCheck(mode)}
     const registry = this.hookRegistry
     const { headers: baseHeaders, store } = cfg
     // Потолок ПОВТОРОВ (сверх первой попытки) для globalRetry-хуков —

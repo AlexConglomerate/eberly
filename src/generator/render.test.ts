@@ -56,7 +56,7 @@ const render = (mode: ClientMode) =>
 
 test("режим 'test': ApiResponse, карта статусов, request не бросает", () => {
   const out = render('test')
-  assert.match(out, /import \{ BaseStore, ApiResponse, HookRegistry, toMultipartFormData \} from "ebely"/)
+  assert.match(out, /import \{ BaseStore, ApiResponse, HookRegistry, assertHostAllowed, toMultipartFormData \} from "ebely"/)
   assert.match(out, /Promise<ApiResponse<\{ 200: \{ "id": string \} \}>>/)
   assert.match(out, /return \{ status: response\.status, body: data \}/)
   assert.doesNotMatch(out, /throw new Error\(/)
@@ -68,6 +68,13 @@ test("режим 'frontend': тело напрямую, без ApiResponse, requ
   assert.doesNotMatch(out, /ApiResponse/)
   assert.match(out, /Promise<\{ "id": string \}>/)
   assert.match(out, /throw new Error\(/)
+})
+
+test("allowedHosts: проверка хоста в makeRequest только в режиме 'test'", () => {
+  const out = render('test')
+  assert.match(out, /const baseUrl = this\.baseUrl\(\)\n[^]*?assertHostAllowed\(\{\n\s+url: baseUrl,/)
+  assert.match(out, /allowedHosts: \(ebely as \{ allowedHosts\?: string\[\] \}\)\.allowedHosts/)
+  assert.doesNotMatch(render('frontend'), /assertHostAllowed/)
 })
 
 test('оба режима: типизированное дерево хуков + проводка в request', () => {

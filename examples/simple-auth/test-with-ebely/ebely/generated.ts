@@ -3,7 +3,7 @@
 // Режим клиента: test
 // Перегенерация: pnpm run client:generate
 
-import { BaseStore, ApiResponse, HookRegistry, toMultipartFormData } from "ebely"
+import { BaseStore, ApiResponse, HookRegistry, assertHostAllowed, toMultipartFormData } from "ebely"
 import type { BeforeHook, AfterHook, RetryHook } from "ebely"
 import type { FileInput, FileEncoding, FileFieldMeta } from "ebely"
 import { ebely } from "./ebely"
@@ -506,6 +506,11 @@ export class World<
     store: BaseStore
   }): RequestFn {
     const baseUrl = this.baseUrl()
+    // Защита от прода: loopback можно всегда, остальное — из ebely.allowedHosts.
+    assertHostAllowed({
+      url: baseUrl,
+      allowedHosts: (ebely as { allowedHosts?: string[] }).allowedHosts,
+    })
     const registry = this.hookRegistry
     const { headers: baseHeaders, store } = cfg
     // Потолок ПОВТОРОВ (сверх первой попытки) для globalRetry-хуков —

@@ -33,7 +33,7 @@ describe("posts", () => {
 
     test("несуществующий пост → 404", async () => {
         const missing = await user1.posts.get({ path: { id: "does-not-exist" } })
-        missing.assert(404 as any)
+        missing.assert(404)
     })
 
     test("изоляция: у каждого пользователя свой lastPostId", async () => {

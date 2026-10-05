@@ -36,7 +36,7 @@ describe('roles (user vs admin)', () => {
     const created = await user.posts.create({ body: { title: 'Doomed', content: 'x' } })
     created.assert(200)
     const del = await user.posts.delete({ path: { id: created.body.id } })
-    del.assert(403 as any)
+    del.assert(403)
   })
 
   test('admin удаляет любой пост — 200', async () => {
@@ -46,7 +46,7 @@ describe('roles (user vs admin)', () => {
     del.assert(200, { success: true })
     // и теперь он действительно пропал
     const gone = await admin.posts.get({ path: { id: created.body.id } })
-    gone.assert(404 as any)
+    gone.assert(404)
   })
 
   test('user НЕ может править ЧУЖОЙ пост — 403', async () => {
@@ -56,7 +56,7 @@ describe('roles (user vs admin)', () => {
       path: { id: adminPost.body.id },
       body: { title: 'hacked' },
     })
-    tryUpdate.assert(403 as any)
+    tryUpdate.assert(403)
   })
 
   test('автор правит СВОЙ пост — 200', async () => {

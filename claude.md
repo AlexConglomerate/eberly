@@ -7,13 +7,20 @@
 - `index.ts` — публичный API (`BaseStore`, `ApiResponse`, `generateClient`, типы).
 - `src/base-store.ts` — рантайм-ядро: базовый класс хранилища переменных.
 - `src/response.ts` — рантайм-ядро: `ApiResponse` + чистая логика `assert`
-  (используется сгенерированным клиентом в режиме `'test'`).
+  (используется сгенерированным клиентом в режиме `'test'`). Перегрузки
+  `assert`: задекларированные статусы типизированы, любой незадекларированный
+  4xx/5xx — без каста (`UndeclaredErrorStatus`). Тест типов —
+  `src/response.type-test.ts` (`@ts-expect-error`, проверяет `pnpm lint`).
+- `src/safety.ts` — рантайм-ядро: защита от прода. `isHostAllowed` /
+  `assertHostAllowed` + `EbelyUnsafeHostError` (loopback всегда, остальное —
+  из `allowedHosts`; вызывается сгенерированным клиентом только в `'test'`;
+  `ARCHITECTURE.md §12`).
 - `src/hooks.ts` — рантайм-ядро: `HookRegistry` + типы хуков `before` /
   `after` (чистый класс без сети; см. `ARCHITECTURE.md §7`).
 - `src/files.ts` — рантайм-ядро: отправка файлов (multipart). `toBlob`,
   `toMultipartFormData`, типы `FileInput` / `FileEncoding` / `FileFieldMeta`
   (чистые функции, чтение пути через ленивый `node:fs`; `ARCHITECTURE.md §9`).
-- `src/config.ts` — публичный тип `EbelyConfig` (+ `ClientMode`).
+- `src/config.ts` — публичный тип `EbelyConfig` (+ `ClientMode`, `allowedHosts`).
 - `src/generate-client.ts` — оркестратор: связывает шаги генератора и пишет файл.
 - `src/generator/` — внутренности генератора (НЕ публичные):
   - `swagger.ts` — `SwaggerSource` + загрузка схемы (`loadSpec`).
@@ -38,6 +45,8 @@
 
 Юнит-тесты библиотеки: `src/**/*.test.ts` (чистые функции, без сети;
 новый файл подхватывается glob-ом сам). Запуск — `pnpm test` в корне.
+Тесты типов: `src/**/*.type-test.ts` — их проверяет `tsc` (`pnpm lint`).
+Сообщения для пользователя (ошибки, логи, CLI) — на английском.
 
 Подробный разбор архитектуры — в `ARCHITECTURE.md`.
 

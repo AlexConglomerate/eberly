@@ -35,12 +35,12 @@ describe('auth (email + пароль)', () => {
     const res = await anon.auth.signIn({
       body: { email: 'alice@example.com', password: 'wrong-password' },
     })
-    res.assert(401 as any)
+    res.assert(401)
   })
 
   test('защищённый эндпоинт без токена → 401', async () => {
     const res = await anon.posts.list({})
-    res.assert(401 as any)
+    res.assert(401)
   })
 
   test('signOut отзывает токен', async () => {
@@ -50,6 +50,6 @@ describe('auth (email + пароль)', () => {
     out.assert(200, { success: true })
     // После signOut session по этому же токену должен отказать.
     const s = await charlie.auth.session({})
-    s.assert(401 as any)
+    s.assert(401)
   })
 })

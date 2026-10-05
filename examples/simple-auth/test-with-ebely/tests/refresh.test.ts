@@ -34,7 +34,7 @@ describe('refresh on 401 (globalRetry)', () => {
     // Вызов уходит со старым (протухшим) токеном → 401. retry-хук рефрешит
     // и ebely прозрачно переигрывает запрос на свежем токене → сразу 200.
     const res = await dave.posts.list({})
-    res.assert(200 as any)
+    res.assert(200)
   })
 
   test('retry не зацикливается на неверных кредах (auth-эндпоинты исключены)', async () => {
@@ -43,6 +43,6 @@ describe('refresh on 401 (globalRetry)', () => {
     // signIn; вдобавок maxRetries в ядре жёстко ограничивает повторы).
     const anon = world.createUser()
     const res = await anon.posts.list({})
-    res.assert(401 as any)
+    res.assert(401)
   })
 })

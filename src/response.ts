@@ -91,8 +91,8 @@ export function assertResponse(args: {
 
   if (actualStatus !== expectedStatus) {
     throw new EbelyAssertionError(
-      `Ожидался статус ${expectedStatus}, получен ${actualStatus}.\n` +
-        `Тело ответа: ${safeJson(actualBody)}`,
+      `Expected status ${expectedStatus}, got ${actualStatus}.\n` +
+        `Response body: ${safeJson(actualBody)}`,
     )
   }
 
@@ -101,13 +101,25 @@ export function assertResponse(args: {
   const mismatch = matchPartial({ actual: actualBody, expected: expectedBody })
   if (mismatch) {
     throw new EbelyAssertionError(
-      `Тело ответа не совпало по пути "${mismatch.path || '<root>'}": ` +
-        `ожидалось ${safeJson(mismatch.expected)}, ` +
-        `получено ${safeJson(mismatch.actual)}.\n` +
-        `Полное тело: ${safeJson(actualBody)}`,
+      `Response body mismatch at "${mismatch.path || '<root>'}": ` +
+        `expected ${safeJson(mismatch.expected)}, ` +
+        `got ${safeJson(mismatch.actual)}.\n` +
+        `Full body: ${safeJson(actualBody)}`,
     )
   }
 }
+
+/**
+ * 4xx/5xx-статус, которого НЕТ в карте `M`. Задекларированные статусы
+ * исключены намеренно: они идут через первую перегрузку `assert` с
+ * типизированным телом — иначе `assert(409, { wrong: 1 })` молча прошёл бы
+ * здесь с телом `unknown`. 1xx–3xx → `never` (опечатка 200 вместо 201).
+ */
+export type UndeclaredErrorStatus<S extends number, M> = S extends keyof M
+  ? never
+  : `${S}` extends `4${string}` | `5${string}`
+    ? S
+    : never
 
 /**
  * Ответ эндпоинта в режиме `'test'`. Дженерик `M` — карта «статус → тело»,
@@ -130,19 +142,21 @@ export class ApiResponse<M extends Record<number, unknown>> {
   /**
    * Проверяет статус и (опционально) часть тела ответа.
    *
-   * @param status Ожидаемый статус. Подсказывается интеллисенсом из
-   *   swagger; незадекларированный литерал — ошибка типов. Чтобы
-   *   проверить статус, которого нет в схеме (например `400`),
-   *   используйте `res.assert(400 as any, ...)`.
+   * @param status Ожидаемый статус. Задекларированные в swagger статусы
+   *   подсказываются интеллисенсом, их тело типизировано. Любой другой
+   *   4xx/5xx (`401`, `403`, `500`) можно передать без каста — тело тогда
+   *   не типизировано. Незадекларированный 1xx–3xx — ошибка типов.
    * @param expectedBody Необязательная часть тела: проверяются только
    *   переданные поля (глубоко-частично), остальные игнорируются.
    * @returns тот же объект ответа — удобно читать `.body` после проверки.
    */
-  assert<S extends keyof M>(status: S, expectedBody?: DeepPartial<M[S]>): this {
+  assert<S extends keyof M>(status: S, expectedBody?: DeepPartial<M[S]>): this
+  assert<S extends number>(status: S & UndeclaredErrorStatus<S, M>, expectedBody?: unknown): this
+  assert(status: number, expectedBody?: unknown): this {
     assertResponse({
       actualStatus: this.status,
       actualBody: this.body,
-      expectedStatus: status as unknown as number,
+      expectedStatus: status,
       expectedBody,
     })
     return this

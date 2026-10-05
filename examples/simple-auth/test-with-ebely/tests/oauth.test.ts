@@ -43,6 +43,6 @@ describe('oauth (fake Google)', () => {
     const created = await googler.posts.create({ body: { title: 't', content: 'c' } })
     created.assert(200)
     const del = await googler.posts.delete({ path: { id: created.body.id } })
-    del.assert(403 as any)
+    del.assert(403)
   })
 })

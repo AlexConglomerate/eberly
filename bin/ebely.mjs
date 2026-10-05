@@ -34,8 +34,8 @@ async function installSkills({ toUser }) {
   }
 
   console.log(
-    `\nГотово. Установлено скиллов: ${names.length}.` +
-      `\nОткрой Claude Code в этом проекте и вызови /ebely-setup для первичной настройки.`,
+    `\nDone. Skills installed: ${names.length}.` +
+      `\nOpen Claude Code in this project and run /ebely-setup for the initial setup.`,
   )
 }
 
@@ -78,7 +78,7 @@ async function createProject({ dir }) {
   const target = resolve(process.cwd(), dir ?? '.')
 
   if (!existsSync(templateSrc)) {
-    console.error(`ebely: шаблон не найден по пути ${templateSrc}`)
+    console.error(`ebely: template not found at ${templateSrc}`)
     process.exit(1)
   }
 
@@ -87,8 +87,8 @@ async function createProject({ dir }) {
     const entries = await readdir(target)
     if (entries.length > 0) {
       console.error(
-        `ebely: папка «${target}» не пуста.\n` +
-          `Укажи несуществующую или пустую папку, либо очисти эту.`,
+        `ebely: directory "${target}" is not empty.\n` +
+          `Pass a new or empty directory, or clear this one.`,
       )
       process.exit(1)
     }
@@ -122,29 +122,29 @@ async function createProject({ dir }) {
 
   const shown = dir && dir !== '.' ? dir : '.'
   console.log(
-    `\nГотово. Шаблон ebely создан в «${target}».\n\n` +
-      `Дальше:\n` +
+    `\nDone. ebely template created in "${target}".\n\n` +
+      `Next:\n` +
       (shown === '.' ? '' : `  cd ${shown}\n`) +
-      `  pnpm install                 # установить зависимости\n` +
-      `  # отредактируй ebely/ebely.ts (url, путь к swagger) под свой бэкенд\n` +
-      `  pnpm run client:generate     # сгенерировать типизированный клиент\n` +
-      `  pnpm test                    # запустить пример тестов\n`,
+      `  pnpm install                 # install dependencies\n` +
+      `  # edit ebely/ebely.ts (url, swagger path) for your backend\n` +
+      `  pnpm run client:generate     # generate the typed client\n` +
+      `  pnpm test                    # run the example tests\n`,
   )
 }
 
 function help() {
   console.log(`ebely — CLI
 
-Использование:
-  npx ebely create [dir]    Склонировать шаблон тест-проекта в папку
-                            (без аргумента или «.» — в текущую папку)
-  npx ebely skills          Установить скиллы в .claude/skills проекта (рекомендуется)
-  npx ebely skills --user   Установить скиллы глобально в ~/.claude/skills
-  npx ebely help            Показать эту справку
+Usage:
+  npx ebely create [dir]    Copy the test project template into a directory
+                            (no argument or "." means the current directory)
+  npx ebely skills          Install skills into the project's .claude/skills (recommended)
+  npx ebely skills --user   Install skills globally into ~/.claude/skills
+  npx ebely help            Show this help
 
-Скиллы:
-  /ebely-setup        первичная настройка библиотеки в проекте
-  /ebely-write-tests  написание тестов через ebely`)
+Skills:
+  /ebely-setup        initial setup of the library in a project
+  /ebely-write-tests  writing tests with ebely`)
 }
 
 const [cmd, ...rest] = process.argv.slice(2)
@@ -163,7 +163,7 @@ switch (cmd) {
     help()
     break
   default:
-    console.error(`ebely: неизвестная команда «${cmd}»\n`)
+    console.error(`ebely: unknown command "${cmd}"\n`)
     help()
     process.exit(1)
 }
