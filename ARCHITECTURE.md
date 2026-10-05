@@ -201,7 +201,8 @@ import { ebely } from "./ebely"          // ← configImport
 - `pnpm build` — пересобрать `dist/` (типы пакета берутся из
   `dist/index.d.ts`, поэтому после правок типов пакет надо пересобрать,
   иначе примеры будут видеть старый тип `EbelyConfig`).
-- `pnpm lint` — `tsc` по всему репозиторию (включая примеры).
+- `pnpm lint` — `tsc` по библиотеке и `scripts/` (примеры проверяются
+  своими `tsconfig` — шагом `typecheck` в `pnpm e2e`).
 - `pnpm test` — юнит-тесты библиотеки (`src/**/*.test.ts`, `tsx --test`):
   чистые функции `assertResponse` / `matchPartial` и генератор
   `renderClient` — без сети и без записи на диск.
@@ -209,6 +210,33 @@ import { ebely } from "./ebely"          // ← configImport
   проверяет `pnpm lint`, в рантайме они не запускаются.
 - `pnpm --filter @ebely-examples/test-with-ebely run client:generate` —
   перегенерировать клиент.
+- `pnpm e2e` (`scripts/e2e.ts`) — интеграция на живых бэкендах. Сначала
+  `pnpm build` (примеры берут `ebely` из `dist/`) и сборка шаблона. Затем
+  для `simple`, `simple-auth`, `nest` **по очереди** (все слушают `:3000`;
+  занят — скрипт сразу выходит): `swagger` в `your-app` → копия в
+  `test-with-ebely/swagger.json` → `your-app start` (`PORT=3000`,
+  `TEST_MODE=1`, отдельная группа процессов) → ждём любой HTTP-ответ
+  (60 с) → `client:generate` → `typecheck` (`tsc --noEmit`: vitest типы
+  не проверяет, поломку контракта ловит только он) → `test`. Бэкенд
+  гасится всей группой в `finally` и на `SIGINT` / `SIGTERM`. Его лог
+  печатается, только если пример упал. В конце — смоук
+  `ebely create` во временную папку и таблица ✓/✗ с упавшим шагом.
+  `--only <пример>` — один пример. Прогон перегенерирует `swagger.json`,
+  `generated.ts` и `ebely/api/` — изменения в них коммитятся.
+- Тест-файлы примеров идут строго последовательно
+  (`vitest.config.ts`: `fileParallelism: false`): база у бэкенда одна, и
+  каждый файл чистит её в `beforeAll`.
+
+### Шаблон `ebely create`
+
+`clone/tests` (его копирует `npx ebely create`) **генерируется** из
+`examples/simple/test-with-ebely` скриптом `scripts/sync-template.ts`
+(без `node_modules` и `tests/draw.ts`; папка сначала очищается). Запуск —
+в `prepublishOnly` и в начале `pnpm e2e`. `clone/` в `.gitignore`, руками
+не правится, поэтому с примером не расходится. В `files` пакета — целиком
+`clone/tests`. `bin/ebely.mjs create` поверх копии пишет свой
+`package.json` (имя по папке, `ebely: ^<версия>`), standalone
+`tsconfig.json` и `.gitignore`.
 
 ## 6. Режимы клиента (`mode`) и `ApiResponse`
 
@@ -233,7 +261,11 @@ import { ebely } from "./ebely"          // ← configImport
     (`for (const s of [401, 403])`) требует `as const`. Поведение
     закреплено `src/response.type-test.ts`;
   - второй аргумент опционален и имеет тип `DeepPartial<тело>` —
-    проверяются только переданные поля (глубоко-частично).
+    проверяются только переданные поля (глубоко-частично);
+  - возвращает тот же объект, но после задекларированного статуса `.body`
+    сужен до тела этого статуса (`this & { body: M[S] }`):
+    `res.assert(201).body.id` — без каста, хотя `res.body` до проверки —
+    союз тел всех статусов (`UserDto | ErrorDto`).
 - **`'frontend'`** — метод возвращает тело 2xx-ответа напрямую
   (`Promise<тело>`), не-2xx бросает `Error`; `ApiResponse` / `.assert`
   отсутствуют. Такой клиент можно использовать из приложения, а не

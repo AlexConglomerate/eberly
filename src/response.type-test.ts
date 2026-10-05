@@ -19,5 +19,12 @@ res.assert(409, { wrong: 1 })
 // @ts-expect-error — тело 201 типизировано
 res.assert(201, { id: 1 })
 
+// После задекларированного статуса тело сужено до него.
+const created: { id: string } = res.assert(201).body
+const conflict: { message: string } = res.assert(409).body
+// @ts-expect-error — без assert тело — союз всех статусов
+const raw: { id: string } = res.body
+void [created, conflict, raw]
+
 // Статус из массива требует `as const`, иначе это просто `number`.
 for (const s of [401, 403] as const) res.assert(s)

@@ -148,9 +148,13 @@ export class ApiResponse<M extends Record<number, unknown>> {
    *   не типизировано. Незадекларированный 1xx–3xx — ошибка типов.
    * @param expectedBody Необязательная часть тела: проверяются только
    *   переданные поля (глубоко-частично), остальные игнорируются.
-   * @returns тот же объект ответа — удобно читать `.body` после проверки.
+   * @returns тот же объект ответа. После задекларированного статуса `.body`
+   *   сужен до его тела: `res.assert(201).body.id` без каста.
    */
-  assert<S extends keyof M>(status: S, expectedBody?: DeepPartial<M[S]>): this
+  assert<S extends keyof M>(
+    status: S,
+    expectedBody?: DeepPartial<M[S]>,
+  ): this & { readonly body: M[S] }
   assert<S extends number>(status: S & UndeclaredErrorStatus<S, M>, expectedBody?: unknown): this
   assert(status: number, expectedBody?: unknown): this {
     assertResponse({

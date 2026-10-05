@@ -8,8 +8,9 @@
 - `src/base-store.ts` — рантайм-ядро: базовый класс хранилища переменных.
 - `src/response.ts` — рантайм-ядро: `ApiResponse` + чистая логика `assert`
   (используется сгенерированным клиентом в режиме `'test'`). Перегрузки
-  `assert`: задекларированные статусы типизированы, любой незадекларированный
-  4xx/5xx — без каста (`UndeclaredErrorStatus`). Тест типов —
+  `assert`: задекларированные статусы типизированы (и сужают `.body` до
+  тела статуса), любой незадекларированный 4xx/5xx — без каста
+  (`UndeclaredErrorStatus`). Тест типов —
   `src/response.type-test.ts` (`@ts-expect-error`, проверяет `pnpm lint`).
 - `src/safety.ts` — рантайм-ядро: защита от прода. `isHostAllowed` /
   `assertHostAllowed` + `EbelyUnsafeHostError` (loopback всегда, остальное —
@@ -74,7 +75,7 @@
   - Описания эндпоинтов для агента: `test-with-ebely/ebely/api/` (`INDEX.md`
     + файл на эндпоинт; генерируются вместе с клиентом, коммитятся)
   - Свагер бэкенда (копия из your-app): `test-with-ebely/swagger.json`
-  - Пример тестов: `test-with-ebely/tests/test1.ts`
+  - Пример тестов: `test-with-ebely/tests/test1.test.ts`
 
 `examples/nest/your-app` — второй тестируемый бэкенд, на NestJS (блог:
 юзеры, посты-черновики, дерево комментариев, аватар). Источник «настоящего»
@@ -92,9 +93,34 @@ OpenAPI **3.0** (`nullable`, `format: binary`), 201/204, ошибки 4xx с
     попадает (скрипт поднимает модуль с `testMode: true`).
   - Схема: `nest/your-app/swagger/swagger.json`
 
+`examples/nest/test-with-ebely` — тесты Nest-бэкенда через ebely
+(`@ebely-examples/nest-test-with-ebely`): `signUp` (register → login →
+токен), `world.reset()`, Bearer в `globalBefore`, `lastPostId` в
+`posts.create.after`. Тесты: `tests/{auth,posts,comments,avatar}.test.ts`;
+`tests/types.ts` — тест типов на настоящем клиенте (`@ts-expect-error`,
+проверяет `typecheck`, vitest его не запускает). Фикстура —
+`tests/fixtures/avatar.png`.
+
+Во всех `test-with-ebely`: `vitest.config.ts` с `fileParallelism: false`
+(общая БД) и скрипт `typecheck` (`tsc --noEmit`).
+
+`clone/tests` — шаблон для `npx ebely create`. **Генерируется** из
+`examples/simple/test-with-ebely` (`scripts/sync-template.ts`), в git не
+лежит, руками не править.
+
+Скрипты репозитория (`scripts/`, проверяются `pnpm lint`):
+- `e2e.ts` — `pnpm e2e` (см. ниже).
+- `sync-template.ts` — пересобрать `clone/tests` из примера.
+
 ## Команды
 
 В корне (библиотека): `pnpm build`, `pnpm lint`, `pnpm test`, `pnpm release`.
+
+`pnpm e2e` — сборка + шаблон, затем по очереди `simple`, `simple-auth`,
+`nest`: свагер → бэкенд на `:3000` → `client:generate` → `typecheck` →
+`test`; в конце смоук `ebely create`. Порт `:3000` должен быть свободен.
+`pnpm e2e --only nest` — один пример. Перегенерированные `swagger.json`,
+`generated.ts`, `ebely/api/` — коммитить.
 
 `your-app` (`pnpm --filter @ebely-examples/your-app run <script>`):
 - `start` / `dev` — поднять бэкенд (`:3000`).
@@ -103,7 +129,11 @@ OpenAPI **3.0** (`nullable`, `format: binary`), 201/204, ошибки 4xx с
 `test-with-ebely` (`pnpm --filter @ebely-examples/test-with-ebely run <script>`):
 - `client:generate` — сгенерировать клиент в `ebely/generated.ts` и
   описания эндпоинтов в `ebely/api/`.
-- `test` — запустить пример тестов (`tests/test1.ts`).
+- `typecheck` — `tsc --noEmit` по тестам (vitest типы не проверяет).
+- `test` — запустить пример тестов (`tests/test1.test.ts`).
+
+`nest/test-with-ebely` (`pnpm --filter @ebely-examples/nest-test-with-ebely run <script>`):
+те же `client:generate`, `typecheck`, `test` (бэкенд — с `TEST_MODE=1`).
 
 `nest/your-app` (`pnpm --filter @ebely-examples/nest-your-app run <script>`):
 - `start` — собрать и поднять бэкенд (`:3000`; `TEST_MODE=1` включает

@@ -1,10 +1,12 @@
 {
-  "name": "for-clone",
+  "name": "@ebely-examples/nest-test-with-ebely",
   "version": "0.0.0",
   "private": true,
+  "description": "Тестируем nest/your-app через ebely: $ref-схемы, рекурсия, 201/204, типизированные ошибки, загрузка файла.",
   "type": "module",
   "scripts": {
     "client:generate": "tsx ebely/generate-client.ts",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {

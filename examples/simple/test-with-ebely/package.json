@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "client:generate": "tsx ebely/generate-client.ts",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {

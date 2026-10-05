@@ -19,17 +19,16 @@
     "dist",
     "bin",
     "skills",
-    "clone/tests/ebely",
-    "clone/tests/tests",
-    "clone/tests/*.json"
+    "clone/tests"
   ],
   "sideEffects": false,
   "scripts": {
     "build": "tsup index.ts --format cjs,esm --dts",
     "release": "pnpm run build && changeset publish",
-    "prepublishOnly": "pnpm run build",
+    "prepublishOnly": "pnpm run build && tsx scripts/sync-template.ts",
     "lint": "tsc",
-    "test": "tsx --test 'src/**/*.test.ts'"
+    "test": "tsx --test 'src/**/*.test.ts'",
+    "e2e": "tsx scripts/e2e.ts"
   },
   "devDependencies": {
     "@changesets/cli": "^2.26.0",
