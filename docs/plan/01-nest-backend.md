@@ -30,6 +30,10 @@
 - Nest опирается на `emitDecoratorMetadata`. tsx/esbuild этих метаданных
   **не генерирует** → ломаются DI по типу и вывод типов свойств в
   `@nestjs/swagger`. Поэтому бэкенд собираем `tsc` и запускаем `node`.
+- Пакеты Nest 12 — **ESM-only** (`"type": "module"`). Поэтому бэкенд
+  тоже ESM: `"type": "module"`, `module: nodenext`, импорты с `.js`
+  (а не `module: commonjs`, как планировалось изначально).
+- TS 6 по умолчанию `types: []` → в tsconfig явно `["node", "multer"]`.
 - Корневой `tsconfig.json` без `include`, поэтому `pnpm lint` в корне
   проверяет и файлы из `examples/` (сейчас 35 файлов). Декораторы
   параметров Nest (`@Body()`) под корневым конфигом не скомпилируются →
@@ -58,7 +62,7 @@
 | DTO | Поля | Что проверяет в ebely |
 |-----|------|-----------------------|
 | `RegisterDto`, `LoginDto` | `email`, `password` | тело запроса через `$ref` |
-| `TokenDto` | `accessToken` | — |
+| `TokenDto` | `accessToken`, `user: UserDto` | вложенный DTO с `description` → `allOf: [{ $ref }]` |
 | `UserDto` | `id`, `email`, `avatarUrl: string \| null` | `nullable` (3.0) |
 | `CreatePostDto` | `title`, `content` | — |
 | `PostDto` | `id`, `title`, `content`, `authorId`, `publishedAt: string \| null`, `createdAt` | `nullable` (3.0) |
@@ -83,7 +87,7 @@
 | posts | `POST /posts` 🔒 | 201 `PostDto`, 400, 401 | — |
 | posts | `GET /posts/:id` | 200 `PostDto`, 404 `ErrorDto` | path с описанием (`@ApiParam`) |
 | posts | `POST /posts/:id/publish` 🔒 | 200 `PostDto`, 403, 404 | `publishedAt`: null → строка |
-| posts | `DELETE /posts/:id` 🔒 (`@HttpCode(204)`) | 204 без тела, 403, 404 | пустое тело |
+| posts | `DELETE /posts/:id` 🔒 (`@HttpCode(204)`, метод `remove`) | 204 без тела, 403, 404 | пустое тело |
 | comments | `POST /posts/:id/comments` 🔒 | 201 `CommentDto`, 404 | `parentId` → ответ на комментарий |
 | comments | `GET /posts/:id/comments` | 200 `CommentDto[]` (дерево) | рекурсия в ответе |
 | users | `POST /users/me/avatar` 🔒 multipart | 201 `UserDto` | `format: binary` (3.0) |
@@ -107,7 +111,7 @@
    - `start`: `pnpm build && node dist/main.js`
    - `swagger`: `pnpm build && node dist/swagger.js`
 3. Свой `tsconfig.json` (корневой **не** расширять): `experimentalDecorators`,
-   `emitDecoratorMetadata`, `module: commonjs`, `target: es2022`,
+   `emitDecoratorMetadata`, `module: nodenext` (Nest 12 — ESM), `target: es2022`,
    `outDir: dist`, `strict`, `strictPropertyInitialization: false` (DTO-классы).
 4. `src/`: `main.ts`, `app.module.ts`, `store.ts` (in-memory), `auth/`,
    `posts/`, `comments/`, `users/`, `test/`, `swagger.ts`. Последний
@@ -131,17 +135,59 @@
 - Текущий генератор на этом свагере **падает** (рекурсия). Это ожидаемо и
   чинится в 02. Зафиксировать как исходную точку.
 
-## Что выдал Nest (заполнить после шага 6)
+## Что выдал Nest
 
-- [ ] версия `openapi`
-- [ ] DTO лежат в `components/schemas`, ссылки через `$ref`
-- [ ] форма nullable (`nullable: true`? рядом с `$ref` — через `allOf`?)
-- [ ] файл: `type: string, format: binary`, content-type `multipart/form-data`
-- [ ] рекурсия `CommentDto.replies` — `$ref` на себя
-- [ ] `tags` и `operationId` (после `operationIdFactory`)
-- [ ] 204 — есть ли `content` у ответа
-- [ ] ошибки 4xx с `$ref` на `ErrorDto`
-- [ ] `ErrorDto.message` — `oneOf`?
-- [ ] summary / description / deprecated, описания полей и параметров
-- [ ] `securitySchemes` и `security` на операциях
-- [ ] сюрпризы
+Исходная точка: текущий генератор на `swagger/swagger.json` падает с
+`RangeError: Maximum call stack size exceeded` в `resolveRef`
+(`schemaToType` разворачивает `CommentDto.replies`). Чинится в 02.
+
+- [x] **версия `openapi`**: `"3.0.0"` (дефолт `@nestjs/swagger`).
+- [x] **DTO в `components/schemas`, ссылки через `$ref`**: 9 схем
+  (`RegisterDto`, `UserDto`, `ErrorDto`, `LoginDto`, `TokenDto`, `PostDto`,
+  `CreatePostDto`, `CreateCommentDto`, `CommentDto`). Тела запросов и
+  ответы — `$ref`, списки — `{ type: 'array', items: { $ref } }`. Инлайн
+  остаются только схемы, заданные руками (`@ApiBody({ schema })` у аватара,
+  `@ApiOkResponse({ schema })` у `/test/reset`).
+- [x] **форма nullable**: у примитива — `{ type: 'string', nullable: true }`
+  (`UserDto.avatarUrl`, `PostDto.publishedAt` + `format: date-time`).
+  Рядом с `$ref` (проверено временным DTO, в бэкенде такого поля нет):
+  `{ nullable: true, type: 'object', allOf: [{ $ref }] }`; nullable-массив
+  DTO — `{ nullable: true, type: 'array', items: { $ref } }`.
+  **Любая доп. мета у вложенного DTO** (хоть один `description`) тоже
+  даёт `allOf`: `TokenDto.user` = `{ description, allOf: [{ $ref }] }`.
+  Голый `$ref` — только у свойства без меты. → учтено в 02.
+- [x] **файл**: `multipart/form-data`, схема инлайн
+  `{ type: 'object', required: ['file'], properties: { file: { type: 'string', format: 'binary' } } }`.
+- [x] **рекурсия**: `CommentDto.replies` =
+  `{ type: 'array', items: { $ref: '#/components/schemas/CommentDto' } }`.
+- [x] **`tags` и `operationId`**: на операциях теги из `@ApiTags`
+  (`auth`, `posts`, `comments`, `users`, `test` — уже lowercase).
+  `operationId` = `auth.register`, `posts.create`, `posts.remove`,
+  `comments.list`, `users.uploadAvatar`, `test.reset` и т.д. Корневой
+  `tags: []` — пустой (теги без `addTag()` не описаны).
+- [x] **204**: `{ "description": "Deleted. Empty body." }` — без `content`.
+- [x] **ошибки 4xx**: `content.application/json.schema.$ref: ErrorDto`
+  у всех 400/401/403/404/409.
+- [x] **`ErrorDto.message`**: `oneOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' } }]`,
+  **без** `type` рядом. `error` — необязательное (не в `required`).
+  Реально: `new UnauthorizedException()` без текста отдаёт
+  `{ message: 'Unauthorized', statusCode: 401 }` — без `error`.
+- [x] **summary / description / deprecated**: есть у всех операций;
+  `deprecated: true` у `auth.whoami`. Описания полей — в `description`
+  свойств (+ `example`, `minLength`). Параметры: `description` у
+  `authorId` (query, `required: false`) и `id` (path).
+- [x] **`securitySchemes` и `security`**: `components.securitySchemes.bearer`
+  = `{ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }`; у
+  защищённых операций `security: [{ bearer: [] }]`.
+- [x] **сюрпризы**:
+  - у успешных ответов без явного `description` — `"description": ""`
+    (пустая строка, не отсутствие). Генератору описаний (03) не
+    рендерить пустое;
+  - числа — `type: 'number'`, не `integer` (у id и query/path тоже);
+  - у каждой операции `parameters: []`, даже если параметров нет;
+  - `bearerFormat: 'JWT'` подставляется сам, хотя токен у нас не JWT;
+  - корневые `servers: []`, `info.contact: {}`;
+  - `/test/reset` попадает в схему только потому, что `swagger.ts`
+    поднимает модуль с `testMode: true`; сервер без `TEST_MODE=1` его не
+    отдаёт ни в API (404), ни в своём `/swagger.json`;
+  - Nest 12 — ESM-only (см. «Проверенные факты»).

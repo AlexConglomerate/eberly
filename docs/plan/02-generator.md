@@ -43,6 +43,21 @@
 
 `format: byte` (base64-строка) — это **не** файл, остаётся `string`.
 
+Формы, которые реально выдаёт `@nestjs/swagger` (проверено в 01, см.
+раздел «Что выдал Nest» там):
+
+- примитив: `{ type: 'string', nullable: true }` → `string | null`;
+- вложенный DTO с любой доп. метой (`description` и т.п.) приходит **не**
+  голым `$ref`, а как `{ description, allOf: [{ $ref }] }` → просто имя
+  (`TokenDto.user` в Nest-свагере);
+- nullable-DTO: `{ nullable: true, type: 'object', allOf: [{ $ref }] }` →
+  `UserDto | null`. Поэтому `nullable` применяется **поверх результата
+  любой ветки** (`$ref`, `allOf`/`oneOf`/`anyOf`, `type`), а не только в
+  ветке `type`; `type: 'object'` рядом с `allOf` игнорируется (ветка
+  `allOf` уже стоит раньше `type`);
+- nullable-массив: `{ nullable: true, type: 'array', items: { $ref } }` →
+  `Array<CommentDto> | null`.
+
 ### Именованные типы
 
 - Каждая схема из `components/schemas` → `export type <Имя> = <тип>` в
@@ -138,6 +153,8 @@ glob `*.test.ts`.
   - `$ref` → имя;
   - **рекурсивная схема рендерится без исключения** (воспроизведение бага);
   - `nullable: true` (3.0) → `string | null`;
+  - `{ description, allOf: [{ $ref }] }` → имя схемы;
+  - `{ nullable: true, type: 'object', allOf: [{ $ref }] }` → `X | null`;
   - `format: binary` → `FileInput`, `format: byte` → `string`;
   - 3.1 `type: ['string', 'null']` работает как раньше.
 - `operations.test.ts`: тег → группа; несколько тегов → первый; без

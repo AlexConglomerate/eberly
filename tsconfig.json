@@ -20,5 +20,8 @@
     "noEmit": true,
     /* If your code runs in the DOM: */
     "lib": ["es2022", "dom", "dom.iterable"],
-  }
+  },
+  // Только библиотека. Примеры проверяются своими tsconfig: у Nest-примера
+  // декораторы параметров (`@Body()`) под этим конфигом не скомпилируются.
+  "include": ["index.ts", "src"]
 }

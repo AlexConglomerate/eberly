@@ -52,6 +52,22 @@
   - Свагер бэкенда (копия из your-app): `test-with-ebely/swagger.json`
   - Пример тестов: `test-with-ebely/tests/test1.ts`
 
+`examples/nest/your-app` — второй тестируемый бэкенд, на NestJS (блог:
+юзеры, посты-черновики, дерево комментариев, аватар). Источник «настоящего»
+свагера: DTO в `components/schemas` + `$ref`, рекурсия (`CommentDto`),
+OpenAPI **3.0** (`nullable`, `format: binary`), 201/204, ошибки 4xx с
+`ErrorDto`, описания, `deprecated`. Данные в памяти.
+  - ESM (`"type": "module"`, Nest 12 — ESM-only), собирается `tsc`, а не
+    tsx: Nest нужен `emitDecoratorMetadata`. Свой `tsconfig.json`, корневой
+    не расширяет.
+  - Код: `src/{main,app.module,store,openapi,swagger}.ts` +
+    `src/{auth,posts,comments,users,test,common}/`
+  - `src/openapi.ts` — общая сборка документа (`operationIdFactory` →
+    `posts.create`), её используют сервер и скрипт `swagger`.
+  - `POST /test/reset` есть только при `TEST_MODE=1`; в `swagger.json`
+    попадает (скрипт поднимает модуль с `testMode: true`).
+  - Схема: `nest/your-app/swagger/swagger.json`
+
 ## Команды
 
 В корне (библиотека): `pnpm build`, `pnpm lint`, `pnpm test`, `pnpm release`.
@@ -63,3 +79,8 @@
 `test-with-ebely` (`pnpm --filter @ebely-examples/test-with-ebely run <script>`):
 - `client:generate` — сгенерировать клиент в `ebely/generated.ts`.
 - `test` — запустить пример тестов (`tests/test1.ts`).
+
+`nest/your-app` (`pnpm --filter @ebely-examples/nest-your-app run <script>`):
+- `start` — собрать и поднять бэкенд (`:3000`; `TEST_MODE=1` включает
+  `POST /test/reset`). Swagger UI — `/docs`, схема — `/swagger.json`.
+- `swagger` — собрать и перегенерировать `swagger/swagger.json`.

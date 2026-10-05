@@ -1,0 +1,20 @@
+{
+  // Корневой tsconfig НЕ расширяем: Nest нужны декораторы + emitDecoratorMetadata,
+  // а собирать надо именно tsc (tsx/esbuild метаданные типов не генерирует).
+  "compilerOptions": {
+    "target": "es2022",
+    // Nest 12 — ESM-only пакеты, поэтому собираем в ESM (package.json: "type": "module").
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "rootDir": "src",
+    "outDir": "dist",
+    "strict": true,
+    // Поля DTO-классов заполняет class-transformer, а не конструктор.
+    "strictPropertyInitialization": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "skipLibCheck": true,
+    "types": ["node", "multer"]
+  },
+  "include": ["src"]
+}
