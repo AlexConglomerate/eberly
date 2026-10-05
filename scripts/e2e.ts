@@ -206,14 +206,20 @@ async function runExample({ name }: { name: Example }): Promise<Result> {
   }
 }
 
-/** `npx ebely create` в пустую временную папку: файлы на месте, версия своя. */
+/** `npx ebely create` в пустую временную папку: файлы и скиллы на месте, версия своя. */
 async function smokeTemplate(): Promise<Result> {
   const name = 'template'
   const dir = await mkdtemp(join(tmpdir(), 'ebely-create-'))
   try {
     await run({ cmd: 'node', args: ['bin/ebely.mjs', 'create', dir], cwd: ROOT, prefix: `[${name}]` })
 
-    const missing = ['ebely/ebely.ts', 'vitest.config.ts', 'tsconfig.json'].filter((file) => !existsSync(join(dir, file)))
+    const missing = [
+      'ebely/ebely.ts',
+      'vitest.config.ts',
+      'tsconfig.json',
+      '.claude/skills/ebely-setup/SKILL.md',
+      '.claude/skills/ebely-write-tests/SKILL.md',
+    ].filter((file) => !existsSync(join(dir, file)))
     if (missing.length > 0) throw new Error(`missing in the created project: ${missing.join(', ')}`)
 
     const { version } = JSON.parse(await readFile(join(ROOT, 'package.json'), 'utf8'))

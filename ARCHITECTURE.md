@@ -236,7 +236,19 @@ import { ebely } from "./ebely"          // ← configImport
 не правится, поэтому с примером не расходится. В `files` пакета — целиком
 `clone/tests`. `bin/ebely.mjs create` поверх копии пишет свой
 `package.json` (имя по папке, `ebely: ^<версия>`), standalone
-`tsconfig.json` и `.gitignore`.
+`tsconfig.json`, `.gitignore` и кладёт скиллы в `.claude/skills/`.
+
+### Скиллы для Claude Code
+
+`skills/ebely-setup` и `skills/ebely-write-tests` (в `files` пакета).
+Ставятся копией: `npx ebely create` — сразу в новый проект,
+`npx ebely skills [--user]` — в существующий (или обновить после
+апдейта `ebely`). Пишутся на английском и короче ~150 строк: скилл сам
+попадает в контекст агента. Главный принцип — агент узнаёт API из
+`ebely/api/` (§11), а не из `generated.ts` и не из кода бэкенда;
+шпаргалка по `assert` / сторам / хукам лежит в `ebely-write-tests`, её
+же читает `ebely-setup`. Смоук шаблона в `pnpm e2e` проверяет, что
+скиллы попали в созданный проект.
 
 ## 6. Режимы клиента (`mode`) и `ApiResponse`
 

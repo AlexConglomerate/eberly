@@ -1,37 +1,36 @@
-### Быстрый старт из шаблона
-
-Склонировать готовый тест-проект (как `create-react-app`):
+### Быстрый старт с Claude Code
 
 ```sh
-npx ebely create my-tests   # в новую/пустую папку
-# или
-npx ebely create            # в текущую папку
+npx ebely create my-tests   # шаблон + скиллы в my-tests/.claude/skills
+cd my-tests
+claude
 ```
 
-Затем:
+В Claude Code:
+
+```
+/ebely-setup                                    # пара вопросов → конфиг, клиент, стор, хуки, зелёные смоук-тесты
+/ebely-write-tests Bob cannot delete Alice's post  # тест написан и прогнан
+```
+
+Агент читает описания эндпоинтов из `ebely/api/`, а не `generated.ts` и
+не код бэкенда.
+
+**Существующий проект:** `pnpm add -D ebely`, затем `npx ebely skills`
+(или `npx ebely skills --user` — глобально в `~/.claude/skills`). Скиллы
+копируются, поэтому после обновления `ebely` команду нужно запустить ещё
+раз.
+
+### Быстрый старт без агента
 
 ```sh
+npx ebely create my-tests   # в новую/пустую папку (без аргумента — в текущую)
 cd my-tests
 pnpm install
 # отредактируй ebely/ebely.ts (url, путь к swagger) под свой бэкенд
 pnpm run client:generate
 pnpm test
 ```
-
-### Алгоритм действий для пользователя библиотекой
-
-
-#### 1. Установить библиотеку
-`pnpm add -D ebely`
-
-#### 2. Один раз разложить скиллы в проект
-`npx ebely skills`
-
-#### 3. Открыть проект в Claude Code и вызвать настройку
-`/ebely-setup `            # настроит конфиг, сгенерирует клиент, стор, хуки
-
-#### 4. Дальше при написании любых тестов
-`/ebely-write-tests `      # опишет сценарий — тесты напишутся сами
 
 ### Негативные тесты: `assert` на 4xx/5xx
 

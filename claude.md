@@ -104,6 +104,11 @@ OpenAPI **3.0** (`nullable`, `format: binary`), 201/204, ошибки 4xx с
 Во всех `test-with-ebely`: `vitest.config.ts` с `fileParallelism: false`
 (общая БД) и скрипт `typecheck` (`tsc --noEmit`).
 
+CLI `bin/ebely.mjs` (`npx ebely create` / `skills`) и скиллы для Claude Code
+`skills/{ebely-setup,ebely-write-tests}/SKILL.md` (на английском, <150
+строк; `create` сам копирует их в `<dir>/.claude/skills/`). Попадают в
+npm-пакет.
+
 `clone/tests` — шаблон для `npx ebely create`. **Генерируется** из
 `examples/simple/test-with-ebely` (`scripts/sync-template.ts`), в git не
 лежит, руками не править.

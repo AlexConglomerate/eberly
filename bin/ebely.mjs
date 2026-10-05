@@ -14,11 +14,8 @@ async function listSkills() {
   return entries.filter((e) => e.isDirectory()).map((e) => e.name)
 }
 
-async function installSkills({ toUser }) {
-  const base = toUser
-    ? join(process.env.HOME ?? process.cwd(), '.claude', 'skills')
-    : join(process.cwd(), '.claude', 'skills')
-
+/** Копирует скиллы пакета в `<base>/<имя>`; возвращает имена. */
+async function copySkills({ base }) {
   if (!existsSync(skillsSrc)) {
     console.error(`ebely: skills directory not found at ${skillsSrc}`)
     process.exit(1)
@@ -26,16 +23,24 @@ async function installSkills({ toUser }) {
 
   await mkdir(base, { recursive: true })
   const names = await listSkills()
-
   for (const name of names) {
-    const dest = join(base, name)
-    await cp(join(skillsSrc, name), dest, { recursive: true })
-    console.log(`  ✓ ${name} → ${dest}`)
+    await cp(join(skillsSrc, name), join(base, name), { recursive: true })
   }
+  return names
+}
+
+async function installSkills({ toUser }) {
+  const base = toUser
+    ? join(process.env.HOME ?? process.cwd(), '.claude', 'skills')
+    : join(process.cwd(), '.claude', 'skills')
+
+  const names = await copySkills({ base })
+  for (const name of names) console.log(`  ✓ ${name} → ${join(base, name)}`)
 
   console.log(
     `\nDone. Skills installed: ${names.length}.` +
-      `\nOpen Claude Code in this project and run /ebely-setup for the initial setup.`,
+      `\nOpen Claude Code in this project and run /ebely-setup for the initial setup.` +
+      `\nSkills are copied: run this command again after updating ebely.`,
   )
 }
 
@@ -120,15 +125,22 @@ async function createProject({ dir }) {
   // Базовый .gitignore.
   await writeFile(join(target, '.gitignore'), 'node_modules\n')
 
+  // Скиллы для Claude Code — сразу в проект, отдельный `npx ebely skills` не нужен.
+  await copySkills({ base: join(target, '.claude', 'skills') })
+
   const shown = dir && dir !== '.' ? dir : '.'
   console.log(
     `\nDone. ebely template created in "${target}".\n\n` +
-      `Next:\n` +
+      `Next, with Claude Code:\n` +
       (shown === '.' ? '' : `  cd ${shown}\n`) +
-      `  pnpm install                 # install dependencies\n` +
+      `  claude                       # open Claude Code here\n` +
+      `  /ebely-setup                 # answer a few questions → green smoke tests\n` +
+      `  /ebely-write-tests <scenario> # e.g. "Bob cannot delete Alice's post"\n\n` +
+      `Or by hand:\n` +
+      `  pnpm install\n` +
       `  # edit ebely/ebely.ts (url, swagger path) for your backend\n` +
       `  pnpm run client:generate     # generate the typed client\n` +
-      `  pnpm test                    # run the example tests\n`,
+      `  pnpm test\n`,
   )
 }
 
@@ -136,9 +148,11 @@ function help() {
   console.log(`ebely — CLI
 
 Usage:
-  npx ebely create [dir]    Copy the test project template into a directory
+  npx ebely create [dir]    Copy the test project template (with Claude Code skills
+                            in .claude/skills) into a directory
                             (no argument or "." means the current directory)
-  npx ebely skills          Install skills into the project's .claude/skills (recommended)
+  npx ebely skills          Install or update skills in the project's .claude/skills
+                            (for existing projects; run again after updating ebely)
   npx ebely skills --user   Install skills globally into ~/.claude/skills
   npx ebely help            Show this help
 
