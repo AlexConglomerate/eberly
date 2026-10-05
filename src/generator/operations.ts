@@ -31,14 +31,25 @@ import {
 export const HTTP_METHODS = ['get', 'post', 'put', 'patch', 'delete'] as const
 export type HttpMethod = (typeof HTTP_METHODS)[number]
 
+/** Path- или query-параметр операции. */
+export interface Param {
+  name: string
+  description?: string
+  required: boolean
+  /** Сырая схема параметра (для примера вызова в `api/*.md`). */
+  schema?: Json
+}
+
 export interface Operation {
   group: string
   name: string
   method: HttpMethod
   path: string
-  pathParams: string[]
-  queryParams: string[]
+  pathParams: Param[]
+  queryParams: Param[]
   bodyType: string | null
+  /** Сырая схема тела (для примера вызова и списка типов в `api/*.md`). */
+  bodySchema?: Json
   bodyRequired: boolean
   /** Тело уходит как `multipart/form-data` (есть файловые поля). */
   isMultipart: boolean
@@ -46,9 +57,14 @@ export interface Operation {
   fileFields: { name: string; array: boolean }[]
   /** Тип тела успешного 2xx-ответа (режим клиента `'frontend'`). */
   responseType: string
-  /** Все задекларированные ответы: статус → тип тела (режим `'test'`). */
-  responses: { status: number; bodyType: string }[]
+  /**
+   * Все задекларированные ответы: статус → тип тела (режим `'test'`).
+   * `schema` / `description` — сырые данные для `api/*.md`.
+   */
+  responses: { status: number; bodyType: string; schema?: Json; description?: string }[]
   summary?: string
+  description?: string
+  deprecated?: boolean
 }
 
 /** Собирает плоский список операций из секции paths. */
@@ -67,8 +83,8 @@ export function collectOperations(args: { spec: Json; names: SchemaNames }): Ope
       const name = dotIndex === -1 ? operationId : operationId.slice(dotIndex + 1)
 
       const parameters: Json[] = op.parameters ?? []
-      const pathParams = parameters.filter((p) => p.in === 'path').map((p) => p.name as string)
-      const queryParams = parameters.filter((p) => p.in === 'query').map((p) => p.name as string)
+      const pathParams = collectParams({ parameters, spec, location: 'path' })
+      const queryParams = collectParams({ parameters, spec, location: 'query' })
 
       // Тело берём «multipart-aware»: для файловых эндпоинтов oRPC кладёт
       // СРАЗУ два content-типа (application/json + multipart/form-data) с
@@ -89,8 +105,10 @@ export function collectOperations(args: { spec: Json; names: SchemaNames }): Ope
           ? declared.map((r) => ({
               status: r.status,
               bodyType: schemaToType({ schema: r.schema, spec, names, indent: 4 }),
+              schema: r.schema,
+              description: r.description,
             }))
-          : [{ status: 200, bodyType: responseType }]
+          : [{ status: 200, bodyType: responseType, schema: responseSchema }]
 
       operations.push({
         group,
@@ -100,18 +118,39 @@ export function collectOperations(args: { spec: Json; names: SchemaNames }): Ope
         pathParams,
         queryParams,
         bodyType: bodySchema ? schemaToType({ schema: bodySchema, spec, names, indent: 4 }) : null,
+        bodySchema,
         bodyRequired: Boolean(op.requestBody?.required),
         isMultipart,
         fileFields,
         responseType,
         responses,
         summary: op.summary,
+        description: op.description,
+        deprecated: op.deprecated === true,
       })
     }
   }
 
   dedupeNames({ operations })
   return operations
+}
+
+/**
+ * Параметры операции в `path` или `query`. `$ref` на параметр
+ * (`components/parameters`) разворачивается; path-параметр обязателен
+ * всегда (так требует OpenAPI).
+ */
+function collectParams(args: { parameters: Json[]; spec: Json; location: 'path' | 'query' }): Param[] {
+  const { parameters, spec, location } = args
+  return parameters
+    .map((p) => (typeof p.$ref === 'string' ? resolveRef({ ref: p.$ref, spec }) : p))
+    .filter((p): p is Json => p?.in === location)
+    .map((p) => ({
+      name: p.name as string,
+      ...(typeof p.description === 'string' ? { description: p.description } : {}),
+      required: location === 'path' || p.required === true,
+      ...(p.schema ? { schema: p.schema } : {}),
+    }))
 }
 
 /**

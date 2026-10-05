@@ -30,7 +30,11 @@ export type CreateUserArgs = {
 
 export type WorldApi = {
     "auth": {
-      /** Регистрация по email и паролю (BetterAuth) */
+      /**
+       * Регистрация по email и паролю (BetterAuth)
+       *
+       * `POST /auth/sign-up`
+       */
       "signUp": (input: { body: {
           "email": string
           "password": string
@@ -44,7 +48,11 @@ export type WorldApi = {
             "role": string
           }
         } }>>
-      /** Логин по email и паролю (BetterAuth) */
+      /**
+       * Логин по email и паролю (BetterAuth)
+       *
+       * `POST /auth/sign-in`
+       */
       "signIn": (input: { body: {
           "email": string
           "password": string
@@ -57,18 +65,30 @@ export type WorldApi = {
             "role": string
           }
         } }>>
-      /** Текущий пользователь (требует bearer-токен) */
+      /**
+       * Текущий пользователь (требует bearer-токен)
+       *
+       * `GET /auth/session`
+       */
       "session": (input?: {}) => Promise<ApiResponse<{ 200: {
           "id": string
           "email": string
           "name": string
           "role": string
         } }>>
-      /** Выйти (отзывает session-токен в BetterAuth) */
+      /**
+       * Выйти (отзывает session-токен в BetterAuth)
+       *
+       * `POST /auth/sign-out`
+       */
       "signOut": (input?: {}) => Promise<ApiResponse<{ 200: {
           "success": boolean
         } }>>
-      /** OAuth-логин через фейковый Google (server-side flow) */
+      /**
+       * OAuth-логин через фейковый Google (server-side flow)
+       *
+       * `POST /auth/oauth/google/login`
+       */
       "googleLogin": (input?: {}) => Promise<ApiResponse<{ 200: {
           "token": string
           "user": {
@@ -80,7 +100,11 @@ export type WorldApi = {
         } }>>
     }
     "posts": {
-      /** List all posts (auth required) */
+      /**
+       * List all posts (auth required)
+       *
+       * `GET /posts`
+       */
       "list": (input?: {}) => Promise<ApiResponse<{ 200: Array<{
           "id": string
           "title": string
@@ -89,7 +113,11 @@ export type WorldApi = {
           "createdAt": string
           "updatedAt": string
         }> }>>
-      /** Create a post (any authenticated user; authorId = current user) */
+      /**
+       * Create a post (any authenticated user; authorId = current user)
+       *
+       * `POST /posts`
+       */
       "create": (input: { body: {
           "title": string
           "content": string
@@ -101,7 +129,11 @@ export type WorldApi = {
           "createdAt": string
           "updatedAt": string
         } }>>
-      /** Get a single post (auth required) */
+      /**
+       * Get a single post (auth required)
+       *
+       * `GET /posts/{id}`
+       */
       "get": (input: { path: { "id": string } }) => Promise<ApiResponse<{ 200: {
           "id": string
           "title": string
@@ -110,7 +142,11 @@ export type WorldApi = {
           "createdAt": string
           "updatedAt": string
         } }>>
-      /** Update a post (author OR admin) */
+      /**
+       * Update a post (author OR admin)
+       *
+       * `PATCH /posts/{id}`
+       */
       "update": (input: { path: { "id": string }; body?: {
           "title"?: string
           "content"?: string
@@ -122,24 +158,40 @@ export type WorldApi = {
           "createdAt": string
           "updatedAt": string
         } }>>
-      /** Delete a post (admin only) */
+      /**
+       * Delete a post (admin only)
+       *
+       * `DELETE /posts/{id}`
+       */
       "delete": (input: { path: { "id": string } }) => Promise<ApiResponse<{ 200: {
           "success": boolean
         } }>>
     }
     "admin": {
-      /** Wipe ALL data (тест-хелпер, не для прода) */
+      /**
+       * Wipe ALL data (тест-хелпер, не для прода)
+       *
+       * `POST /admin/clear-database`
+       */
       "clearDatabase": (input?: {}) => Promise<ApiResponse<{ 200: {
           "success": boolean
         } }>>
-      /** Set role for a user by email (тест-хелпер, не для прода) */
+      /**
+       * Set role for a user by email (тест-хелпер, не для прода)
+       *
+       * `POST /admin/promote`
+       */
       "promote": (input: { body: {
           "email": string
           "role": string
         } }) => Promise<ApiResponse<{ 200: {
           "success": boolean
         } }>>
-      /** Revoke all sessions of a user by email (тест-хелпер: «протухание» токена) */
+      /**
+       * Revoke all sessions of a user by email (тест-хелпер: «протухание» токена)
+       *
+       * `POST /admin/revoke`
+       */
       "revoke": (input: { body: {
           "email": string
         } }) => Promise<ApiResponse<{ 200: {

@@ -30,7 +30,11 @@ export type CreateUserArgs = {
 
 export type WorldApi = {
     "posts": {
-      /** List all posts */
+      /**
+       * List all posts
+       *
+       * `GET /posts`
+       */
       "list": (input?: {}) => Promise<ApiResponse<{ 200: Array<{
           "id": string
           "title": string
@@ -38,7 +42,11 @@ export type WorldApi = {
           "createdAt": string
           "updatedAt": string
         }> }>>
-      /** Create a post */
+      /**
+       * Create a post
+       *
+       * `POST /posts`
+       */
       "create": (input: { body: {
           "title": string
           "content": string
@@ -49,7 +57,11 @@ export type WorldApi = {
           "createdAt": string
           "updatedAt": string
         } }>>
-      /** Get a single post by id */
+      /**
+       * Get a single post by id
+       *
+       * `GET /posts/{id}`
+       */
       "get": (input: { path: { "id": string } }) => Promise<ApiResponse<{ 200: {
           "id": string
           "title": string
@@ -57,7 +69,11 @@ export type WorldApi = {
           "createdAt": string
           "updatedAt": string
         } }>>
-      /** Update a post */
+      /**
+       * Update a post
+       *
+       * `PATCH /posts/{id}`
+       */
       "update": (input: { path: { "id": string }; body?: {
           "title"?: string
           "content"?: string
@@ -68,13 +84,21 @@ export type WorldApi = {
           "createdAt": string
           "updatedAt": string
         } }>>
-      /** Delete a post */
+      /**
+       * Delete a post
+       *
+       * `DELETE /posts/{id}`
+       */
       "delete": (input: { path: { "id": string } }) => Promise<ApiResponse<{ 200: {
           "success": boolean
         } }>>
     }
     "auth": {
-      /** Register (stub: echoes input) */
+      /**
+       * Register (stub: echoes input)
+       *
+       * `POST /auth/register`
+       */
       "register": (input: { body: {
           "email": string
           "password": string
@@ -82,18 +106,30 @@ export type WorldApi = {
           "email": string
           "password": string
         } }>>
-      /** Confirm registration code (stub: echoes input) */
+      /**
+       * Confirm registration code (stub: echoes input)
+       *
+       * `POST /auth/confirm`
+       */
       "confirm": (input: { body: {
           "code": string
         } }) => Promise<ApiResponse<{ 200: {
           "code": string
         } }>>
-      /** Read current session (stub) */
+      /**
+       * Read current session (stub)
+       *
+       * `GET /auth/session`
+       */
       "getGetSession": (input?: {}) => Promise<ApiResponse<{ 200: {
           "user": string
           "method": string
         } }>>
-      /** Refresh current session (stub) */
+      /**
+       * Refresh current session (stub)
+       *
+       * `POST /auth/session`
+       */
       "postGetSession": (input: { body: {
           "token": string
         } }) => Promise<ApiResponse<{ 200: {
@@ -102,7 +138,11 @@ export type WorldApi = {
         } }>>
     }
     "admin": {
-      /** Wipe all in-memory data */
+      /**
+       * Wipe all in-memory data
+       *
+       * `POST /admin/clear-database`
+       */
       "clearDatabase": (input?: {}) => Promise<ApiResponse<{ 200: {
           "success": boolean
         } }>>

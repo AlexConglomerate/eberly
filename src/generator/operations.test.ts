@@ -260,5 +260,45 @@ test('$ref на схему в теле и ответе → имя типа', () 
   const op = collect(spec)[0]!
   assert.equal(op.bodyType, 'CreatePostDto')
   assert.equal(op.responseType, 'PostDto')
-  assert.deepEqual(op.responses, [{ status: 201, bodyType: 'PostDto' }])
+  assert.deepEqual(
+    op.responses.map((r) => ({ status: r.status, bodyType: r.bodyType })),
+    [{ status: 201, bodyType: 'PostDto' }],
+  )
+})
+
+test('описание, deprecated, параметры объектами и сырые схемы', () => {
+  const bodySchema = { $ref: '#/components/schemas/CreatePostDto' }
+  const spec = makeSpec({
+    schemas: { CreatePostDto: { type: 'object' } },
+    paths: {
+      '/posts/{id}': {
+        put: {
+          operationId: 'posts.update',
+          description: 'Long text',
+          deprecated: true,
+          parameters: [
+            { name: 'id', in: 'path', description: 'Post id', schema: { type: 'string' } },
+            { name: 'draft', in: 'query', schema: { type: 'boolean' } },
+            { name: 'page', in: 'query', required: true },
+          ],
+          requestBody: { content: { 'application/json': { schema: bodySchema } } },
+          responses: { 200: { description: 'Updated' } },
+        },
+      },
+    },
+  })
+  const op = collect(spec)[0]!
+  assert.equal(op.description, 'Long text')
+  assert.equal(op.deprecated, true)
+  assert.deepEqual(op.pathParams, [
+    { name: 'id', description: 'Post id', required: true, schema: { type: 'string' } },
+  ])
+  assert.deepEqual(op.queryParams, [
+    { name: 'draft', required: false, schema: { type: 'boolean' } },
+    { name: 'page', required: true },
+  ])
+  assert.deepEqual(op.bodySchema, bodySchema)
+  assert.deepEqual(op.responses, [
+    { status: 200, bodyType: 'unknown', schema: undefined, description: 'Updated' },
+  ])
 })

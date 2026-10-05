@@ -6,12 +6,14 @@
 //   names.ts     → имена типов для схем    (buildSchemaNames)
 //   operations.ts→ разобрать paths         (collectOperations)
 //   render.ts    → отрендерить файл        (renderClient)
+//   docs.ts      → папка api/ для агента   (renderEndpointDocs)
 //
 // и пишет результат на диск. Сама логика разбора живёт в src/generator/*.
 
-import { writeFile } from 'node:fs/promises'
-import { resolve } from 'node:path'
+import { mkdir, readdir, readFile, unlink, writeFile } from 'node:fs/promises'
+import { dirname, join, relative, resolve } from 'node:path'
 import type { EbelyConfig } from './config'
+import { DOCS_MARKER, renderEndpointDocs } from './generator/docs'
 import { buildSchemaNames } from './generator/names'
 import { collectOperations } from './generator/operations'
 import { renderClient } from './generator/render'
@@ -30,7 +32,7 @@ export type { SwaggerSource } from './generator/swagger'
  */
 export async function generateClient(
   args: EbelyConfig,
-): Promise<{ outPath: string; operations: number }> {
+): Promise<{ outPath: string; operations: number; docsDir: string }> {
   const {
     swagger,
     generateClientTo,
@@ -55,11 +57,42 @@ export async function generateClient(
   })
 
   await writeFile(outPath, source, 'utf8')
+
+  const docsDir = join(dirname(outPath), 'api')
+  const docs = renderEndpointDocs({ spec, operations, names, mode })
+  await writeEndpointDocs({ dir: docsDir, files: docs })
+
   console.log(`
 ✅ Typed client written to:
 ${outPath}
 
 Endpoints: ${operations.length}
+Endpoint docs: ${relative(process.cwd(), docsDir)} (${docs.length} files)
 `)
-  return { outPath, operations: operations.length }
+  return { outPath, operations: operations.length, docsDir }
+}
+
+/**
+ * Пишет папку `api/`. Сначала удаляет устаревшие файлы — но ТОЛЬКО `.md`,
+ * первая строка которых — `DOCS_MARKER`: при `generateClientTo:
+ * 'src/generated.ts'` папка `src/api/` может оказаться кодом пользователя,
+ * поэтому никакого `rm -rf`.
+ */
+export async function writeEndpointDocs(args: {
+  dir: string
+  files: { fileName: string; content: string }[]
+}): Promise<void> {
+  const { dir, files } = args
+  await mkdir(dir, { recursive: true })
+
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    if (!entry.isFile() || !entry.name.endsWith('.md')) continue
+    const path = join(dir, entry.name)
+    const firstLine = (await readFile(path, 'utf8')).split('\n', 1)[0]?.trimEnd()
+    if (firstLine === DOCS_MARKER) await unlink(path)
+  }
+
+  for (const { fileName, content } of files) {
+    await writeFile(join(dir, fileName), content, 'utf8')
+  }
 }

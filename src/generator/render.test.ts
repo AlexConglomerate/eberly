@@ -17,7 +17,7 @@ const op: Operation = {
   name: 'get',
   method: 'get',
   path: '/posts/{id}',
-  pathParams: ['id'],
+  pathParams: [{ name: 'id', required: true }],
   queryParams: [],
   bodyType: null,
   bodyRequired: false,
@@ -102,7 +102,7 @@ test('оба режима: типизированное дерево хуков 
 test('оба режима: путь, метод и summary на месте', () => {
   for (const mode of ['test', 'frontend'] as const) {
     const out = render(mode)
-    assert.match(out, /\/\*\* Get a post \*\//)
+    assert.match(out, / {7}\* Get a post\n/)
     assert.match(out, /method: "GET"/)
     assert.match(out, /path: "\/posts\/\{id\}"/)
   }
@@ -259,10 +259,111 @@ test('реализация типизирована через WorldApi и не 
   }
 })
 
-test('summary — JSDoc на методе в WorldApi', () => {
-  const out = renderSpec({ spec: postsSpec })
-  const worldApi = out.slice(out.indexOf('export type WorldApi'), out.indexOf('type EbelyHookTree'))
-  assert.match(worldApi, /\/\*\* Create a post \*\/\n {6}"create": /)
+/** Кусок исходника — тип `WorldApi`. */
+const worldApiType = (out: string): string =>
+  out.slice(out.indexOf('export type WorldApi'), out.indexOf('type EbelyHookTree'))
+
+test('JSDoc эндпоинта: summary, description и маршрут — над методом в WorldApi', () => {
+  const spec = makeSpec({
+    paths: {
+      '/posts': {
+        post: {
+          operationId: 'posts.create',
+          summary: 'Create a post',
+          description: 'Only for authenticated users.\nThe author is the current user.',
+          responses: { 201: { description: 'ok' } },
+        },
+      },
+    },
+  })
+  const worldApi = worldApiType(renderSpec({ spec }))
+  assert.ok(
+    worldApi.includes(
+      [
+        '      /**',
+        '       * Create a post',
+        '       *',
+        '       * Only for authenticated users.',
+        '       * The author is the current user.',
+        '       *',
+        '       * `POST /posts`',
+        '       */',
+        '      "create": ',
+      ].join('\n'),
+    ),
+  )
+  assert.doesNotMatch(worldApi, /@deprecated/)
+})
+
+test('JSDoc эндпоинта: deprecated → @deprecated', () => {
+  const spec = makeSpec({
+    paths: { '/auth/whoami': { get: { operationId: 'auth.whoami', deprecated: true, responses: {} } } },
+  })
+  assert.match(worldApiType(renderSpec({ spec })), /\* `GET \/auth\/whoami`\n {7}\* @deprecated\n {7}\*\/\n {6}"whoami"/)
+})
+
+test('JSDoc: "*/" в описании экранируется и не закрывает комментарий', () => {
+  const spec = makeSpec({
+    paths: {
+      '/x': { get: { operationId: 'x.get', summary: 'a */ b', description: 'c */ process.exit(1)', responses: {} } },
+    },
+  })
+  const worldApi = worldApiType(renderSpec({ spec }))
+  assert.match(worldApi, /\* a \*\\\/ b\n/)
+  assert.match(worldApi, /\* c \*\\\/ process\.exit\(1\)\n/)
+  // единственный `*/` в типе — штатное закрытие комментария
+  assert.equal(worldApi.match(/\*\//g)?.length, 1)
+})
+
+test('JSDoc параметров path / query; без описаний — в одну строку', () => {
+  const spec = makeSpec({
+    paths: {
+      '/posts/{id}': {
+        get: {
+          operationId: 'posts.get',
+          parameters: [
+            { name: 'id', in: 'path', description: 'Post id' },
+            { name: 'full', in: 'query' },
+          ],
+          responses: {},
+        },
+      },
+    },
+  })
+  const worldApi = worldApiType(renderSpec({ spec }))
+  assert.match(worldApi, /path: \{\n {10}\/\*\* Post id \*\/\n {10}"id": string\n {8}\}/)
+  assert.match(worldApi, /query\?: \{ "full"\?: string \| number \| boolean \}/)
+})
+
+test('JSDoc полей схемы: description и deprecated', () => {
+  const spec = makeSpec({
+    schemas: {
+      PostDto: {
+        type: 'object',
+        properties: {
+          title: { type: 'string', description: 'Post title' },
+          legacy: { type: 'string', deprecated: true },
+          plain: { type: 'string' },
+        },
+      },
+    },
+  })
+  const out = renderSpec({ spec })
+  assert.match(out, / {2}\/\*\* Post title \*\/\n {2}"title"\?: string/)
+  assert.match(out, / {2}\/\*\* @deprecated \*\/\n {2}"legacy"\?: string/)
+  assert.match(out, /\n {2}"plain"\?: string/)
+  assert.doesNotMatch(out, /"plain"\?: string[^]*\/\*\*\s*\*\//)
+})
+
+test('без описаний — без пустых /** */', () => {
+  const spec = makeSpec({
+    schemas: { A: { type: 'object', properties: { x: { type: 'string' } } } },
+    paths: { '/a/{id}': { get: { operationId: 'a.get', parameters: [{ name: 'id', in: 'path' }], responses: {} } } },
+  })
+  const out = renderSpec({ spec })
+  assert.doesNotMatch(out, /\/\*\*\s*\*\//)
+  // у эндпоинта остаётся только маршрут
+  assert.match(worldApiType(out), /\/\*\* `GET \/a\/\{id\}` \*\/\n {6}"get": \(input: \{ path: \{ "id": string \} \}\)/)
 })
 
 test('без схем блок объявлений не рендерится', () => {

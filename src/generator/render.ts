@@ -8,7 +8,9 @@
 //
 // Типы вызовов описаны ОДИН раз — в `WorldApi`. Реализация
 // (`buildApiTree(): WorldApi`) типизируется контекстно и литералы типов
-// не повторяет; JSDoc тоже живёт только в `WorldApi`.
+// не повторяет; JSDoc тоже живёт только в `WorldApi` (summary,
+// description, маршрут, `@deprecated`; у параметров и полей схем — их
+// description). Экранирование и формат — jsdoc.ts.
 //
 // Форма зависит от режима (см. ClientMode):
 //   - 'test'     → методы возвращают ApiResponse<{ статус: тело }> с .assert();
@@ -31,30 +33,75 @@
 
 import type { ClientMode } from '../config'
 import type { SchemaNames } from './names'
-import type { Operation } from './operations'
+import { renderJsDoc } from './jsdoc'
+import type { Operation, Param } from './operations'
 import { renderSchemaDecls } from './schema'
 import type { Json } from './types'
 
-/** Описывает тип единственного аргумента-объекта метода (паттерн options object). */
-function buildInputType(op: Operation): { type: string; optional: boolean } {
+/**
+ * Поля `path` / `query` во входном типе. Без описаний — в одну строку
+ * (`{ "id": string }`); есть хоть одно описание — построчно, с JSDoc над
+ * параметром. `indent` — уровень, на котором стоит закрывающая скобка.
+ */
+function renderParamFields(args: { params: Param[]; fieldType: (p: Param) => string; indent: number }): string {
+  const { params, fieldType, indent } = args
+  if (params.every((p) => !p.description)) {
+    return `{ ${params.map((p) => `${JSON.stringify(p.name)}${fieldType(p)}`).join('; ')} }`
+  }
+  const pad = '  '.repeat(indent + 1)
+  const lines = params.map(
+    (p) =>
+      `${renderJsDoc({ lines: [p.description], indent: pad })}${pad}${JSON.stringify(p.name)}${fieldType(p)}`,
+  )
+  return `{\n${lines.join('\n')}\n${'  '.repeat(indent)}}`
+}
+
+/**
+ * Описывает тип единственного аргумента-объекта метода (паттерн options
+ * object). `bodyType` / `indent` переопределяются для `api/*.md`, где тип
+ * рендерится с нулевым отступом.
+ */
+export function buildInputType(args: {
+  op: Operation
+  bodyType?: string | null
+  indent?: number
+}): { type: string; optional: boolean } {
+  const { op, bodyType = op.bodyType, indent = 4 } = args
   const parts: string[] = []
 
   if (op.pathParams.length > 0) {
-    const fields = op.pathParams.map((p) => `${JSON.stringify(p)}: string`).join('; ')
-    parts.push(`path: { ${fields} }`)
+    const fields = renderParamFields({ params: op.pathParams, fieldType: () => ': string', indent })
+    parts.push(`path: ${fields}`)
   }
   if (op.queryParams.length > 0) {
-    const fields = op.queryParams.map((p) => `${JSON.stringify(p)}?: string | number | boolean`).join('; ')
-    parts.push(`query?: { ${fields} }`)
+    const fields = renderParamFields({
+      params: op.queryParams,
+      fieldType: () => '?: string | number | boolean',
+      indent,
+    })
+    parts.push(`query?: ${fields}`)
   }
-  if (op.bodyType) {
-    parts.push(`body${op.bodyRequired ? '' : '?'}: ${op.bodyType}`)
+  if (bodyType) {
+    parts.push(`body${op.bodyRequired ? '' : '?'}: ${bodyType}`)
   }
 
   if (parts.length === 0) return { type: '{}', optional: true }
 
-  const optional = op.pathParams.length === 0 && (!op.bodyType || !op.bodyRequired)
+  const optional = op.pathParams.length === 0 && (!bodyType || !op.bodyRequired)
   return { type: `{ ${parts.join('; ')} }`, optional }
+}
+
+/**
+ * JSDoc эндпоинта: summary, description, маршрут и `@deprecated`.
+ * Маршрут есть всегда — сразу видно, куда реально уходит запрос.
+ */
+function renderEndpointJsDoc(args: { op: Operation; indent: string }): string {
+  const { op, indent } = args
+  return renderJsDoc({
+    lines: [op.summary, op.description, `\`${op.method.toUpperCase()} ${op.path}\``],
+    deprecated: op.deprecated,
+    indent,
+  })
 }
 
 /** Тип-карта «статус → тело» для режима `'test'`: `{ 200: {...}; 404: {...} }`. */
@@ -179,9 +226,9 @@ function renderApiType(args: { groups: Map<string, Operation[]>; mode: ClientMod
   const { groups, mode } = args
   const blocks = [...groups.entries()].map(([group, ops]) => {
     const leaves = ops.map((op) => {
-      const { type, optional } = buildInputType(op)
+      const { type, optional } = buildInputType({ op })
       const inputParam = `input${optional ? '?' : ''}: ${type}`
-      const doc = op.summary ? `      /** ${op.summary} */\n` : ''
+      const doc = renderEndpointJsDoc({ op, indent: '      ' })
       return `${doc}      ${JSON.stringify(op.name)}: (${inputParam}) => ${methodReturnType({ op, mode })}`
     })
     return `    ${JSON.stringify(group)}: {\n${leaves.join('\n')}\n    }`

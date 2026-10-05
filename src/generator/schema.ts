@@ -4,10 +4,11 @@
 // узлов swagger-схемы в текст TS-типа, который потом подставляется в
 // сигнатуры сгенерированных методов клиента.
 
+import { renderJsDoc } from './jsdoc'
 import type { SchemaNames } from './names'
 import type { Json } from './types'
 
-const SCHEMA_REF_PREFIX = '#/components/schemas/'
+export const SCHEMA_REF_PREFIX = '#/components/schemas/'
 
 /**
  * Узел схемы описывает ФАЙЛ? OpenAPI 3.1: строка с `contentMediaType`
@@ -29,6 +30,7 @@ export function isFileSchema(schema: Json | undefined): boolean {
  * `components/schemas` рендерится ИМЕНЕМ типа из `names` (без разворота),
  * поэтому рекурсивные схемы становятся обычной рекурсией TypeScript.
  * `nullable: true` (3.0) добавляет `| null` поверх результата любой ветки.
+ * У полей объекта `description` / `deprecated` → JSDoc над свойством.
  */
 export function schemaToType(args: {
   schema: Json | undefined
@@ -106,7 +108,13 @@ function schemaToTypeBase(args: {
         const closePad = '  '.repeat(indent)
         const lines = keys.map((k) => {
           const optional = required.includes(k) ? '' : '?'
-          return `${pad}${JSON.stringify(k)}${optional}: ${sub(props[k], indent + 1)}`
+          const prop: Json | undefined = props[k]
+          const doc = renderJsDoc({
+            lines: [typeof prop?.description === 'string' ? prop.description : undefined],
+            deprecated: prop?.deprecated === true,
+            indent: pad,
+          })
+          return `${doc}${pad}${JSON.stringify(k)}${optional}: ${sub(prop, indent + 1)}`
         })
         return `{\n${lines.join('\n')}\n${closePad}}`
       }
@@ -155,15 +163,17 @@ export function pickResponseSchema(args: { responses: Json; spec: Json }): Json 
 export function collectResponseSchemas(args: {
   responses: Json
   spec: Json
-}): Array<{ status: number; schema: Json | undefined }> {
+}): Array<{ status: number; schema: Json | undefined; description?: string }> {
   const { responses } = args
-  const out: Array<{ status: number; schema: Json | undefined }> = []
+  const out: Array<{ status: number; schema: Json | undefined; description?: string }> = []
   for (const key of Object.keys(responses ?? {})) {
     const status = Number(key)
     if (!Number.isInteger(status)) continue
+    const description: unknown = responses[key]?.description
     out.push({
       status,
       schema: responses[key]?.content?.['application/json']?.schema,
+      ...(typeof description === 'string' && description.trim() ? { description } : {}),
     })
   }
   return out

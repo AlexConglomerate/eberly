@@ -27,7 +27,12 @@
   - `operations.ts` — разбор `paths` в плоский список операций; группа —
     первый тег (фолбэки: префикс `operationId` → сегмент пути → `default`).
   - `render.ts` — рендер исходника клиента (класс `World`), форма зависит
-    от `mode` (`'test'` / `'frontend'`). Типы вызовов — только в `WorldApi`.
+    от `mode` (`'test'` / `'frontend'`). Типы вызовов — только в `WorldApi`
+    (там же JSDoc эндпоинта: summary, description, маршрут, `@deprecated`).
+  - `jsdoc.ts` — `renderJsDoc` / `escapeJsDoc`: общий рендер JSDoc для
+    эндпоинтов, параметров и полей схем (`*/` → `*\/`).
+  - `docs.ts` — папка `api/` для агента: `renderEndpointDocs` (`INDEX.md`
+    + `<группа>.<метод>.md`), `renderExampleValue`, `DOCS_MARKER`.
   - `types.ts` — общий тип `Json`.
   - `test-utils.ts` — `makeSpec()` для юнит-тестов.
 
@@ -57,6 +62,8 @@
   - Хуки before/after: `test-with-ebely/ebely/hooks.ts` (типизированы,
     `Hooks<UserStore>`), переиспользуемые хендлеры — `ebely/handlers.ts`
   - Сгенерированный клиент: `test-with-ebely/ebely/generated.ts` (не редактировать)
+  - Описания эндпоинтов для агента: `test-with-ebely/ebely/api/` (`INDEX.md`
+    + файл на эндпоинт; генерируются вместе с клиентом, коммитятся)
   - Свагер бэкенда (копия из your-app): `test-with-ebely/swagger.json`
   - Пример тестов: `test-with-ebely/tests/test1.ts`
 
@@ -85,7 +92,8 @@ OpenAPI **3.0** (`nullable`, `format: binary`), 201/204, ошибки 4xx с
 - `swagger` — перегенерировать `swagger/swagger.json`.
 
 `test-with-ebely` (`pnpm --filter @ebely-examples/test-with-ebely run <script>`):
-- `client:generate` — сгенерировать клиент в `ebely/generated.ts`.
+- `client:generate` — сгенерировать клиент в `ebely/generated.ts` и
+  описания эндпоинтов в `ebely/api/`.
 - `test` — запустить пример тестов (`tests/test1.ts`).
 
 `nest/your-app` (`pnpm --filter @ebely-examples/nest-your-app run <script>`):
