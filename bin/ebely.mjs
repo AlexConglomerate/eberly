@@ -140,7 +140,8 @@ async function createProject({ dir }) {
       `  pnpm install\n` +
       `  # edit ebely/ebely.ts (url, swagger path) for your backend\n` +
       `  pnpm run client:generate     # generate the typed client\n` +
-      `  pnpm test\n`,
+      `  pnpm typecheck && pnpm test\n\n` +
+      `See the README: https://github.com/AlexConglomerate/evely#quick-start\n`,
   )
 }
 

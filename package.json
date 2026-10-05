@@ -1,7 +1,27 @@
 {
   "name": "ebely",
-  "license": "MIT",
   "version": "0.1.1",
+  "description": "Typed end-to-end API tests for any backend with an OpenAPI 3 spec",
+  "keywords": [
+    "openapi",
+    "swagger",
+    "e2e",
+    "api-testing",
+    "testing",
+    "typescript",
+    "client-generator",
+    "vitest",
+    "claude-code"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlexConglomerate/evely.git"
+  },
+  "homepage": "https://github.com/AlexConglomerate/evely#readme",
+  "bugs": {
+    "url": "https://github.com/AlexConglomerate/evely/issues"
+  },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",

@@ -51,6 +51,11 @@
 
 Подробный разбор архитектуры — в `ARCHITECTURE.md`.
 
+`README.md` — на английском, это страница пакета и лендинг. Каждый
+фрагмент кода в нём скопирован из теста, зелёного в `pnpm e2e` (пример
+«до и после» — `examples/nest/test-with-ebely/tests/readme.test.ts`).
+Поменяли API или тест — сверьте README.
+
 Примеры (НЕ попадают в npm-пакет — `files: ["dist"]` + отдельный workspace,
 `examples/*/*`, каждый `private: true`). `examples/simple` — это два
 независимых проекта:
@@ -96,7 +101,8 @@ OpenAPI **3.0** (`nullable`, `format: binary`), 201/204, ошибки 4xx с
 `examples/nest/test-with-ebely` — тесты Nest-бэкенда через ebely
 (`@ebely-examples/nest-test-with-ebely`): `signUp` (register → login →
 токен), `world.reset()`, Bearer в `globalBefore`, `lastPostId` в
-`posts.create.after`. Тесты: `tests/{auth,posts,comments,avatar}.test.ts`;
+`posts.create.after`. Тесты: `tests/{auth,posts,comments,avatar,readme}.test.ts`
+(`readme.test.ts` — пример «до и после» из `README.md`, один в один);
 `tests/types.ts` — тест типов на настоящем клиенте (`@ts-expect-error`,
 проверяет `typecheck`, vitest его не запускает). Фикстура —
 `tests/fixtures/avatar.png`.
