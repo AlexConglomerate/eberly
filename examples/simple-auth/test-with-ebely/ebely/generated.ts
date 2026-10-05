@@ -3,9 +3,12 @@
 // Режим клиента: test
 // Перегенерация: pnpm run client:generate
 
-import { BaseStore, ApiResponse, HookRegistry } from "ebely"
+import { BaseStore, ApiResponse, HookRegistry, toMultipartFormData } from "ebely"
 import type { BeforeHook, AfterHook, RetryHook } from "ebely"
+import type { FileInput, FileEncoding, FileFieldMeta } from "ebely"
 import { ebely } from "./ebely"
+
+const FILE_OPS: Record<string, FileFieldMeta[]> = {}
 
 type RequestInput = {
   path?: Record<string, string>
@@ -27,6 +30,7 @@ export type CreateUserArgs = {
 
 export type WorldApi = {
     "auth": {
+      /** Регистрация по email и паролю (BetterAuth) */
       "signUp": (input: { body: {
           "email": string
           "password": string
@@ -40,6 +44,7 @@ export type WorldApi = {
             "role": string
           }
         } }>>
+      /** Логин по email и паролю (BetterAuth) */
       "signIn": (input: { body: {
           "email": string
           "password": string
@@ -52,15 +57,18 @@ export type WorldApi = {
             "role": string
           }
         } }>>
+      /** Текущий пользователь (требует bearer-токен) */
       "session": (input?: {}) => Promise<ApiResponse<{ 200: {
           "id": string
           "email": string
           "name": string
           "role": string
         } }>>
+      /** Выйти (отзывает session-токен в BetterAuth) */
       "signOut": (input?: {}) => Promise<ApiResponse<{ 200: {
           "success": boolean
         } }>>
+      /** OAuth-логин через фейковый Google (server-side flow) */
       "googleLogin": (input?: {}) => Promise<ApiResponse<{ 200: {
           "token": string
           "user": {
@@ -72,6 +80,7 @@ export type WorldApi = {
         } }>>
     }
     "posts": {
+      /** List all posts (auth required) */
       "list": (input?: {}) => Promise<ApiResponse<{ 200: Array<{
           "id": string
           "title": string
@@ -80,6 +89,7 @@ export type WorldApi = {
           "createdAt": string
           "updatedAt": string
         }> }>>
+      /** Create a post (any authenticated user; authorId = current user) */
       "create": (input: { body: {
           "title": string
           "content": string
@@ -91,6 +101,7 @@ export type WorldApi = {
           "createdAt": string
           "updatedAt": string
         } }>>
+      /** Get a single post (auth required) */
       "get": (input: { path: { "id": string } }) => Promise<ApiResponse<{ 200: {
           "id": string
           "title": string
@@ -99,6 +110,7 @@ export type WorldApi = {
           "createdAt": string
           "updatedAt": string
         } }>>
+      /** Update a post (author OR admin) */
       "update": (input: { path: { "id": string }; body?: {
           "title"?: string
           "content"?: string
@@ -110,20 +122,24 @@ export type WorldApi = {
           "createdAt": string
           "updatedAt": string
         } }>>
+      /** Delete a post (admin only) */
       "delete": (input: { path: { "id": string } }) => Promise<ApiResponse<{ 200: {
           "success": boolean
         } }>>
     }
     "admin": {
+      /** Wipe ALL data (тест-хелпер, не для прода) */
       "clearDatabase": (input?: {}) => Promise<ApiResponse<{ 200: {
           "success": boolean
         } }>>
+      /** Set role for a user by email (тест-хелпер, не для прода) */
       "promote": (input: { body: {
           "email": string
           "role": string
         } }) => Promise<ApiResponse<{ 200: {
           "success": boolean
         } }>>
+      /** Revoke all sessions of a user by email (тест-хелпер: «протухание» токена) */
       "revoke": (input: { body: {
           "email": string
         } }) => Promise<ApiResponse<{ 200: {
@@ -477,13 +493,31 @@ export class World<
         }
 
         const hasBody = hookReq.body !== undefined
+        // Файловые (multipart) операции: FormData собирается ПОСЛЕ before-хуков
+        // (тело к этому моменту — обычный объект, хуки видят/правят его как
+        // JSON). Кодировка имён полей для массива файлов — из ebely.files
+        // (дефолт 'repeat': веб-стандарт busboy/Go/Rust; oRPC ставит
+        // 'bracket-index'). На retry FormData пересобирается заново.
+        const fileFields = FILE_OPS[opKey]
+        const form =
+          fileFields && fileFields.length > 0 && hasBody
+            ? await toMultipartFormData({
+                body: hookReq.body as Record<string, unknown>,
+                fileFields,
+                encoding:
+                  (ebely as { files?: { encoding?: FileEncoding } }).files?.encoding ?? 'repeat',
+              })
+            : undefined
+        const isMultipart = form !== undefined
+
         const response = await fetch(url, {
           method,
           headers: {
-            ...(hasBody ? { 'content-type': 'application/json' } : {}),
+            // multipart: content-type НЕ ставим — fetch сам выставит boundary.
+            ...(isMultipart ? {} : hasBody ? { 'content-type': 'application/json' } : {}),
             ...hookReq.headers,
           },
-          body: hasBody ? JSON.stringify(hookReq.body) : undefined,
+          body: isMultipart ? form : hasBody ? JSON.stringify(hookReq.body) : undefined,
         })
 
         const text = await response.text()
@@ -522,308 +556,104 @@ export class World<
   }
 
   /** Дерево типизированных вызовов эндпоинтов поверх одного `request`. */
-  private buildApiTree(request: RequestFn) {
+  private buildApiTree(request: RequestFn): WorldApi {
     return {
       "auth": {
-
-        /** Регистрация по email и паролю (BetterAuth) */
-        "signUp": async (input: { body: {
-          "email": string
-          "password": string
-          "name": string
-        } }): Promise<ApiResponse<{ 200: {
-          "token": string
-          "user": {
-            "id": string
-            "email": string
-            "name": string
-            "role": string
-          }
-        } }>> => {
-          const res = await request({
+        "signUp": async (input) =>
+          new ApiResponse(await request({
             method: "POST",
             path: "/auth/sign-up",
             opKey: "auth.signUp",
             input: input as RequestInput,
-          })
-          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
-          "token": string
-          "user": {
-            "id": string
-            "email": string
-            "name": string
-            "role": string
-          }
-        } }>
-        },
-
-        /** Логин по email и паролю (BetterAuth) */
-        "signIn": async (input: { body: {
-          "email": string
-          "password": string
-        } }): Promise<ApiResponse<{ 200: {
-          "token": string
-          "user": {
-            "id": string
-            "email": string
-            "name": string
-            "role": string
-          }
-        } }>> => {
-          const res = await request({
+          })) as never,
+        "signIn": async (input) =>
+          new ApiResponse(await request({
             method: "POST",
             path: "/auth/sign-in",
             opKey: "auth.signIn",
             input: input as RequestInput,
-          })
-          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
-          "token": string
-          "user": {
-            "id": string
-            "email": string
-            "name": string
-            "role": string
-          }
-        } }>
-        },
-
-        /** Текущий пользователь (требует bearer-токен) */
-        "session": async (input?: {}): Promise<ApiResponse<{ 200: {
-          "id": string
-          "email": string
-          "name": string
-          "role": string
-        } }>> => {
-          const res = await request({
+          })) as never,
+        "session": async (input) =>
+          new ApiResponse(await request({
             method: "GET",
             path: "/auth/session",
             opKey: "auth.session",
             input: input as RequestInput,
-          })
-          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
-          "id": string
-          "email": string
-          "name": string
-          "role": string
-        } }>
-        },
-
-        /** Выйти (отзывает session-токен в BetterAuth) */
-        "signOut": async (input?: {}): Promise<ApiResponse<{ 200: {
-          "success": boolean
-        } }>> => {
-          const res = await request({
+          })) as never,
+        "signOut": async (input) =>
+          new ApiResponse(await request({
             method: "POST",
             path: "/auth/sign-out",
             opKey: "auth.signOut",
             input: input as RequestInput,
-          })
-          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
-          "success": boolean
-        } }>
-        },
-
-        /** OAuth-логин через фейковый Google (server-side flow) */
-        "googleLogin": async (input?: {}): Promise<ApiResponse<{ 200: {
-          "token": string
-          "user": {
-            "id": string
-            "email": string
-            "name": string
-            "role": string
-          }
-        } }>> => {
-          const res = await request({
+          })) as never,
+        "googleLogin": async (input) =>
+          new ApiResponse(await request({
             method: "POST",
             path: "/auth/oauth/google/login",
             opKey: "auth.googleLogin",
             input: input as RequestInput,
-          })
-          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
-          "token": string
-          "user": {
-            "id": string
-            "email": string
-            "name": string
-            "role": string
-          }
-        } }>
-        },
+          })) as never,
       },
       "posts": {
-
-        /** List all posts (auth required) */
-        "list": async (input?: {}): Promise<ApiResponse<{ 200: Array<{
-          "id": string
-          "title": string
-          "content": string
-          "authorId": string
-          "createdAt": string
-          "updatedAt": string
-        }> }>> => {
-          const res = await request({
+        "list": async (input) =>
+          new ApiResponse(await request({
             method: "GET",
             path: "/posts",
             opKey: "posts.list",
             input: input as RequestInput,
-          })
-          return new ApiResponse(res) as unknown as ApiResponse<{ 200: Array<{
-          "id": string
-          "title": string
-          "content": string
-          "authorId": string
-          "createdAt": string
-          "updatedAt": string
-        }> }>
-        },
-
-        /** Create a post (any authenticated user; authorId = current user) */
-        "create": async (input: { body: {
-          "title": string
-          "content": string
-        } }): Promise<ApiResponse<{ 200: {
-          "id": string
-          "title": string
-          "content": string
-          "authorId": string
-          "createdAt": string
-          "updatedAt": string
-        } }>> => {
-          const res = await request({
+          })) as never,
+        "create": async (input) =>
+          new ApiResponse(await request({
             method: "POST",
             path: "/posts",
             opKey: "posts.create",
             input: input as RequestInput,
-          })
-          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
-          "id": string
-          "title": string
-          "content": string
-          "authorId": string
-          "createdAt": string
-          "updatedAt": string
-        } }>
-        },
-
-        /** Get a single post (auth required) */
-        "get": async (input: { path: { "id": string } }): Promise<ApiResponse<{ 200: {
-          "id": string
-          "title": string
-          "content": string
-          "authorId": string
-          "createdAt": string
-          "updatedAt": string
-        } }>> => {
-          const res = await request({
+          })) as never,
+        "get": async (input) =>
+          new ApiResponse(await request({
             method: "GET",
             path: "/posts/{id}",
             opKey: "posts.get",
             input: input as RequestInput,
-          })
-          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
-          "id": string
-          "title": string
-          "content": string
-          "authorId": string
-          "createdAt": string
-          "updatedAt": string
-        } }>
-        },
-
-        /** Update a post (author OR admin) */
-        "update": async (input: { path: { "id": string }; body?: {
-          "title"?: string
-          "content"?: string
-        } }): Promise<ApiResponse<{ 200: {
-          "id": string
-          "title": string
-          "content": string
-          "authorId": string
-          "createdAt": string
-          "updatedAt": string
-        } }>> => {
-          const res = await request({
+          })) as never,
+        "update": async (input) =>
+          new ApiResponse(await request({
             method: "PATCH",
             path: "/posts/{id}",
             opKey: "posts.update",
             input: input as RequestInput,
-          })
-          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
-          "id": string
-          "title": string
-          "content": string
-          "authorId": string
-          "createdAt": string
-          "updatedAt": string
-        } }>
-        },
-
-        /** Delete a post (admin only) */
-        "delete": async (input: { path: { "id": string } }): Promise<ApiResponse<{ 200: {
-          "success": boolean
-        } }>> => {
-          const res = await request({
+          })) as never,
+        "delete": async (input) =>
+          new ApiResponse(await request({
             method: "DELETE",
             path: "/posts/{id}",
             opKey: "posts.delete",
             input: input as RequestInput,
-          })
-          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
-          "success": boolean
-        } }>
-        },
+          })) as never,
       },
       "admin": {
-
-        /** Wipe ALL data (тест-хелпер, не для прода) */
-        "clearDatabase": async (input?: {}): Promise<ApiResponse<{ 200: {
-          "success": boolean
-        } }>> => {
-          const res = await request({
+        "clearDatabase": async (input) =>
+          new ApiResponse(await request({
             method: "POST",
             path: "/admin/clear-database",
             opKey: "admin.clearDatabase",
             input: input as RequestInput,
-          })
-          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
-          "success": boolean
-        } }>
-        },
-
-        /** Set role for a user by email (тест-хелпер, не для прода) */
-        "promote": async (input: { body: {
-          "email": string
-          "role": string
-        } }): Promise<ApiResponse<{ 200: {
-          "success": boolean
-        } }>> => {
-          const res = await request({
+          })) as never,
+        "promote": async (input) =>
+          new ApiResponse(await request({
             method: "POST",
             path: "/admin/promote",
             opKey: "admin.promote",
             input: input as RequestInput,
-          })
-          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
-          "success": boolean
-        } }>
-        },
-
-        /** Revoke all sessions of a user by email (тест-хелпер: «протухание» токена) */
-        "revoke": async (input: { body: {
-          "email": string
-        } }): Promise<ApiResponse<{ 200: {
-          "success": boolean
-        } }>> => {
-          const res = await request({
+          })) as never,
+        "revoke": async (input) =>
+          new ApiResponse(await request({
             method: "POST",
             path: "/admin/revoke",
             opKey: "admin.revoke",
             input: input as RequestInput,
-          })
-          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
-          "success": boolean
-        } }>
-        },
+          })) as never,
       },
     }
   }

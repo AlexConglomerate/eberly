@@ -3,8 +3,11 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { buildSchemaNames } from './names'
+import { collectOperations, type Operation } from './operations'
 import { renderClient } from './render'
-import type { Operation } from './operations'
+import { makeSpec } from './test-utils'
+import type { Json } from './types'
 import type { ClientMode } from '../config'
 
 const spec = { info: { title: 'T', version: '1' }, servers: [{ url: '/api' }] }
@@ -44,6 +47,7 @@ const fileOp: Operation = {
 const render = (mode: ClientMode) =>
   renderClient({
     spec,
+    names: new Map(),
     operations: [op],
     mode,
     userStoreImport: 'ebely',
@@ -137,7 +141,7 @@ test('сценарии: один движок request, общий buildApiTree, 
   for (const mode of ['test', 'frontend'] as const) {
     const out = render(mode)
     assert.match(out, /private makeRequest\(cfg: \{/)
-    assert.match(out, /private buildApiTree\(request: RequestFn\)/)
+    assert.match(out, /private buildApiTree\(request: RequestFn\): WorldApi \{/)
     // user-store получает то же дерево в .api (сценарии ходят от его лица)
     assert.match(
       out,
@@ -151,6 +155,7 @@ test('multipart: FILE_OPS, ветка request, импорт файловых х�
   for (const mode of ['test', 'frontend'] as const) {
     const out = renderClient({
       spec,
+      names: new Map(),
       operations: [fileOp],
       mode,
       userStoreImport: 'ebely',
@@ -174,4 +179,93 @@ test('multipart: FILE_OPS, ветка request, импорт файловых х�
 test('без файловых операций: FILE_OPS пустой', () => {
   const out = render('test')
   assert.match(out, /const FILE_OPS: Record<string, FileFieldMeta\[\]> = \{\}/)
+})
+
+// --- именованные типы, один источник типов --------------------------------
+
+/** Полный путь генератора на мини-спеке: names → operations → render. */
+function renderSpec(args: { spec: Json; mode?: ClientMode }): string {
+  const { spec, mode = 'test' } = args
+  const names = buildSchemaNames({ spec })
+  return renderClient({
+    spec,
+    names,
+    operations: collectOperations({ spec, names }),
+    mode,
+    userStoreImport: 'ebely',
+    configImport: './ebely',
+  })
+}
+
+const postsSpec = makeSpec({
+  schemas: {
+    PostDto: {
+      type: 'object',
+      required: ['id'],
+      properties: { id: { type: 'number' }, related: { type: 'array', items: { $ref: '#/components/schemas/PostDto' } } },
+    },
+  },
+  paths: {
+    '/posts': {
+      post: {
+        operationId: 'posts.create',
+        tags: ['Posts'],
+        summary: 'Create a post',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { type: 'object', properties: { title: { type: 'string' } } },
+            },
+          },
+        },
+        responses: {
+          201: { content: { 'application/json': { schema: { $ref: '#/components/schemas/PostDto' } } } },
+        },
+      },
+    },
+  },
+})
+
+/** Кусок исходника — реализация дерева вызовов. */
+const apiTreeImpl = (out: string): string =>
+  out.slice(out.indexOf('private buildApiTree'), out.indexOf('createUser('))
+
+test('именованный тип объявлен ровно один раз, после импортов', () => {
+  for (const mode of ['test', 'frontend'] as const) {
+    const out = renderSpec({ spec: postsSpec, mode })
+    assert.equal(out.match(/export type PostDto =/g)?.length, 1)
+    assert.ok(out.indexOf('export type PostDto =') > out.indexOf('import { ebely }'))
+    assert.match(out, /"related"\?: Array<PostDto>/)
+  }
+})
+
+test('WorldApi ссылается на именованный тип', () => {
+  assert.match(
+    renderSpec({ spec: postsSpec, mode: 'test' }),
+    /"create": \(input: \{ body: \{[^]*?\} \}\) => Promise<ApiResponse<\{ 201: PostDto \}>>/,
+  )
+  assert.match(renderSpec({ spec: postsSpec, mode: 'frontend' }), /=> Promise<PostDto>/)
+})
+
+test('реализация типизирована через WorldApi и не повторяет типы', () => {
+  for (const mode of ['test', 'frontend'] as const) {
+    const out = renderSpec({ spec: postsSpec, mode })
+    assert.match(out, /private buildApiTree\(request: RequestFn\): WorldApi \{/)
+    const impl = apiTreeImpl(out)
+    assert.doesNotMatch(impl, /"title"\?: string/)
+    assert.doesNotMatch(impl, /PostDto/)
+    assert.doesNotMatch(impl, /\/\*\* Create a post \*\//)
+  }
+})
+
+test('summary — JSDoc на методе в WorldApi', () => {
+  const out = renderSpec({ spec: postsSpec })
+  const worldApi = out.slice(out.indexOf('export type WorldApi'), out.indexOf('type EbelyHookTree'))
+  assert.match(worldApi, /\/\*\* Create a post \*\/\n {6}"create": /)
+})
+
+test('без схем блок объявлений не рендерится', () => {
+  const out = renderSpec({ spec: makeSpec() })
+  assert.match(out, /from "\.\/ebely"\n\nconst FILE_OPS/)
 })

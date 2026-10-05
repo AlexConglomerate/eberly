@@ -29,7 +29,7 @@
     "release": "pnpm run build && changeset publish",
     "prepublishOnly": "pnpm run build",
     "lint": "tsc",
-    "test": "tsx --test src/response.test.ts src/hooks.test.ts src/files.test.ts src/generator/render.test.ts src/generator/operations.test.ts src/generator/schema.test.ts"
+    "test": "tsx --test 'src/**/*.test.ts'"
   },
   "devDependencies": {
     "@changesets/cli": "^2.26.0",

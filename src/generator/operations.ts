@@ -2,8 +2,12 @@
 //
 // Берёт сырой документ схемы и превращает его в массив `Operation` —
 // удобную промежуточную модель, по которой потом рендерится клиент.
-// Группа и имя метода берутся из operationId: `posts.create` →
-// группа `posts`, метод `create`.
+//
+// Группа — первый тег операции (`User Management` → `userManagement`).
+// Фолбэки по порядку: префикс operationId до точки (`posts.create` →
+// `posts`) → первый статический сегмент пути (`/posts/{id}` → `posts`) →
+// `default`. Имя метода — operationId после первой точки, иначе
+// operationId целиком, иначе `${method}${path}`. См. names.ts.
 //
 // Коллизии имён. Один и тот же operationId может прийти на разные HTTP-
 // методы одного пути (классика — better-auth: GET и POST `/get-session`
@@ -14,6 +18,7 @@
 // (`getSession` → `getGetSession` / `postGetSession`). Уникальные имена
 // не трогаются. См. dedupeNames ниже.
 
+import { toGroupName, type SchemaNames } from './names'
 import type { Json } from './types'
 import {
   collectResponseSchemas,
@@ -47,8 +52,8 @@ export interface Operation {
 }
 
 /** Собирает плоский список операций из секции paths. */
-export function collectOperations(args: { spec: Json }): Operation[] {
-  const { spec } = args
+export function collectOperations(args: { spec: Json; names: SchemaNames }): Operation[] {
+  const { spec, names } = args
   const operations: Operation[] = []
 
   for (const [path, pathItem] of Object.entries<Json>(spec.paths ?? {})) {
@@ -58,7 +63,7 @@ export function collectOperations(args: { spec: Json }): Operation[] {
 
       const operationId: string = op.operationId ?? `${method}${path}`
       const dotIndex = operationId.indexOf('.')
-      const group = dotIndex === -1 ? 'default' : operationId.slice(0, dotIndex)
+      const group = pickGroup({ op, operationId, path })
       const name = dotIndex === -1 ? operationId : operationId.slice(dotIndex + 1)
 
       const parameters: Json[] = op.parameters ?? []
@@ -76,14 +81,14 @@ export function collectOperations(args: { spec: Json }): Operation[] {
       const isMultipart = 'multipart/form-data' in content || fileFields.length > 0
 
       const responseSchema = pickResponseSchema({ responses: op.responses, spec })
-      const responseType = schemaToType({ schema: responseSchema, spec, indent: 3 })
+      const responseType = schemaToType({ schema: responseSchema, spec, names, indent: 3 })
 
       const declared = collectResponseSchemas({ responses: op.responses, spec })
       const responses =
         declared.length > 0
           ? declared.map((r) => ({
               status: r.status,
-              bodyType: schemaToType({ schema: r.schema, spec, indent: 4 }),
+              bodyType: schemaToType({ schema: r.schema, spec, names, indent: 4 }),
             }))
           : [{ status: 200, bodyType: responseType }]
 
@@ -94,7 +99,7 @@ export function collectOperations(args: { spec: Json }): Operation[] {
         path,
         pathParams,
         queryParams,
-        bodyType: bodySchema ? schemaToType({ schema: bodySchema, spec, indent: 4 }) : null,
+        bodyType: bodySchema ? schemaToType({ schema: bodySchema, spec, names, indent: 4 }) : null,
         bodyRequired: Boolean(op.requestBody?.required),
         isMultipart,
         fileFields,
@@ -107,6 +112,28 @@ export function collectOperations(args: { spec: Json }): Operation[] {
 
   dedupeNames({ operations })
   return operations
+}
+
+/**
+ * Группа операции: первый тег → префикс operationId до точки → первый
+ * статический сегмент пути → `default`. Кандидат, из которого после
+ * санитизации ничего не осталось (`'!!!'`), пропускается.
+ */
+function pickGroup(args: { op: Json; operationId: string; path: string }): string {
+  const { op, operationId, path } = args
+  const tag: unknown = op.tags?.[0]
+  const dotIndex = operationId.indexOf('.')
+  const segment = path.split('/').find((s) => s !== '' && !s.startsWith('{'))
+  const candidates = [
+    typeof tag === 'string' ? tag : undefined,
+    dotIndex === -1 ? undefined : operationId.slice(0, dotIndex),
+    segment,
+  ]
+  for (const raw of candidates) {
+    const group = raw === undefined ? '' : toGroupName(raw)
+    if (group) return group
+  }
+  return 'default'
 }
 
 /**

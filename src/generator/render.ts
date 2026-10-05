@@ -1,9 +1,14 @@
 // Слой «модель операций → исходный текст клиента».
 //
 // Здесь рождается содержимое будущего сгенерированного файла (world):
-// класс `World` с методом `createUser()`, сгруппированными по
-// operationId типизированными вызовами и общей функцией `request`.
-// Это единственное место, где задаётся форма публичного API клиента.
+// именованные типы схем (`export type PostDto = …`), класс `World` с
+// методом `createUser()`, сгруппированными типизированными вызовами и
+// общей функцией `request`. Это единственное место, где задаётся форма
+// публичного API клиента.
+//
+// Типы вызовов описаны ОДИН раз — в `WorldApi`. Реализация
+// (`buildApiTree(): WorldApi`) типизируется контекстно и литералы типов
+// не повторяет; JSDoc тоже живёт только в `WorldApi`.
 //
 // Форма зависит от режима (см. ClientMode):
 //   - 'test'     → методы возвращают ApiResponse<{ статус: тело }> с .assert();
@@ -25,7 +30,9 @@
 // анонимный клиент. См. ARCHITECTURE.md §8.
 
 import type { ClientMode } from '../config'
+import type { SchemaNames } from './names'
 import type { Operation } from './operations'
+import { renderSchemaDecls } from './schema'
 import type { Json } from './types'
 
 /** Описывает тип единственного аргумента-объекта метода (паттерн options object). */
@@ -73,12 +80,13 @@ function hookBodyType(op: Operation): string {
   return op.bodyType ?? 'undefined'
 }
 
-/** Рендерит реализацию одного метода группы (внутри `buildApiTree`). */
+/**
+ * Рендерит реализацию одного метода группы (внутри `buildApiTree`). Типы
+ * параметра и результата приходят контекстно из `WorldApi`, поэтому здесь
+ * их нет: `input as RequestInput` и `as never` на выходе.
+ */
 function renderMethod(args: { op: Operation; mode: ClientMode }): string {
   const { op, mode } = args
-  const { type, optional } = buildInputType(op)
-  const inputParam = `input${optional ? '?' : ''}: ${type}`
-  const doc = op.summary ? `\n        /** ${op.summary} */` : ''
   const call = `request({
             method: ${JSON.stringify(op.method.toUpperCase())},
             path: ${JSON.stringify(op.path)},
@@ -87,17 +95,12 @@ function renderMethod(args: { op: Operation; mode: ClientMode }): string {
           })`
 
   if (mode === 'frontend') {
-    return `${doc}
-        ${JSON.stringify(op.name)}: (${inputParam}): Promise<${op.responseType}> =>
-          ${call} as Promise<${op.responseType}>,`
+    return `        ${JSON.stringify(op.name)}: (input) =>
+          ${call} as never,`
   }
 
-  const map = buildStatusMapType(op)
-  return `${doc}
-        ${JSON.stringify(op.name)}: async (${inputParam}): Promise<ApiResponse<${map}>> => {
-          const res = await ${call}
-          return new ApiResponse(res) as unknown as ApiResponse<${map}>
-        },`
+  return `        ${JSON.stringify(op.name)}: async (input) =>
+          new ApiResponse(await ${call}) as never,`
 }
 
 /** Импорты сгенерированного файла. В 'test' дополнительно нужен ApiResponse. */
@@ -178,7 +181,8 @@ function renderApiType(args: { groups: Map<string, Operation[]>; mode: ClientMod
     const leaves = ops.map((op) => {
       const { type, optional } = buildInputType(op)
       const inputParam = `input${optional ? '?' : ''}: ${type}`
-      return `      ${JSON.stringify(op.name)}: (${inputParam}) => ${methodReturnType({ op, mode })}`
+      const doc = op.summary ? `      /** ${op.summary} */\n` : ''
+      return `${doc}      ${JSON.stringify(op.name)}: (${inputParam}) => ${methodReturnType({ op, mode })}`
     })
     return `    ${JSON.stringify(group)}: {\n${leaves.join('\n')}\n    }`
   })
@@ -237,7 +241,7 @@ function renderApiTreeBuilder(args: { groups: Map<string, Operation[]>; mode: Cl
     return `      ${JSON.stringify(group)}: {\n${methods.join('\n')}\n      },`
   })
   return `  /** Дерево типизированных вызовов эндпоинтов поверх одного \`request\`. */
-  private buildApiTree(request: RequestFn) {
+  private buildApiTree(request: RequestFn): WorldApi {
     return {
 ${groupBlocks.join('\n')}
     }
@@ -247,15 +251,17 @@ ${groupBlocks.join('\n')}
 /** Рендерит финальный исходник клиента (world). */
 export function renderClient(args: {
   spec: Json
+  names: SchemaNames
   operations: Operation[]
   mode: ClientMode
   userStoreImport: string
   configImport: string
 }): string {
-  const { spec, operations, mode, userStoreImport, configImport } = args
+  const { spec, names, operations, mode, userStoreImport, configImport } = args
   const basePath: string = spec.servers?.[0]?.url ?? ''
 
   const groups = groupOperations(operations)
+  const decls = renderSchemaDecls({ spec, names })
   const tail = renderRequestTail(mode)
   // Хвост `request` (return/throw) теперь живёт ВНУТРИ retry-цикла, на один
   // уровень глубже — добавим 2 пробела к каждой непустой строке, чтобы
@@ -272,7 +278,7 @@ export function renderClient(args: {
 
 ${renderImports({ mode, userStoreImport, configImport })}
 
-${renderFileOps(operations)}
+${decls ? `${decls}\n\n` : ''}${renderFileOps(operations)}
 
 type RequestInput = {
   path?: Record<string, string>

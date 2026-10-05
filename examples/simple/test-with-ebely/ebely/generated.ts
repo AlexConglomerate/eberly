@@ -30,6 +30,7 @@ export type CreateUserArgs = {
 
 export type WorldApi = {
     "posts": {
+      /** List all posts */
       "list": (input?: {}) => Promise<ApiResponse<{ 200: Array<{
           "id": string
           "title": string
@@ -37,6 +38,7 @@ export type WorldApi = {
           "createdAt": string
           "updatedAt": string
         }> }>>
+      /** Create a post */
       "create": (input: { body: {
           "title": string
           "content": string
@@ -47,6 +49,7 @@ export type WorldApi = {
           "createdAt": string
           "updatedAt": string
         } }>>
+      /** Get a single post by id */
       "get": (input: { path: { "id": string } }) => Promise<ApiResponse<{ 200: {
           "id": string
           "title": string
@@ -54,6 +57,7 @@ export type WorldApi = {
           "createdAt": string
           "updatedAt": string
         } }>>
+      /** Update a post */
       "update": (input: { path: { "id": string }; body?: {
           "title"?: string
           "content"?: string
@@ -64,11 +68,13 @@ export type WorldApi = {
           "createdAt": string
           "updatedAt": string
         } }>>
+      /** Delete a post */
       "delete": (input: { path: { "id": string } }) => Promise<ApiResponse<{ 200: {
           "success": boolean
         } }>>
     }
     "auth": {
+      /** Register (stub: echoes input) */
       "register": (input: { body: {
           "email": string
           "password": string
@@ -76,15 +82,18 @@ export type WorldApi = {
           "email": string
           "password": string
         } }>>
+      /** Confirm registration code (stub: echoes input) */
       "confirm": (input: { body: {
           "code": string
         } }) => Promise<ApiResponse<{ 200: {
           "code": string
         } }>>
+      /** Read current session (stub) */
       "getGetSession": (input?: {}) => Promise<ApiResponse<{ 200: {
           "user": string
           "method": string
         } }>>
+      /** Refresh current session (stub) */
       "postGetSession": (input: { body: {
           "token": string
         } }) => Promise<ApiResponse<{ 200: {
@@ -93,6 +102,7 @@ export type WorldApi = {
         } }>>
     }
     "admin": {
+      /** Wipe all in-memory data */
       "clearDatabase": (input?: {}) => Promise<ApiResponse<{ 200: {
           "success": boolean
         } }>>
@@ -445,214 +455,83 @@ export class World<
   }
 
   /** Дерево типизированных вызовов эндпоинтов поверх одного `request`. */
-  private buildApiTree(request: RequestFn) {
+  private buildApiTree(request: RequestFn): WorldApi {
     return {
       "posts": {
-
-        /** List all posts */
-        "list": async (input?: {}): Promise<ApiResponse<{ 200: Array<{
-          "id": string
-          "title": string
-          "content": string
-          "createdAt": string
-          "updatedAt": string
-        }> }>> => {
-          const res = await request({
+        "list": async (input) =>
+          new ApiResponse(await request({
             method: "GET",
             path: "/posts",
             opKey: "posts.list",
             input: input as RequestInput,
-          })
-          return new ApiResponse(res) as unknown as ApiResponse<{ 200: Array<{
-          "id": string
-          "title": string
-          "content": string
-          "createdAt": string
-          "updatedAt": string
-        }> }>
-        },
-
-        /** Create a post */
-        "create": async (input: { body: {
-          "title": string
-          "content": string
-        } }): Promise<ApiResponse<{ 200: {
-          "id": string
-          "title": string
-          "content": string
-          "createdAt": string
-          "updatedAt": string
-        } }>> => {
-          const res = await request({
+          })) as never,
+        "create": async (input) =>
+          new ApiResponse(await request({
             method: "POST",
             path: "/posts",
             opKey: "posts.create",
             input: input as RequestInput,
-          })
-          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
-          "id": string
-          "title": string
-          "content": string
-          "createdAt": string
-          "updatedAt": string
-        } }>
-        },
-
-        /** Get a single post by id */
-        "get": async (input: { path: { "id": string } }): Promise<ApiResponse<{ 200: {
-          "id": string
-          "title": string
-          "content": string
-          "createdAt": string
-          "updatedAt": string
-        } }>> => {
-          const res = await request({
+          })) as never,
+        "get": async (input) =>
+          new ApiResponse(await request({
             method: "GET",
             path: "/posts/{id}",
             opKey: "posts.get",
             input: input as RequestInput,
-          })
-          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
-          "id": string
-          "title": string
-          "content": string
-          "createdAt": string
-          "updatedAt": string
-        } }>
-        },
-
-        /** Update a post */
-        "update": async (input: { path: { "id": string }; body?: {
-          "title"?: string
-          "content"?: string
-        } }): Promise<ApiResponse<{ 200: {
-          "id": string
-          "title": string
-          "content": string
-          "createdAt": string
-          "updatedAt": string
-        } }>> => {
-          const res = await request({
+          })) as never,
+        "update": async (input) =>
+          new ApiResponse(await request({
             method: "PATCH",
             path: "/posts/{id}",
             opKey: "posts.update",
             input: input as RequestInput,
-          })
-          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
-          "id": string
-          "title": string
-          "content": string
-          "createdAt": string
-          "updatedAt": string
-        } }>
-        },
-
-        /** Delete a post */
-        "delete": async (input: { path: { "id": string } }): Promise<ApiResponse<{ 200: {
-          "success": boolean
-        } }>> => {
-          const res = await request({
+          })) as never,
+        "delete": async (input) =>
+          new ApiResponse(await request({
             method: "DELETE",
             path: "/posts/{id}",
             opKey: "posts.delete",
             input: input as RequestInput,
-          })
-          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
-          "success": boolean
-        } }>
-        },
+          })) as never,
       },
       "auth": {
-
-        /** Register (stub: echoes input) */
-        "register": async (input: { body: {
-          "email": string
-          "password": string
-        } }): Promise<ApiResponse<{ 200: {
-          "email": string
-          "password": string
-        } }>> => {
-          const res = await request({
+        "register": async (input) =>
+          new ApiResponse(await request({
             method: "POST",
             path: "/auth/register",
             opKey: "auth.register",
             input: input as RequestInput,
-          })
-          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
-          "email": string
-          "password": string
-        } }>
-        },
-
-        /** Confirm registration code (stub: echoes input) */
-        "confirm": async (input: { body: {
-          "code": string
-        } }): Promise<ApiResponse<{ 200: {
-          "code": string
-        } }>> => {
-          const res = await request({
+          })) as never,
+        "confirm": async (input) =>
+          new ApiResponse(await request({
             method: "POST",
             path: "/auth/confirm",
             opKey: "auth.confirm",
             input: input as RequestInput,
-          })
-          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
-          "code": string
-        } }>
-        },
-
-        /** Read current session (stub) */
-        "getGetSession": async (input?: {}): Promise<ApiResponse<{ 200: {
-          "user": string
-          "method": string
-        } }>> => {
-          const res = await request({
+          })) as never,
+        "getGetSession": async (input) =>
+          new ApiResponse(await request({
             method: "GET",
             path: "/auth/session",
             opKey: "auth.getGetSession",
             input: input as RequestInput,
-          })
-          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
-          "user": string
-          "method": string
-        } }>
-        },
-
-        /** Refresh current session (stub) */
-        "postGetSession": async (input: { body: {
-          "token": string
-        } }): Promise<ApiResponse<{ 200: {
-          "user": string
-          "method": string
-        } }>> => {
-          const res = await request({
+          })) as never,
+        "postGetSession": async (input) =>
+          new ApiResponse(await request({
             method: "POST",
             path: "/auth/session",
             opKey: "auth.postGetSession",
             input: input as RequestInput,
-          })
-          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
-          "user": string
-          "method": string
-        } }>
-        },
+          })) as never,
       },
       "admin": {
-
-        /** Wipe all in-memory data */
-        "clearDatabase": async (input?: {}): Promise<ApiResponse<{ 200: {
-          "success": boolean
-        } }>> => {
-          const res = await request({
+        "clearDatabase": async (input) =>
+          new ApiResponse(await request({
             method: "POST",
             path: "/admin/clear-database",
             opKey: "admin.clearDatabase",
             input: input as RequestInput,
-          })
-          return new ApiResponse(res) as unknown as ApiResponse<{ 200: {
-          "success": boolean
-        } }>
-        },
+          })) as never,
       },
     }
   }

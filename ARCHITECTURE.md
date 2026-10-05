@@ -62,9 +62,12 @@ src/
 └── generator/               # внутренности генератора (не публичные)
     ├── types.ts             #   общий тип Json
     ├── swagger.ts           #   SwaggerSource + loadSpec()  — ОТКУДА брать схему
+    ├── version.ts           #   assertSupportedVersion()    — КАКУЮ версию берём
+    ├── names.ts             #   имена типов и групп         — КАК называть
     ├── schema.ts            #   JSON-Schema → строка TS-типа — КАК типизировать
     ├── operations.ts        #   paths → Operation[]          — ЧТО за эндпоинты
-    └── render.ts            #   Operation[] → исходник World  — ВО ЧТО рендерим
+    ├── render.ts            #   Operation[] → исходник World  — ВО ЧТО рендерим
+    └── test-utils.ts        #   makeSpec() для юнит-тестов (не *.test.ts)
 ```
 
 Зачем именно так:
@@ -78,20 +81,27 @@ src/
   Плюс помощники `resolveRef` (разворачивает `$ref`) и
   `pickResponseSchema` (берёт схему ответа `2xx`). Здесь нет ни HTTP, ни
   файлов — это легко тестировать в изоляции.
+- **`generator/version.ts`** — `assertSupportedVersion()`: 3.0/3.1
+  генерируем, Swagger 2.0 и прочее — понятная ошибка (§10).
+- **`generator/names.ts`** — имена: `components/schemas` → имена типов
+  (`buildSchemaNames`), тег → имя группы (`toGroupName`), списки
+  зарезервированных имён (§10).
 - **`generator/operations.ts`** — `collectOperations()` проходит по
   `spec.paths` и строит плоский массив `Operation` (группа, имя, метод,
-  path/query-параметры, типы тела и ответа). `operationId` вида
-  `posts.create` превращается в группу `posts` + метод `create`.
+  path/query-параметры, типы тела и ответа). Группа — первый тег
+  (`Posts` → `posts`), метод — `operationId` после точки
+  (`posts.create` → `create`); фолбэки — в §10.
 - **`generator/render.ts`** — `renderClient()` собирает финальный
   **текст** файла `World`: импорты, общую функцию `request` (fetch,
-  подстановка path-параметров, query, заголовки, обработка ошибок) и
-  сгруппированные по `operationId` методы. Это единственное место, где
+  подстановка path-параметров, query, заголовки, обработка ошибок),
+  именованные типы схем и сгруппированные методы. Это единственное место, где
   задаётся форма публичного API сгенерированного клиента.
 - **`generate-client.ts`** — больше ничего не делает сам, только
   связывает три шага и пишет результат на диск:
 
 ```
-loadSpec (swagger.ts)  →  collectOperations (operations.ts)  →  renderClient (render.ts)  →  writeFile
+loadSpec (swagger.ts) → assertSupportedVersion (version.ts) → buildSchemaNames (names.ts)
+  → collectOperations (operations.ts) → renderClient (render.ts) → writeFile
 ```
 
 - **`config.ts`** и **`base-store.ts`** оставлены в корне `src/`,
@@ -355,14 +365,15 @@ const upload = await user.wordCard.wordCardUploadScreenshots({
 upload.assert(200)
 ```
 
-**Детект файла (OpenAPI 3.1).** Файловый узел схемы — это
-`{ type: 'string', contentMediaType: '<mime>' }` (ровно `isFileSchema`
-из `@orpc/openapi`). `schema.ts → isFileSchema` детектит его, а
+**Детект файла.** Файловый узел схемы — это
+`{ type: 'string', contentMediaType: '<mime>' }` (OpenAPI 3.1, ровно
+`isFileSchema` из `@orpc/openapi`) или `{ type: 'string', format:
+'binary' }` (OpenAPI 3.0, так пишет `@nestjs/swagger`). `format: 'byte'`
+(base64-строка) — НЕ файл. `schema.ts → isFileSchema` детектит узел, а
 `schemaToType` возвращает для него публичный тип `FileInput` (ДО ветки
 `type: 'string'`), поэтому массив файлов автоматически становится
-`Array<FileInput>`. 3.0 (`format: 'binary'`) и 2.0 (`in: formData`) —
-задел, пока НЕ поддерживаем (точка расширения — `isFileSchema` и источник
-схемы тела в `operations.ts`).
+`Array<FileInput>`. Swagger 2.0 (`in: formData`) не поддерживается вовсе
+(§10).
 
 **Две точки врезки** (как и для JSON):
 
@@ -403,6 +414,58 @@ type? }`, `{ content, name, type? }`, `Blob`/`File`.
 `files: { encoding: 'bracket-index' }` одной строкой в конфиге. Для
 ОДНОГО файла вопрос не стоит — поле без скобок, кодировка игнорируется.
 
-Не делаем сейчас (задел): raw-body (тело — сам файл без объекта-обёртки),
-3.0/2.0-диалекты, глубокая bracket-сериализация ВЛОЖЕННЫХ объектов в
+Не делаем сейчас (задел): raw-body (тело — сам файл без объекта-обёртки), глубокая bracket-сериализация ВЛОЖЕННЫХ объектов в
 смешанном теле (сейчас скаляры → `String()`, объекты → `JSON.stringify`).
+
+## 10. Версии OpenAPI, именованные типы и группы
+
+**Версии** (`generator/version.ts`, вызывается сразу после `loadSpec`):
+
+| `spec` | Действие |
+|--------|----------|
+| `openapi: 3.1.x` | генерируем |
+| `openapi: 3.0.x` | генерируем; `nullable: true` → `\| null`, `format: binary` → `FileInput` |
+| `swagger: "2.0"` | ошибка с подсказкой (swagger2openapi) |
+| что-то ещё / нет поля | ошибка с найденным значением |
+
+`nullable` и `format: binary` обрабатываются без оглядки на версию: в 3.1
+их просто нет, а если генератор их всё же написал — смысл тот же.
+`nullable` применяется ПОВЕРХ результата любой ветки `schemaToType`
+(`$ref`, `allOf`/`oneOf`/`anyOf`, `type`): Nest пишет nullable-DTO как
+`{ nullable: true, type: 'object', allOf: [{ $ref }] }` → `UserDto | null`.
+
+**Именованные типы** (`generator/names.ts` + `schema.ts`). Каждая схема из
+`components/schemas` рендерится один раз блоком `export type <Имя> = …`
+сразу после импортов, а `$ref: '#/components/schemas/X'` — просто именем
+`X`. Поэтому рекурсивные схемы (`CommentDto.replies: CommentDto[]`)
+становятся обычной рекурсией TypeScript, а не бесконечным разворотом.
+`$ref` в другие разделы (`components/responses` и т.п.) по-прежнему
+разворачивается через `resolveRef`. Инлайн-схемы (как у oRPC) остаются
+инлайновыми.
+
+Имя типа = ключ схемы в PascalCase (`post.create` → `PostCreate`,
+`Page<Post>` → `PagePost`); с цифры — префикс `Schema`. Имена, которые
+файл объявляет или использует сам (`World`, `Store`, `FileInput`,
+`Array`, `File`, … — `RESERVED_TYPE_NAMES`), получают суффикс `Schema`.
+Коллизии после санитизации — `PostCreate2` по порядку ключей. Таблица
+«ключ → имя» (`buildSchemaNames`) строится один раз и передаётся в
+`schemaToType` аргументом `names`. Пользователь может импортировать
+типы: `import type { PostDto } from './generated'`.
+
+**Один источник типов вызовов.** Типы параметров и ответов описаны только
+в `WorldApi` (там же JSDoc `summary`). Реализация —
+`buildApiTree(request): WorldApi` — типизируется контекстно и типы не
+повторяет (`input as RequestInput`, результат `as never`). `createUser()`
+возвращает `Store & WorldApi`, так что IDE показывает JSDoc из `WorldApi`.
+Дерево хуков пока рендерит типы само (с именами — коротко).
+
+**Группы** (`collectOperations` → `toGroupName`). Группа = первый тег в
+camelCase (`User Management` → `userManagement`). Фолбэки по порядку:
+префикс `operationId` до точки (oRPC без тегов) → первый статический
+сегмент пути (`/posts/{id}` → `posts`) → `default`. Группа становится
+свойством объекта пользователя (`Object.assign(store, tree)`) и дерева
+хуков, поэтому `get`, `set`, `api`, `store`, `globalBefore`,
+`globalAfter`, `globalRetry`, `constructor` (`RESERVED_GROUP_NAMES`)
+получают суффикс `Api`: `store` → `storeApi`. Имя метода не меняется
+(после первой точки `operationId`, иначе целиком, иначе
+`${method}${path}`).

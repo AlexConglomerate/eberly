@@ -17,14 +17,22 @@
 - `src/generate-client.ts` — оркестратор: связывает шаги генератора и пишет файл.
 - `src/generator/` — внутренности генератора (НЕ публичные):
   - `swagger.ts` — `SwaggerSource` + загрузка схемы (`loadSpec`).
-  - `schema.ts` — JSON-Schema → строка TS-типа.
-  - `operations.ts` — разбор `paths` в плоский список операций.
+  - `version.ts` — `assertSupportedVersion`: 3.0/3.1 ок, Swagger 2.0 и
+    прочее — ошибка.
+  - `names.ts` — имена типов для `components/schemas` (`buildSchemaNames`,
+    `toTypeName`), имена групп из тегов (`toGroupName`), списки
+    зарезервированных имён.
+  - `schema.ts` — JSON-Schema → строка TS-типа (`$ref` на схему → имя,
+    `nullable` из 3.0) + блок `export type …` (`renderSchemaDecls`).
+  - `operations.ts` — разбор `paths` в плоский список операций; группа —
+    первый тег (фолбэки: префикс `operationId` → сегмент пути → `default`).
   - `render.ts` — рендер исходника клиента (класс `World`), форма зависит
-    от `mode` (`'test'` / `'frontend'`).
+    от `mode` (`'test'` / `'frontend'`). Типы вызовов — только в `WorldApi`.
   - `types.ts` — общий тип `Json`.
+  - `test-utils.ts` — `makeSpec()` для юнит-тестов.
 
-Юнит-тесты библиотеки: `src/*.test.ts`, `src/generator/*.test.ts`
-(чистые функции, без сети). Запуск — `pnpm test` в корне.
+Юнит-тесты библиотеки: `src/**/*.test.ts` (чистые функции, без сети;
+новый файл подхватывается glob-ом сам). Запуск — `pnpm test` в корне.
 
 Подробный разбор архитектуры — в `ARCHITECTURE.md`.
 

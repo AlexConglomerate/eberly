@@ -7,12 +7,16 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { buildSchemaNames } from './names'
 import { collectOperations } from './operations'
+import { makeSpec } from './test-utils'
 import type { Json } from './types'
 
 const ok = {
   responses: { 200: { description: 'ok' } },
 }
+
+const collect = (spec: Json) => collectOperations({ spec, names: buildSchemaNames({ spec }) })
 
 test('коллизия имени на GET+POST одного пути: метод дописывается спереди', () => {
   const spec: Json = {
@@ -23,7 +27,7 @@ test('коллизия имени на GET+POST одного пути: мето�
       },
     },
   }
-  const ops = collectOperations({ spec })
+  const ops = collect(spec)
   const names = ops.map((o) => o.name).sort()
   assert.deepEqual(names, ['getGetSession', 'postGetSession'])
   // группа сохраняется
@@ -39,7 +43,7 @@ test('уникальные имена не трогаются', () => {
       },
     },
   }
-  const ops = collectOperations({ spec })
+  const ops = collect(spec)
   assert.deepEqual(
     ops.map((o) => o.name).sort(),
     ['create', 'list'],
@@ -58,7 +62,7 @@ test('коллизия только внутри своей группы; чуж
       },
     },
   }
-  const ops = collectOperations({ spec })
+  const ops = collect(spec)
   const auth = ops.filter((o) => o.group === 'auth').map((o) => o.name).sort()
   const posts = ops.filter((o) => o.group === 'posts').map((o) => o.name)
   assert.deepEqual(auth, ['getSession', 'postSession'])
@@ -72,7 +76,7 @@ test('остаточная коллизия (тот же метод + имя н�
       '/b': { get: { operationId: 'x.ping', ...ok } },
     },
   }
-  const ops = collectOperations({ spec })
+  const ops = collect(spec)
   // оба GET → оба префиксуются методом, второй получает суффикс
   assert.deepEqual(
     ops.map((o) => o.name).sort(),
@@ -106,7 +110,7 @@ test('multipart (oRPC 3.1): isMultipart + fileFields для массива фа�
       },
     },
   }
-  const op = collectOperations({ spec })[0]!
+  const op = collect(spec)[0]!
   assert.equal(op.isMultipart, true)
   assert.deepEqual(op.fileFields, [{ name: 'files', array: true }])
   // тип тела — Array<FileInput>, а не Array<string>
@@ -134,7 +138,7 @@ test('multipart: одиночный файл → array:false', () => {
       },
     },
   }
-  const op = collectOperations({ spec })[0]!
+  const op = collect(spec)[0]!
   assert.equal(op.isMultipart, true)
   assert.deepEqual(op.fileFields, [{ name: 'avatar', array: false }])
 })
@@ -157,7 +161,104 @@ test('обычный JSON-эндпоинт: isMultipart false, fileFields пус
       },
     },
   }
-  const op = collectOperations({ spec })[0]!
+  const op = collect(spec)[0]!
   assert.equal(op.isMultipart, false)
   assert.deepEqual(op.fileFields, [])
+})
+
+// --- группы по тегам -------------------------------------------------------
+
+/** Группа единственной операции `get <path>` с заданными полями. */
+function groupOf(args: { path?: string; op: Json }): string {
+  const { path = '/posts', op } = args
+  const spec = makeSpec({ paths: { [path]: { get: { ...op, ...ok } } } })
+  return collect(spec)[0]!.group
+}
+
+test('группа: первый тег → camelCase', () => {
+  assert.equal(groupOf({ op: { operationId: 'PostsController_list', tags: ['Posts'] } }), 'posts')
+  assert.equal(groupOf({ op: { tags: ['User Management'] } }), 'userManagement')
+})
+
+test('группа: несколько тегов → берётся первый', () => {
+  assert.equal(groupOf({ op: { tags: ['posts', 'admin'] } }), 'posts')
+})
+
+test('группа: тег важнее префикса operationId', () => {
+  assert.equal(groupOf({ op: { operationId: 'blog.list', tags: ['Posts'] } }), 'posts')
+})
+
+test('группа: без тегов → префикс operationId до точки (старое поведение)', () => {
+  const op = collect(makeSpec({ paths: { '/x': { get: { operationId: 'posts.list', ...ok } } } }))[0]!
+  assert.equal(op.group, 'posts')
+  assert.equal(op.name, 'list')
+})
+
+test('группа: без тегов и без точки → первый статический сегмент пути', () => {
+  assert.equal(
+    groupOf({ path: '/posts/{id}/comments', op: { operationId: 'read_items_items_get' } }),
+    'posts',
+  )
+})
+
+test('группа: путь без статических сегментов → default', () => {
+  assert.equal(groupOf({ path: '/', op: {} }), 'default')
+  assert.equal(groupOf({ path: '/{id}', op: {} }), 'default')
+})
+
+test('группа: зарезервированный тег → суффикс Api', () => {
+  assert.equal(groupOf({ op: { tags: ['Store'] } }), 'storeApi')
+})
+
+test('multipart (3.0): format binary → isMultipart + fileFields', () => {
+  const spec = makeSpec({
+    openapi: '3.0.0',
+    paths: {
+      '/users/me/avatar': {
+        post: {
+          operationId: 'users.uploadAvatar',
+          requestBody: {
+            required: true,
+            content: {
+              'multipart/form-data': {
+                schema: {
+                  type: 'object',
+                  required: ['file'],
+                  properties: { file: { type: 'string', format: 'binary' } },
+                },
+              },
+            },
+          },
+          ...ok,
+        },
+      },
+    },
+  })
+  const op = collect(spec)[0]!
+  assert.equal(op.isMultipart, true)
+  assert.deepEqual(op.fileFields, [{ name: 'file', array: false }])
+  assert.match(op.bodyType!, /"file": FileInput/)
+})
+
+test('$ref на схему в теле и ответе → имя типа', () => {
+  const spec = makeSpec({
+    schemas: { CreatePostDto: { type: 'object' }, PostDto: { type: 'object' } },
+    paths: {
+      '/posts': {
+        post: {
+          operationId: 'posts.create',
+          requestBody: {
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/CreatePostDto' } } },
+          },
+          responses: {
+            201: { content: { 'application/json': { schema: { $ref: '#/components/schemas/PostDto' } } } },
+          },
+        },
+      },
+    },
+  })
+  const op = collect(spec)[0]!
+  assert.equal(op.bodyType, 'CreatePostDto')
+  assert.equal(op.responseType, 'PostDto')
+  assert.deepEqual(op.responses, [{ status: 201, bodyType: 'PostDto' }])
 })
