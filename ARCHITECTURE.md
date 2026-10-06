@@ -548,21 +548,6 @@ type? }`, `{ content, name, type? }`, `Blob`/`File`.
 `schemaToType` аргументом `names`. Пользователь может импортировать
 типы: `import type { PostDto } from './generated'`.
 
-Тип части вызова без имени схемы — хелперы из `eberly`
-(`src/endpoint-types.ts`): `BodyOf` / `QueryOf` / `PathOf` /
-`ResponseOf<F, статус>`, где `F` — метод (`typeof api.posts.create`,
-`typeof alice.posts.create`) или `WorldApi['posts']['create']`. Выводятся
-из сигнатуры в `WorldApi`, поэтому работают и для инлайн-схем. Нужны для
-`satisfies`: у переменной, переданной в вызов, лишние поля TS не ловит.
-
-`api` — `export const api: WorldApi` в сгенерированном файле, только ради
-точки в типах (у типа точки нет, у значения есть). Это Proxy: любое
-обращение в рантайме бросает «for types only». `declare const` не взяли:
-`import { api }` без `type` упал бы на импорте невнятным SyntaxError.
-Namespace (`World.posts.create.body`) не взяли: его имя не может быть
-зарезервированным словом (`delete`, `default`), а `typeof api.users.delete`
-работает.
-
 **Один источник типов вызовов.** Типы параметров и ответов описаны только
 в `WorldApi` (там же JSDoc `summary`). Реализация —
 `buildApiTree(request): WorldApi` — типизируется контекстно и типы не

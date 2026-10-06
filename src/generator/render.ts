@@ -252,30 +252,6 @@ function renderApiType(args: { groups: Map<string, Operation[]>; mode: ClientMod
   return `export type WorldApi = {\n${blocks.join('\n')}\n}`
 }
 
-/**
- * Значение `api` типа `WorldApi` — только для типов через точку:
- * `BodyOf<typeof api.posts.create>` (у типа точки нет, у значения — есть,
- * и зарезервированные слова вроде `api.users.delete` ей не мешают).
- * Это не клиент: любое обращение в рантайме бросает понятную ошибку
- * (`declare const` упал бы на импорте невнятным SyntaxError).
- */
-function renderTypeOnlyApi(): string {
-  return `/**
- * The endpoint tree for TYPES only: \`BodyOf<typeof api.posts.create>\`
- * (also \`QueryOf\`, \`PathOf\`, \`ResponseOf\` from "eberly").
- * It does not call the backend, any access throws: use \`world.createUser()\`.
- */
-export const api: WorldApi = new Proxy({} as WorldApi, {
-  get(_, key) {
-    if (typeof key === 'symbol') return undefined
-    throw new Error(
-      'api from the generated client is for types only (typeof api.<group>.<method>). ' +
-        'To call the backend, use world.createUser().',
-    )
-  },
-})`
-}
-
 /** Тип типизированного дерева хуков `h.<группа>.<метод>.before/after`. */
 function renderHookTreeType(groups: Map<string, Operation[]>): string {
   const blocks = [...groups.entries()].map(([group, ops]) => {
@@ -386,8 +362,6 @@ export type CreateUserArgs = {
 }
 
 ${renderApiType({ groups, mode })}
-
-${renderTypeOnlyApi()}
 
 ${renderHookTreeType(groups)}
 

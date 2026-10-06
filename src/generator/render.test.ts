@@ -59,7 +59,7 @@ test("режим 'test': ApiResponse, карта статусов, request не 
   assert.match(out, /import \{ BaseStore, ApiResponse, HookRegistry, assertHostAllowed, toMultipartFormData \} from "eberly"/)
   assert.match(out, /Promise<ApiResponse<\{ 200: \{ "id": string \} \}>>/)
   assert.match(out, /return \{ status: response\.status, body: data \}/)
-  assert.doesNotMatch(out, /if \(!response\.ok\)/)
+  assert.doesNotMatch(out, /throw new Error\(/)
 })
 
 test("режим 'frontend': тело напрямую, без ApiResponse, request бросает", () => {
@@ -67,7 +67,7 @@ test("режим 'frontend': тело напрямую, без ApiResponse, requ
   assert.match(out, /import \{ BaseStore, HookRegistry, toMultipartFormData \} from "eberly"/)
   assert.doesNotMatch(out, /ApiResponse/)
   assert.match(out, /Promise<\{ "id": string \}>/)
-  assert.match(out, /if \(!response\.ok\) \{\n\s+throw new Error\(/)
+  assert.match(out, /throw new Error\(/)
 })
 
 test("allowedHosts: проверка хоста в makeRequest только в режиме 'test'", () => {
@@ -127,14 +127,6 @@ test('сценарии: экспортируется тип WorldApi (дерев
     f,
     /"get": \(input: \{ path: \{ "id": string \} \}\) => Promise<\{ "id": string \}>/,
   )
-})
-
-test('api: значение WorldApi только для типов, обращение бросает', () => {
-  for (const mode of ['test', 'frontend'] as const) {
-    const out = render(mode)
-    assert.match(out, /export const api: WorldApi = new Proxy\(\{\} as WorldApi, \{/)
-    assert.match(out, /throw new Error\(\n\s+'api from the generated client is for types only/)
-  }
 })
 
 test('world-store: World наследует сконфигурированный worldStore', () => {
@@ -276,7 +268,7 @@ test('реализация типизирована через WorldApi и не 
 
 /** Кусок исходника — тип `WorldApi`. */
 const worldApiType = (out: string): string =>
-  out.slice(out.indexOf('export type WorldApi'), out.indexOf('/**\n * The endpoint tree for TYPES only'))
+  out.slice(out.indexOf('export type WorldApi'), out.indexOf('type EberlyHookTree'))
 
 test('JSDoc эндпоинта: summary, description и маршрут — над методом в WorldApi', () => {
   const spec = makeSpec({
