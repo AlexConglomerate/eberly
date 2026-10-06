@@ -5,12 +5,30 @@
 // Вся логика проверки вынесена в ЧИСТЫЕ функции (assertResponse /
 // matchPartial) без сети и fetch — их легко юнит-тестировать в изоляции.
 
+import { isStandardSchema, type StandardSchemaV1 } from './standard-schema'
+
 /** Глубоко-частичный тип: на каждом уровне все поля необязательны. */
 export type DeepPartial<T> = T extends (infer U)[]
   ? DeepPartial<U>[]
   : T extends object
     ? { [K in keyof T]?: DeepPartial<T[K]> }
     : T
+
+/**
+ * Ожидаемое тело для `assert`: глубоко-частичное, и на любом уровне вместо
+ * значения можно передать
+ * - Standard Schema (Zod, Valibot, ArkType…) — её выход должен подходить
+ *   под тип поля: `id: z.uuid()` на числовом `id` — ошибка типов;
+ * - асимметричный матчер vitest/jest (`expect.any(Number)`): он типизирован
+ *   как `any`, поэтому подходит к любому полю.
+ */
+export type Expected<T> =
+  | StandardSchemaV1<unknown, DeepPartial<T>>
+  | (T extends (infer U)[]
+      ? Expected<U>[]
+      : T extends object
+        ? { [K in keyof T]?: Expected<T[K]> }
+        : T)
 
 /** Ошибка проваленной проверки `res.assert(...)`. */
 export class EberlyAssertionError extends Error {
@@ -29,8 +47,77 @@ function trimStack(args: { error: Error; fn: (...args: never[]) => unknown }): E
   return args.error
 }
 
-/** Описание первого найденного расхождения тела ответа с эталоном. */
-export type Mismatch = { path: string; expected: unknown; actual: unknown }
+/**
+ * Описание первого найденного расхождения тела ответа с эталоном.
+ * `message` — текст проблемы от схемы (`Invalid email address`).
+ */
+export type Mismatch = { path: string; expected: unknown; actual: unknown; message?: string }
+
+/** Асимметричный матчер vitest/jest: `expect.any(Number)`, `expect.stringMatching(…)`. */
+type AsymmetricMatcher = {
+  asymmetricMatch: (other: unknown) => boolean
+  toAsymmetricMatcher?: () => string
+}
+
+function isAsymmetricMatcher(value: unknown): value is AsymmetricMatcher {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as { asymmetricMatch?: unknown }).asymmetricMatch === 'function'
+  )
+}
+
+/** `user` + `name` → `user.name`, `items` + `0` → `items[0]`. */
+function joinPath(args: { path: string; key: PropertyKey }): string {
+  const { path, key } = args
+  if (typeof key === 'number') return `${path}[${key}]`
+  return path ? `${path}.${String(key)}` : String(key)
+}
+
+/** Проверка значения схемой; путь из `issue.path` дописывается к `path`. */
+function matchSchema(args: {
+  actual: unknown
+  schema: StandardSchemaV1
+  path: string
+}): Mismatch | null {
+  const { actual, schema, path } = args
+  const result = schema['~standard'].validate(actual)
+  if (result instanceof Promise) {
+    result.catch(() => {})
+    throw new TypeError(
+      `Async schemas are not supported in assert (at "${path || '<root>'}"). ` +
+        'Remove async refinements or validate the body yourself.',
+    )
+  }
+  const issue = result.issues?.[0]
+  if (!issue) return null
+
+  let issuePath = path
+  let issueActual = actual
+  for (const segment of issue.path ?? []) {
+    const key = typeof segment === 'object' ? segment.key : segment
+    issuePath = joinPath({ path: issuePath, key })
+    issueActual =
+      issueActual !== null && typeof issueActual === 'object'
+        ? (issueActual as Record<PropertyKey, unknown>)[key]
+        : undefined
+  }
+  return { path: issuePath, expected: schema, actual: issueActual, message: issue.message }
+}
+
+/** Как показать ожидаемое значение в сообщении об ошибке. */
+function describeExpected(expected: unknown): string {
+  if (isStandardSchema(expected)) {
+    return `a value matching the ${expected['~standard'].vendor} schema`
+  }
+  if (isAsymmetricMatcher(expected)) {
+    if (expected.toAsymmetricMatcher) return expected.toAsymmetricMatcher()
+    const sample = (expected as { sample?: unknown }).sample
+    if (sample === undefined) return String(expected)
+    return `${String(expected)}(${sample instanceof RegExp ? String(sample) : safeJson(sample)})`
+  }
+  return safeJson(expected)
+}
 
 function safeJson(value: unknown): string {
   try {
@@ -44,6 +131,8 @@ function safeJson(value: unknown): string {
  * Чистая функция: ищет первое расхождение `actual` с «частичным эталоном»
  * `expected`. Проверяются ТОЛЬКО поля/индексы, присутствующие в `expected`
  * (глубоко-частичное сравнение); остальное в `actual` игнорируется.
+ * Standard Schema на любом уровне валидирует значение, асимметричный
+ * матчер — вызывает свой `asymmetricMatch`.
  * Возвращает `null`, если расхождений нет.
  */
 export function matchPartial(args: {
@@ -53,13 +142,18 @@ export function matchPartial(args: {
 }): Mismatch | null {
   const { actual, expected, path = '' } = args
 
+  if (isStandardSchema(expected)) return matchSchema({ actual, schema: expected, path })
+  if (isAsymmetricMatcher(expected)) {
+    return expected.asymmetricMatch(actual) ? null : { path, expected, actual }
+  }
+
   if (Array.isArray(expected)) {
     if (!Array.isArray(actual)) return { path, expected, actual }
     for (let i = 0; i < expected.length; i++) {
       const m = matchPartial({
         actual: actual[i],
         expected: expected[i],
-        path: `${path}[${i}]`,
+        path: joinPath({ path, key: i }),
       })
       if (m) return m
     }
@@ -76,7 +170,7 @@ export function matchPartial(args: {
       const m = matchPartial({
         actual: act[key],
         expected: exp[key],
-        path: path ? `${path}.${key}` : key,
+        path: joinPath({ path, key }),
       })
       if (m) return m
     }
@@ -114,7 +208,8 @@ export function assertResponse(args: {
   if (mismatch) {
     throw new EberlyAssertionError(
       `${prefix}Response body mismatch at "${mismatch.path || '<root>'}": ` +
-        `expected ${safeJson(mismatch.expected)}, ` +
+        `expected ${describeExpected(mismatch.expected)}` +
+        `${mismatch.message ? ` (${mismatch.message})` : ''}, ` +
         `got ${safeJson(mismatch.actual)}.\n` +
         `Full body: ${safeJson(actualBody)}`,
     )
@@ -185,13 +280,15 @@ export class ApiResponse<M extends Record<number, unknown>> {
    *   4xx/5xx (`401`, `403`, `500`) можно передать без каста — тело тогда
    *   не типизировано. Незадекларированный 1xx–3xx — ошибка типов.
    * @param expectedBody Необязательная часть тела: проверяются только
-   *   переданные поля (глубоко-частично), остальные игнорируются.
+   *   переданные поля (глубоко-частично), остальные игнорируются. Вместо
+   *   любого значения — Standard Schema (`z.email()`, `v.uuid()`…) или
+   *   матчер vitest (`expect.any(Number)`); схемой можно и всё тело.
    * @returns тот же объект ответа. После задекларированного статуса `.body`
    *   сужен до его тела: `res.assert(201).body.id` без каста.
    */
   assert<S extends keyof M>(
     status: S,
-    expectedBody?: DeepPartial<M[S]>,
+    expectedBody?: Expected<M[S]>,
   ): this & { readonly body: M[S] }
   assert<S extends number>(status: S & UndeclaredErrorStatus<S, M>, expectedBody?: unknown): this
   assert(status: number, expectedBody?: unknown): this {

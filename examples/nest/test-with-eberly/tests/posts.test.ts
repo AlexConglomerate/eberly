@@ -4,6 +4,7 @@
 import { randomUUID } from 'node:crypto'
 
 import { beforeAll, describe, expect, test } from 'vitest'
+import { z } from 'zod'
 
 import { World } from '../eberly/generated'
 
@@ -60,6 +61,31 @@ describe('posts', () => {
     const ids = list.assert(200).body.map((p) => p.id)
     expect(ids).toContain(readyId)
     expect(ids).not.toContain(draftId)
+  })
+
+  test('тело проверяется схемами и матчерами, а не только точными значениями', async () => {
+    // #region docs:assert-schemas
+    const created = await alice.posts.create({ body: { title: 'Hello', content: 'First post' } })
+
+    created.assert(201, {
+      title: 'Hello', // exact value
+      id: z.number().int().positive(), // any Standard Schema: Zod, Valibot, ArkType…
+      createdAt: z.iso.datetime(),
+      publishedAt: null,
+      authorId: expect.any(Number), // a vitest asymmetric matcher works too
+    })
+
+    // A schema can check the whole body; fields it does not list are ignored
+    created.assert(201, z.object({ id: z.number(), title: z.string().min(1) }))
+    // #endregion
+
+    // Провал схемы — путь, текст от схемы и фактическое значение.
+    expect(() => created.assert(201, { title: z.email() })).toThrow(
+      'mismatch at "title": expected a value matching the zod schema (Invalid email address), got "Hello"',
+    )
+    expect(() => created.assert(201, { id: expect.any(String) })).toThrow(
+      /mismatch at "id": expected Any<String>, got \d+/,
+    )
   })
 
   test('без токена создать пост нельзя → 401', async () => {

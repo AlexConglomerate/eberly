@@ -23,6 +23,7 @@ res.body                              // union of the declared response bodies
 res.data                              // 2xx body; any other status throws
 res.assert(200)                       // status only
 res.assert(200, { title: 'Hello' })   // + deep-partial body check
+res.assert(200, { id: z.number() })   // a schema or expect.any(…) instead of a value
 res.assert(200).body.title            // body narrowed to the 200 type
 res.assert(403)                       // any undeclared 4xx/5xx works without a cast
 

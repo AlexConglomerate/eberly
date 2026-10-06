@@ -1,0 +1,37 @@
+---
+title: Check shapes with schemas and matchers
+description: Pass a Zod, Valibot or ArkType schema, or a vitest matcher, instead of an exact value in assert.
+sidebar:
+  order: 4
+---
+
+import { Code } from '@astrojs/starlight/components'
+
+import { snippet } from '../../../lib/snippet'
+import postsTest from '../../../../../examples/nest/test-with-eberly/tests/posts.test.ts?raw'
+
+Some values change on every run, like ids and dates. For those, check the shape
+instead of the exact value. In the expected body of `assert`, any value can be
+replaced with:
+
+- a schema from any [Standard Schema](https://standardschema.dev) library:
+  Zod, Valibot, ArkType, Effect Schema. eberly does not depend on any of them;
+- a vitest or jest asymmetric matcher: `expect.any(Number)`,
+  `expect.stringMatching(/@/)`.
+
+You can mix them with exact values at any depth
+([`posts.test.ts`](https://github.com/AlexConglomerate/eberly/blob/main/examples/nest/test-with-eberly/tests/posts.test.ts)):
+
+<Code code={snippet({ source: postsTest, region: 'assert-schemas' })} lang="ts" />
+
+- **Schemas are typed.** The output type of a schema must fit the field:
+  `id: z.email()` on a numeric `id` is a type error. Matchers are typed as
+  `any`, so TypeScript does not check them.
+- **The check stays partial.** A schema for the whole body passes when the body
+  has fields the schema does not list. To reject extra fields, use a strict
+  schema, such as `z.strictObject`.
+- **Errors point at the field.** A failed schema reports the path, the message
+  from the schema and the actual value:
+  `mismatch at "title": expected a value matching the zod schema (Invalid email address), got "Hello"`.
+- **Schemas must be sync.** An async schema, such as Zod with an async
+  `refine`, throws an error.

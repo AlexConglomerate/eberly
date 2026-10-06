@@ -9,6 +9,7 @@ import {
   assertResponse,
   matchPartial,
 } from './response'
+import type { StandardSchemaV1 } from './standard-schema'
 
 test('matchPartial: совпадение по подмножеству полей возвращает null', () => {
   const m = matchPartial({
@@ -40,6 +41,102 @@ test('matchPartial: массивы сверяются частично поэл�
 test('matchPartial: тип-несовпадение объект vs примитив (путь = корень)', () => {
   const m = matchPartial({ actual: 'str', expected: { id: '1' } })
   assert.deepEqual(m, { path: '', expected: { id: '1' }, actual: 'str' })
+})
+
+/** Самодельная Standard Schema: проверка `check`, при провале — `issues`. */
+function schema(args: {
+  check: (value: unknown) => boolean
+  message?: string
+  path?: PropertyKey[]
+}): StandardSchemaV1 {
+  return {
+    '~standard': {
+      version: 1,
+      vendor: 'test',
+      validate: (value) =>
+        args.check(value)
+          ? { value }
+          : { issues: [{ message: args.message ?? 'Invalid', path: args.path }] },
+    },
+  }
+}
+
+const isString = schema({ check: (v) => typeof v === 'string', message: 'Expected string' })
+
+/** Самодельный асимметричный матчер, как `expect.any(Number)` у vitest. */
+const anyNumber = {
+  asymmetricMatch: (other: unknown) => typeof other === 'number',
+  toAsymmetricMatcher: () => 'Any<Number>',
+}
+
+test('matchPartial: Standard Schema в поле проверяет значение, а не сравнивает', () => {
+  assert.equal(
+    matchPartial({ actual: { id: 'abc', title: 'a' }, expected: { id: isString } }),
+    null,
+  )
+  assert.deepEqual(
+    matchPartial({ actual: { user: { id: 5 } }, expected: { user: { id: isString } } }),
+    { path: 'user.id', expected: isString, actual: 5, message: 'Expected string' },
+  )
+})
+
+test('matchPartial: схема на всё тело — путь и значение берутся из issue.path', () => {
+  const body = schema({ check: () => false, message: 'Invalid email', path: ['users', 1, 'email'] })
+  assert.deepEqual(
+    matchPartial({ actual: { users: [{ email: 'a@b.c' }, { email: 'x' }] }, expected: body }),
+    { path: 'users[1].email', expected: body, actual: 'x', message: 'Invalid email' },
+  )
+})
+
+test('matchPartial: ArkType-схема — функция с ~standard — тоже схема', () => {
+  const fn = Object.assign(() => {}, isString)
+  assert.equal(matchPartial({ actual: { id: 'x' }, expected: { id: fn } }), null)
+  assert.equal(matchPartial({ actual: { id: 1 }, expected: { id: fn } })?.path, 'id')
+})
+
+test('matchPartial: асинхронная схема → понятная ошибка', () => {
+  const async: StandardSchemaV1 = {
+    '~standard': { version: 1, vendor: 'test', validate: async (value) => ({ value }) },
+  }
+  assert.throws(
+    () => matchPartial({ actual: { id: 1 }, expected: { id: async } }),
+    /Async schemas are not supported in assert \(at "id"\)/,
+  )
+})
+
+test('matchPartial: асимметричный матчер vitest/jest', () => {
+  assert.equal(matchPartial({ actual: { id: 1, n: 'a' }, expected: { id: anyNumber } }), null)
+  assert.deepEqual(matchPartial({ actual: { id: '1' }, expected: { id: anyNumber } }), {
+    path: 'id',
+    expected: anyNumber,
+    actual: '1',
+  })
+})
+
+test('assertResponse: сообщение называет схему, её текст и матчер', () => {
+  assert.throws(
+    () =>
+      assertResponse({
+        actualStatus: 200,
+        actualBody: { id: 5 },
+        expectedStatus: 200,
+        expectedBody: { id: isString },
+      }),
+    (err: unknown) =>
+      String(err).includes(
+        'mismatch at "id": expected a value matching the test schema (Expected string), got 5.',
+      ),
+  )
+  assert.throws(
+    () =>
+      assertResponse({
+        actualStatus: 200,
+        actualBody: { id: '5' },
+        expectedStatus: 200,
+        expectedBody: { id: anyNumber },
+      }),
+    (err: unknown) => String(err).includes('mismatch at "id": expected Any<Number>, got "5".'),
+  )
 })
 
 test('assertResponse: статус не совпал → EberlyAssertionError', () => {

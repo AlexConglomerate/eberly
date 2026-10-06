@@ -85,6 +85,9 @@ describe('posts', () => {
 - Call shape: `user.<group>.<method>({ path?, query?, body? })`.
 - `assert(status, body?)`: status must match exactly; body is deep-partial
   (only given fields are compared; arrays compare by index from 0).
+  For values that change per run (ids, dates), put a schema or matcher in
+  place of the value: `{ id: z.number(), createdAt: expect.any(String) }`
+  (any Standard Schema: Zod, Valibot, ArkType; the whole body can be a schema too).
   Returns the response, so `.assert(200).body` is typed. Status from a
   variable needs `as const`: `for (const s of [401, 403] as const) res.assert(s)`.
 - `res.data`: the 2xx body, throws on any other status. Use it in setup

@@ -2,6 +2,7 @@
 // пример для README лежит в `readme.test.ts`.
 
 import { beforeEach, describe, expect, test } from 'vitest'
+import { z } from 'zod'
 
 import { World } from '../eberly/generated'
 
@@ -37,6 +38,11 @@ describe('Песочница', () => {
 
     bobRead.assert(200, postData) // Можем проверить все поля
     aliceRead.assert(200, { title: postData.title }) // Можем проверить только часть полей
+    aliceRead.assert(200, {
+      id: z.number().int(),
+      createdAt: z.iso.datetime(),
+      authorId: expect.any(Number)
+    }) // Или форму, а не значения
 
     // Алиса и Боб пытаются удалить пост
     const bobTryToRemove = await bob.posts.remove({ path: { id: alicePostId } })

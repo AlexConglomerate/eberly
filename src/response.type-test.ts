@@ -3,6 +3,7 @@
 // скажет «Unused '@ts-expect-error' directive».
 
 import type { ApiResponse } from './response'
+import type { StandardSchemaV1 } from './standard-schema'
 
 declare const res: ApiResponse<{ 201: { id: string }; 409: { message: string } }>
 
@@ -34,3 +35,24 @@ const fromData: { id: string } = res.data
 // @ts-expect-error — тело 4xx в `data` не попадает
 const notError: { message: string } = res.data
 void [fromData, notError]
+
+// Standard Schema и матчеры во втором аргументе. Схема типизирована своим
+// выходом: он должен подходить под тип поля (или частичного тела целиком).
+
+declare const str: StandardSchemaV1<string>
+declare const num: StandardSchemaV1<number>
+declare const partialBody: StandardSchemaV1<unknown, { id: string }>
+declare const wrongBody: StandardSchemaV1<unknown, { id: number }>
+declare const anyMatcher: any // так типизирован `expect.any(String)` у vitest
+
+declare const post: ApiResponse<{ 200: { id: string; tags: string[]; author: { age: number } } }>
+
+post.assert(200, { id: str, tags: [str], author: { age: num } })
+post.assert(200, { id: anyMatcher })
+post.assert(200, partialBody) // схема на всё тело может описывать часть полей
+// @ts-expect-error — выход схемы number, а поле — string
+post.assert(200, { id: num })
+// @ts-expect-error — схема тела с неверным типом поля
+post.assert(200, wrongBody)
+// @ts-expect-error — схемы не спасают от лишнего поля
+post.assert(200, { title: str })

@@ -2,6 +2,8 @@
 // `.test.` в имени), проверяет `pnpm typecheck` (`tsc --noEmit`). Если
 // ожидаемая ошибка пропадёт, tsc скажет «Unused '@ts-expect-error'».
 
+import { z } from 'zod'
+
 import { World } from '../eberly/generated'
 
 export async function typeChecks(): Promise<void> {
@@ -17,6 +19,13 @@ export async function typeChecks(): Promise<void> {
   res.assert(400, { statusCode: 400 })
   // @ts-expect-error — у ErrorDto нет поля `title`
   res.assert(400, { title: 'Hello' })
+
+  // Схема вместо значения: её выход должен подходить под тип поля.
+  res.assert(201, { id: z.number(), title: z.string().min(1) })
+  // @ts-expect-error — id у PostDto число, а z.email() выдаёт строку
+  res.assert(201, { id: z.email() })
+  // @ts-expect-error — то же для схемы всего тела
+  res.assert(201, z.object({ id: z.string() }))
 
   // Незадекларированный 4xx — без каста.
   res.assert(403)

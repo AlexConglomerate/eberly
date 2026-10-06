@@ -12,6 +12,10 @@
   тела статуса), любой незадекларированный 4xx/5xx — без каста
   (`UndeclaredErrorStatus`). Тест типов —
   `src/response.type-test.ts` (`@ts-expect-error`, проверяет `pnpm lint`).
+  Во втором аргументе `assert` вместо любого значения — Standard Schema
+  или матчер vitest (`expect.any(Number)`), см. `ARCHITECTURE.md §6`.
+- `src/standard-schema.ts` — копия интерфейса Standard Schema v1 (Zod,
+  Valibot, ArkType…) + `isStandardSchema`. Без зависимостей.
 - `src/safety.ts` — рантайм-ядро: защита от прода. `isHostAllowed` /
   `assertHostAllowed` + `EberlyUnsafeHostError` (loopback всегда, остальное —
   из `allowedHosts`; вызывается сгенерированным клиентом только в `'test'`;
@@ -113,7 +117,7 @@ OpenAPI **3.0** (`nullable`, `format: binary`), 201/204, ошибки 4xx с
 `examples/nest/test-with-eberly` — тесты Nest-бэкенда через eberly
 (`@eberly-examples/nest-test-with-eberly`): `signUp` (register → login →
 токен), `world.reset()`, Bearer в `globalBefore`, `lastPostId` в
-`posts.create.after`. Тесты: `tests/{auth,posts,comments,avatar,readme,sandbox}.test.ts`
+`posts.create.after`, Zod-схемы в `assert` (devDependency `zod`). Тесты: `tests/{auth,posts,comments,avatar,readme,sandbox}.test.ts`
 (`readme.test.ts` — пример «до и после» из `README.md`, один в один, оба
 блока: и eberly, и голый `fetch`; `sandbox.test.ts` — песочница для
 экспериментов, в README не попадает);

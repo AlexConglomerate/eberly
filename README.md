@@ -82,6 +82,9 @@ and the statuses `201` / `403` are all checked by TypeScript.
 - **Status with autocomplete, partial body check.** `res.assert(201, { title })`
   checks only the fields you pass, at any depth
   ([recursive comments](https://eberly.dev/guides/recursive-comments/)).
+- **Shapes instead of values.** `res.assert(201, { id: z.number(), createdAt: z.iso.datetime() })`:
+  any Standard Schema (Zod, Valibot, ArkType) or `expect.any(…)` in place of a value
+  ([schemas and matchers](https://eberly.dev/guides/schemas-and-matchers/)).
 - **Transparent token refresh.** A `globalRetry` hook refreshes the token on
   `401`, and eberly replays the request
   ([auth and token refresh](https://eberly.dev/guides/auth-and-token-refresh/)).
