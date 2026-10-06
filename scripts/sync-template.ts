@@ -1,5 +1,5 @@
-// Собирает шаблон для `npx ebely create` (`clone/tests`) из примера
-// `examples/simple/test-with-ebely`. Шаблон руками не правится и не
+// Собирает шаблон для `npx eberly create` (`clone/tests`) из примера
+// `examples/simple/test-with-eberly`. Шаблон руками не правится и не
 // коммитится (`clone/` в .gitignore): любая правка примера попадает в него
 // сама. Запускается в `prepublishOnly` и в начале `pnpm e2e`.
 
@@ -7,7 +7,7 @@ import { cp, rm } from 'node:fs/promises'
 import { relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const SOURCE = fileURLToPath(new URL('../examples/simple/test-with-ebely', import.meta.url))
+const SOURCE = fileURLToPath(new URL('../examples/simple/test-with-eberly', import.meta.url))
 const TARGET = fileURLToPath(new URL('../clone/tests', import.meta.url))
 
 /** Пути относительно примера, которые в шаблон не берём. */

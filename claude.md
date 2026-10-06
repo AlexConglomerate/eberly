@@ -1,4 +1,4 @@
-Это библиотека ebely для создания типизированного клиента,
+Это библиотека eberly для создания типизированного клиента,
 с помощью которого можно тестировать бэкэнд.
 
 ## Структура
@@ -13,7 +13,7 @@
   (`UndeclaredErrorStatus`). Тест типов —
   `src/response.type-test.ts` (`@ts-expect-error`, проверяет `pnpm lint`).
 - `src/safety.ts` — рантайм-ядро: защита от прода. `isHostAllowed` /
-  `assertHostAllowed` + `EbelyUnsafeHostError` (loopback всегда, остальное —
+  `assertHostAllowed` + `EberlyUnsafeHostError` (loopback всегда, остальное —
   из `allowedHosts`; вызывается сгенерированным клиентом только в `'test'`;
   `ARCHITECTURE.md §12`).
 - `src/hooks.ts` — рантайм-ядро: `HookRegistry` + типы хуков `before` /
@@ -21,7 +21,7 @@
 - `src/files.ts` — рантайм-ядро: отправка файлов (multipart). `toBlob`,
   `toMultipartFormData`, типы `FileInput` / `FileEncoding` / `FileFieldMeta`
   (чистые функции, чтение пути через ленивый `node:fs`; `ARCHITECTURE.md §9`).
-- `src/config.ts` — публичный тип `EbelyConfig` (+ `ClientMode`, `allowedHosts`).
+- `src/config.ts` — публичный тип `EberlyConfig` (+ `ClientMode`, `allowedHosts`).
 - `src/generate-client.ts` — оркестратор: связывает шаги генератора и пишет файл.
 - `src/generator/` — внутренности генератора (НЕ публичные):
   - `swagger.ts` — `SwaggerSource` + загрузка схемы (`loadSpec`).
@@ -53,7 +53,7 @@
 
 `README.md` — на английском, это страница пакета и лендинг. Каждый
 фрагмент кода в нём скопирован из теста, зелёного в `pnpm e2e` (пример
-«до и после» — `examples/nest/test-with-ebely/tests/readme.test.ts`).
+«до и после» — `examples/nest/test-with-eberly/tests/readme.test.ts`).
 Поменяли API или тест — сверьте README.
 
 Примеры (НЕ попадают в npm-пакет — `files: ["dist"]` + отдельный workspace,
@@ -61,26 +61,26 @@
 независимых проекта:
 
 - `examples/simple/your-app` — тестируемое приложение (oRPC CRUD-бэкенд).
-  От библиотеки `ebely` НЕ зависит.
+  От библиотеки `eberly` НЕ зависит.
   - Бэкенд: `your-app/src/{db,router,server}.ts`
   - Сборка swagger: `your-app/swagger/{openapi,generate-swagger}.ts`
   - Схема: `your-app/swagger/swagger.json`
-- `examples/simple/test-with-ebely` — пример использования библиотеки.
-  - Конфиг ebely: `test-with-ebely/ebely/ebely.ts`
-  - Скрипт генерации: `test-with-ebely/ebely/generate-client.ts`
-  - Переменные/сценарии юзера: `test-with-ebely/ebely/userStore.ts`
+- `examples/simple/test-with-eberly` — пример использования библиотеки.
+  - Конфиг eberly: `test-with-eberly/eberly/eberly.ts`
+  - Скрипт генерации: `test-with-eberly/eberly/generate-client.ts`
+  - Переменные/сценарии юзера: `test-with-eberly/eberly/userStore.ts`
     (`UserStore`, `BaseStore<Vars, WorldApi>` + методы-сценарии вроде
     `fullRegister`, см. `ARCHITECTURE.md §8`)
-  - Переменные/сценарии world: `test-with-ebely/ebely/worldStore.ts`
+  - Переменные/сценарии world: `test-with-eberly/eberly/worldStore.ts`
     (`WorldStore`; кладётся в конфиг как `worldStore`; даёт
     `world.clearDatabase()` и т.п.)
-  - Хуки before/after: `test-with-ebely/ebely/hooks.ts` (типизированы,
-    `Hooks<UserStore>`), переиспользуемые хендлеры — `ebely/handlers.ts`
-  - Сгенерированный клиент: `test-with-ebely/ebely/generated.ts` (не редактировать)
-  - Описания эндпоинтов для агента: `test-with-ebely/ebely/api/` (`INDEX.md`
+  - Хуки before/after: `test-with-eberly/eberly/hooks.ts` (типизированы,
+    `Hooks<UserStore>`), переиспользуемые хендлеры — `eberly/handlers.ts`
+  - Сгенерированный клиент: `test-with-eberly/eberly/generated.ts` (не редактировать)
+  - Описания эндпоинтов для агента: `test-with-eberly/eberly/api/` (`INDEX.md`
     + файл на эндпоинт; генерируются вместе с клиентом, коммитятся)
-  - Свагер бэкенда (копия из your-app): `test-with-ebely/swagger.json`
-  - Пример тестов: `test-with-ebely/tests/test1.test.ts`
+  - Свагер бэкенда (копия из your-app): `test-with-eberly/swagger.json`
+  - Пример тестов: `test-with-eberly/tests/test1.test.ts`
 
 `examples/nest/your-app` — второй тестируемый бэкенд, на NestJS (блог:
 юзеры, посты-черновики, дерево комментариев, аватар). Источник «настоящего»
@@ -98,8 +98,8 @@ OpenAPI **3.0** (`nullable`, `format: binary`), 201/204, ошибки 4xx с
     попадает (скрипт поднимает модуль с `testMode: true`).
   - Схема: `nest/your-app/swagger/swagger.json`
 
-`examples/nest/test-with-ebely` — тесты Nest-бэкенда через ebely
-(`@ebely-examples/nest-test-with-ebely`): `signUp` (register → login →
+`examples/nest/test-with-eberly` — тесты Nest-бэкенда через eberly
+(`@eberly-examples/nest-test-with-eberly`): `signUp` (register → login →
 токен), `world.reset()`, Bearer в `globalBefore`, `lastPostId` в
 `posts.create.after`. Тесты: `tests/{auth,posts,comments,avatar,readme}.test.ts`
 (`readme.test.ts` — пример «до и после» из `README.md`, один в один);
@@ -107,16 +107,16 @@ OpenAPI **3.0** (`nullable`, `format: binary`), 201/204, ошибки 4xx с
 проверяет `typecheck`, vitest его не запускает). Фикстура —
 `tests/fixtures/avatar.png`.
 
-Во всех `test-with-ebely`: `vitest.config.ts` с `fileParallelism: false`
+Во всех `test-with-eberly`: `vitest.config.ts` с `fileParallelism: false`
 (общая БД) и скрипт `typecheck` (`tsc --noEmit`).
 
-CLI `bin/ebely.mjs` (`npx ebely create` / `skills`) и скиллы для Claude Code
-`skills/{ebely-setup,ebely-write-tests}/SKILL.md` (на английском, <150
+CLI `bin/eberly.mjs` (`npx eberly create` / `skills`) и скиллы для Claude Code
+`skills/{eberly-setup,eberly-write-tests}/SKILL.md` (на английском, <150
 строк; `create` сам копирует их в `<dir>/.claude/skills/`). Попадают в
 npm-пакет.
 
-`clone/tests` — шаблон для `npx ebely create`. **Генерируется** из
-`examples/simple/test-with-ebely` (`scripts/sync-template.ts`), в git не
+`clone/tests` — шаблон для `npx eberly create`. **Генерируется** из
+`examples/simple/test-with-eberly` (`scripts/sync-template.ts`), в git не
 лежит, руками не править.
 
 Скрипты репозитория (`scripts/`, проверяются `pnpm lint`):
@@ -129,24 +129,24 @@ npm-пакет.
 
 `pnpm e2e` — сборка + шаблон, затем по очереди `simple`, `simple-auth`,
 `nest`: свагер → бэкенд на `:3000` → `client:generate` → `typecheck` →
-`test`; в конце смоук `ebely create`. Порт `:3000` должен быть свободен.
+`test`; в конце смоук `eberly create`. Порт `:3000` должен быть свободен.
 `pnpm e2e --only nest` — один пример. Перегенерированные `swagger.json`,
-`generated.ts`, `ebely/api/` — коммитить.
+`generated.ts`, `eberly/api/` — коммитить.
 
-`your-app` (`pnpm --filter @ebely-examples/your-app run <script>`):
+`your-app` (`pnpm --filter @eberly-examples/your-app run <script>`):
 - `start` / `dev` — поднять бэкенд (`:3000`).
 - `swagger` — перегенерировать `swagger/swagger.json`.
 
-`test-with-ebely` (`pnpm --filter @ebely-examples/test-with-ebely run <script>`):
-- `client:generate` — сгенерировать клиент в `ebely/generated.ts` и
-  описания эндпоинтов в `ebely/api/`.
+`test-with-eberly` (`pnpm --filter @eberly-examples/test-with-eberly run <script>`):
+- `client:generate` — сгенерировать клиент в `eberly/generated.ts` и
+  описания эндпоинтов в `eberly/api/`.
 - `typecheck` — `tsc --noEmit` по тестам (vitest типы не проверяет).
 - `test` — запустить пример тестов (`tests/test1.test.ts`).
 
-`nest/test-with-ebely` (`pnpm --filter @ebely-examples/nest-test-with-ebely run <script>`):
+`nest/test-with-eberly` (`pnpm --filter @eberly-examples/nest-test-with-eberly run <script>`):
 те же `client:generate`, `typecheck`, `test` (бэкенд — с `TEST_MODE=1`).
 
-`nest/your-app` (`pnpm --filter @ebely-examples/nest-your-app run <script>`):
+`nest/your-app` (`pnpm --filter @eberly-examples/nest-your-app run <script>`):
 - `start` — собрать и поднять бэкенд (`:3000`; `TEST_MODE=1` включает
   `POST /test/reset`). Swagger UI — `/docs`, схема — `/swagger.json`.
 - `swagger` — собрать и перегенерировать `swagger/swagger.json`.

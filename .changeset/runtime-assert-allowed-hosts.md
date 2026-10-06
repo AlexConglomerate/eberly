@@ -1,5 +1,5 @@
 ---
-"ebely": minor
+"eberly": minor
 ---
 
 Рантайм: `assert` на ошибочные статусы, `allowedHosts`, английские сообщения.
@@ -12,9 +12,9 @@
 - Новое поле конфига `allowedHosts?: string[]` (точный hostname или
   `*.domain`). В режиме `test` клиент ходит только на loopback и хосты из
   списка, иначе `new World()` / `createUser()` бросают
-  `EbelyUnsafeHostError` до первого запроса. **Ломающее:** тесты против
+  `EberlyUnsafeHostError` до первого запроса. **Ломающее:** тесты против
   не-localhost бэкенда теперь требуют `allowedHosts`. Клиент нужно
-  перегенерировать. Экспорт: `assertHostAllowed`, `EbelyUnsafeHostError`,
+  перегенерировать. Экспорт: `assertHostAllowed`, `EberlyUnsafeHostError`,
   тип `UndeclaredErrorStatus`.
 - Сообщения для пользователя на английском: ошибки `assert`, `loadSpec`,
-  вывод CLI `ebely`.
+  вывод CLI `eberly`.

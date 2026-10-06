@@ -135,7 +135,7 @@ const confirm = os
 // --- Два эндпоинта, отличающиеся ТОЛЬКО методом (один путь) -----------
 // Намеренно задаём обоим один и тот же operationId `auth.getSession` —
 // это в точности воспроизводит кейс better-auth (GET и POST на
-// `/get-session` с общим operationId). Генератор ebely разводит такую
+// `/get-session` с общим operationId). Генератор eberly разводит такую
 // коллизию префиксом метода: `getSession` → `getGetSession` (GET) и
 // `postGetSession` (POST). Реальной авторизации тут НЕТ — стабы.
 

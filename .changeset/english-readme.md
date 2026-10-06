@@ -1,5 +1,5 @@
 ---
-"ebely": minor
+"eberly": minor
 ---
 
 README на английском: «до и после», быстрый старт, примеры из тестов
@@ -8,5 +8,5 @@ README на английском: «до и после», быстрый ста�
 - `Readme.md` → `README.md`, добавлен `LICENSE` (MIT).
 - `package.json`: `description`, `keywords`, `repository`, `homepage`,
   `bugs` для страницы на npm.
-- `npx ebely create` в подсказке «вручную» теперь зовёт
+- `npx eberly create` в подсказке «вручную» теперь зовёт
   `pnpm typecheck && pnpm test` и даёт ссылку на README.

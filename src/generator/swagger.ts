@@ -36,7 +36,7 @@ export async function loadSpec(args: { swagger: SwaggerSource }): Promise<Json> 
   const response = await fetch(swagger.url)
   if (!response.ok) {
     throw new Error(
-      `ebely: failed to fetch the swagger spec from ${swagger.url}: ${response.status} ${response.statusText}`,
+      `eberly: failed to fetch the swagger spec from ${swagger.url}: ${response.status} ${response.statusText}`,
     )
   }
   return (await response.json()) as Json

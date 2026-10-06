@@ -1,5 +1,5 @@
 {
-  "name": "@ebely-examples/auth-your-app",
+  "name": "@eberly-examples/auth-your-app",
   "version": "0.0.0",
   "private": true,
   "description": "Тестируемое приложение с авторизацией через BetterAuth (email+пароль, роли, фейковый Google OAuth) поверх oRPC и SQLite.",

@@ -31,7 +31,7 @@ test('toBlob: готовый File/Blob возвращается как есть'
 })
 
 test('toBlob: строка-путь читается с диска, имя/mime выводятся', async () => {
-  const dir = await mkdtemp(join(tmpdir(), 'ebely-files-'))
+  const dir = await mkdtemp(join(tmpdir(), 'eberly-files-'))
   const path = join(dir, 'hi.txt')
   await writeFile(path, 'hello')
   try {
@@ -45,7 +45,7 @@ test('toBlob: строка-путь читается с диска, имя/mime 
 })
 
 test('toBlob: file://-URL читается с диска', async () => {
-  const dir = await mkdtemp(join(tmpdir(), 'ebely-files-'))
+  const dir = await mkdtemp(join(tmpdir(), 'eberly-files-'))
   const path = join(dir, 'pic.jpg')
   await writeFile(path, 'jpegbytes')
   try {

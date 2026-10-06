@@ -1,12 +1,12 @@
 ---
-"ebely": minor
+"eberly": minor
 ---
 
-Скиллы `/ebely-setup` и `/ebely-write-tests` для Claude Code.
+Скиллы `/eberly-setup` и `/eberly-write-tests` для Claude Code.
 
 - Оба скилла дописаны (были заглушками): вопросы пользователю, шаги,
-  правила и шпаргалка по API. Агент читает `ebely/api/`, а не
+  правила и шпаргалка по API. Агент читает `eberly/api/`, а не
   `generated.ts` и не код бэкенда.
-- `npx ebely create` сам кладёт скиллы в `<dir>/.claude/skills/`.
-  `npx ebely skills` остаётся для существующих проектов и обновления
-  (скиллы копируются — после апдейта `ebely` запустить ещё раз).
+- `npx eberly create` сам кладёт скиллы в `<dir>/.claude/skills/`.
+  `npx eberly skills` остаётся для существующих проектов и обновления
+  (скиллы копируются — после апдейта `eberly` запустить ещё раз).

@@ -2,7 +2,7 @@
 
 Игрушечное приложение, которое мы тестируем. Может быть написано на любом
 языке — здесь это простой CRUD-бэкенд для постов на oRPC, данные хранятся
-в памяти. К библиотеке `ebely` не имеет никакого отношения и от неё не зависит.
+в памяти. К библиотеке `eberly` не имеет никакого отношения и от неё не зависит.
 
 Помечен `private: true` и вынесен в pnpm workspace, поэтому **не попадает**
 в публикуемый npm-пакет библиотеки.
@@ -12,9 +12,9 @@
 Из корня репозитория установите зависимости (`pnpm install`).
 
 ```bash
-pnpm --filter @ebely-examples/your-app run start    # бэкенд на :3000
-pnpm --filter @ebely-examples/your-app run dev      # то же, в watch-режиме
-pnpm --filter @ebely-examples/your-app run swagger  # перегенерировать swagger/swagger.json
+pnpm --filter @eberly-examples/your-app run start    # бэкенд на :3000
+pnpm --filter @eberly-examples/your-app run dev      # то же, в watch-режиме
+pnpm --filter @eberly-examples/your-app run swagger  # перегенерировать swagger/swagger.json
 ```
 
 - `http://localhost:3000/api/posts` — API
@@ -28,4 +28,4 @@ pnpm --filter @ebely-examples/your-app run swagger  # перегенериров
 - `src/server.ts` — HTTP-сервер.
 - `swagger/openapi.ts` — сборка OpenAPI-схемы из роутера.
 - `swagger/generate-swagger.ts` — пишет схему в `swagger/swagger.json`.
-- `swagger/swagger.json` — сгенерированная схема (отдаётся тестам в `test-with-ebely`).
+- `swagger/swagger.json` — сгенерированная схема (отдаётся тестам в `test-with-eberly`).

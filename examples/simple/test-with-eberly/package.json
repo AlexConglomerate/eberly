@@ -1,0 +1,21 @@
+{
+  "name": "@eberly-examples/test-with-eberly",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Пример использования библиотеки eberly для тестирования бэкенда (your-app)",
+  "type": "module",
+  "scripts": {
+    "client:generate": "tsx eberly/generate-client.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "eberly": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.8.0",
+    "tsx": "^4.22.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.6"
+  }
+}

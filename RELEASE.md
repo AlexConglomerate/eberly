@@ -1,6 +1,6 @@
 # Релиз новой версии
 
-Библиотека `ebely` публикуется в npm. Версионирование — через
+Библиотека `eberly` публикуется в npm. Версионирование — через
 [Changesets](https://github.com/changesets/changesets).
 
 ## Шаги

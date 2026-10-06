@@ -10,15 +10,15 @@
 - **фейковый Google OAuth-провайдер**: локальный IdP под `/fake-google/*`, через
   который BetterAuth честно делает authorize → token → userinfo (без реальных ключей).
 
-К библиотеке `ebely` НЕ имеет отношения и от неё не зависит. `private: true` +
-pnpm workspace ⇒ в npm-пакет ebely не попадает.
+К библиотеке `eberly` НЕ имеет отношения и от неё не зависит. `private: true` +
+pnpm workspace ⇒ в npm-пакет eberly не попадает.
 
 ## Запуск
 
 ```bash
-pnpm --filter @ebely-examples/auth-your-app run start    # бэкенд на :3000
-pnpm --filter @ebely-examples/auth-your-app run dev      # то же, в watch
-pnpm --filter @ebely-examples/auth-your-app run swagger  # перегенерировать swagger.json
+pnpm --filter @eberly-examples/auth-your-app run start    # бэкенд на :3000
+pnpm --filter @eberly-examples/auth-your-app run dev      # то же, в watch
+pnpm --filter @eberly-examples/auth-your-app run swagger  # перегенерировать swagger.json
 ```
 
 - `http://localhost:3000/api/...`  — API

@@ -6,7 +6,7 @@
 
 import type { Json } from './types'
 
-const SUPPORTED = 'ebely supports OpenAPI 3.0 and 3.1'
+const SUPPORTED = 'eberly supports OpenAPI 3.0 and 3.1'
 
 /** Бросает понятную ошибку, если версия схемы не 3.0.x / 3.1.x. */
 export function assertSupportedVersion(args: { spec: Json }): void {

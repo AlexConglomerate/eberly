@@ -1,4 +1,4 @@
-// Публичный API приложения (oRPC). Сюда смотрит ebely — отсюда же
+// Публичный API приложения (oRPC). Сюда смотрит eberly — отсюда же
 // собирается swagger. Никаких сетевых mountов BetterAuth наружу нет:
 // auth-эндпоинты — это oRPC-обёртки над server-side API BetterAuth.
 //

@@ -22,7 +22,7 @@ export const RESERVED_TYPE_NAMES: ReadonlySet<string> = new Set([
   'WorldApi',
   'Hooks',
   'CreateUserArgs',
-  'EbelyHookTree',
+  'EberlyHookTree',
   'RequestInput',
   'RequestFn',
   'ConfiguredWorldStore',

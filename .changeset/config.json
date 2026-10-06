@@ -7,5 +7,5 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["@ebely-examples/*"]
+  "ignore": ["@eberly-examples/*"]
 }

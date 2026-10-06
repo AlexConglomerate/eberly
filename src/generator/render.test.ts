@@ -50,13 +50,13 @@ const render = (mode: ClientMode) =>
     names: new Map(),
     operations: [op],
     mode,
-    userStoreImport: 'ebely',
-    configImport: './ebely',
+    userStoreImport: 'eberly',
+    configImport: './eberly',
   })
 
 test("режим 'test': ApiResponse, карта статусов, request не бросает", () => {
   const out = render('test')
-  assert.match(out, /import \{ BaseStore, ApiResponse, HookRegistry, assertHostAllowed, toMultipartFormData \} from "ebely"/)
+  assert.match(out, /import \{ BaseStore, ApiResponse, HookRegistry, assertHostAllowed, toMultipartFormData \} from "eberly"/)
   assert.match(out, /Promise<ApiResponse<\{ 200: \{ "id": string \} \}>>/)
   assert.match(out, /return \{ status: response\.status, body: data \}/)
   assert.doesNotMatch(out, /throw new Error\(/)
@@ -64,7 +64,7 @@ test("режим 'test': ApiResponse, карта статусов, request не 
 
 test("режим 'frontend': тело напрямую, без ApiResponse, request бросает", () => {
   const out = render('frontend')
-  assert.match(out, /import \{ BaseStore, HookRegistry, toMultipartFormData \} from "ebely"/)
+  assert.match(out, /import \{ BaseStore, HookRegistry, toMultipartFormData \} from "eberly"/)
   assert.doesNotMatch(out, /ApiResponse/)
   assert.match(out, /Promise<\{ "id": string \}>/)
   assert.match(out, /throw new Error\(/)
@@ -73,7 +73,7 @@ test("режим 'frontend': тело напрямую, без ApiResponse, requ
 test("allowedHosts: проверка хоста в makeRequest только в режиме 'test'", () => {
   const out = render('test')
   assert.match(out, /const baseUrl = this\.baseUrl\(\)\n[^]*?assertHostAllowed\(\{\n\s+url: baseUrl,/)
-  assert.match(out, /allowedHosts: \(ebely as \{ allowedHosts\?: string\[\] \}\)\.allowedHosts/)
+  assert.match(out, /allowedHosts: \(eberly as \{ allowedHosts\?: string\[\] \}\)\.allowedHosts/)
   assert.doesNotMatch(render('frontend'), /assertHostAllowed/)
 })
 
@@ -82,7 +82,7 @@ test('оба режима: типизированное дерево хуков 
     const out = render(mode)
     // публичный тип регистратора и дерево
     assert.match(out, /export type Hooks</)
-    assert.match(out, /type EbelyHookTree<Store extends BaseStore> = \{/)
+    assert.match(out, /type EberlyHookTree<Store extends BaseStore> = \{/)
     assert.match(out, /before\(fn: BeforeHook<Store, undefined>\): void/)
     assert.match(out, /after\(fn: AfterHook<Store, undefined, \{ "id": string \}>\): void/)
     // глобальные хуки на все операции
@@ -92,9 +92,9 @@ test('оба режима: типизированное дерево хуков 
     assert.match(out, /globalBefore: \(fn: BeforeHook<Store>\) => r\.globalBefore\(\{ fn \}\)/)
     assert.match(out, /globalAfter: \(fn: AfterHook<Store>\) => r\.globalAfter\(\{ fn \}\)/)
     assert.match(out, /globalRetry: \(fn: RetryHook<Store>\) => r\.globalRetry\(\{ fn \}\)/)
-    assert.match(out, /import type \{ BeforeHook, AfterHook, RetryHook \} from "ebely"/)
+    assert.match(out, /import type \{ BeforeHook, AfterHook, RetryHook \} from "eberly"/)
     // retry-цикл и обращение к runRetry в общем request
-    assert.match(out, /const maxRetries = \(ebely as \{ maxRetries\?: number \}\)\.maxRetries \?\? 3/)
+    assert.match(out, /const maxRetries = \(eberly as \{ maxRetries\?: number \}\)\.maxRetries \?\? 3/)
     assert.match(out, /await registry\.runRetry\(\{/)
     // реестр на World и применение конфиг-регистратора
     assert.match(out, /private hookRegistry = new HookRegistry\(\)/)
@@ -133,7 +133,7 @@ test('world-store: World наследует сконфигурированный
   for (const mode of ['test', 'frontend'] as const) {
     const out = render(mode)
     assert.match(out, /type ConfiguredWorldStore =/)
-    assert.match(out, /const WorldStoreBase = \(\(ebely as \{ worldStore\?:/)
+    assert.match(out, /const WorldStoreBase = \(\(eberly as \{ worldStore\?:/)
     assert.match(out, /> extends WorldStoreBase \{/)
     // конструктор инициализирует super() и анонимный api для world
     assert.match(out, /super\(\)/)
@@ -165,15 +165,15 @@ test('multipart: FILE_OPS, ветка request, импорт файловых х�
       names: new Map(),
       operations: [fileOp],
       mode,
-      userStoreImport: 'ebely',
-      configImport: './ebely',
+      userStoreImport: 'eberly',
+      configImport: './eberly',
     })
     // импорты: значение toMultipartFormData + типы файлов
-    assert.match(out, /import type \{ FileInput, FileEncoding, FileFieldMeta \} from "ebely"/)
+    assert.match(out, /import type \{ FileInput, FileEncoding, FileFieldMeta \} from "eberly"/)
     // статическая карта файловых операций
     assert.match(out, /const FILE_OPS: Record<string, FileFieldMeta\[\]> = \{/)
     assert.match(out, /"media\.upload": \[\{ name: "files", array: true \}\]/)
-    // ветка в общем request: дефолт 'repeat', чтение ebely.files.encoding
+    // ветка в общем request: дефолт 'repeat', чтение eberly.files.encoding
     assert.match(out, /const fileFields = FILE_OPS\[opKey\]/)
     assert.match(out, /await toMultipartFormData\(\{/)
     assert.match(out, /\.files\?\.encoding \?\? 'repeat'/)
@@ -199,8 +199,8 @@ function renderSpec(args: { spec: Json; mode?: ClientMode }): string {
     names,
     operations: collectOperations({ spec, names }),
     mode,
-    userStoreImport: 'ebely',
-    configImport: './ebely',
+    userStoreImport: 'eberly',
+    configImport: './eberly',
   })
 }
 
@@ -242,7 +242,7 @@ test('именованный тип объявлен ровно один раз,
   for (const mode of ['test', 'frontend'] as const) {
     const out = renderSpec({ spec: postsSpec, mode })
     assert.equal(out.match(/export type PostDto =/g)?.length, 1)
-    assert.ok(out.indexOf('export type PostDto =') > out.indexOf('import { ebely }'))
+    assert.ok(out.indexOf('export type PostDto =') > out.indexOf('import { eberly }'))
     assert.match(out, /"related"\?: Array<PostDto>/)
   }
 })
@@ -268,7 +268,7 @@ test('реализация типизирована через WorldApi и не 
 
 /** Кусок исходника — тип `WorldApi`. */
 const worldApiType = (out: string): string =>
-  out.slice(out.indexOf('export type WorldApi'), out.indexOf('type EbelyHookTree'))
+  out.slice(out.indexOf('export type WorldApi'), out.indexOf('type EberlyHookTree'))
 
 test('JSDoc эндпоинта: summary, description и маршрут — над методом в WorldApi', () => {
   const spec = makeSpec({
@@ -375,5 +375,5 @@ test('без описаний — без пустых /** */', () => {
 
 test('без схем блок объявлений не рендерится', () => {
   const out = renderSpec({ spec: makeSpec() })
-  assert.match(out, /from "\.\/ebely"\n\nconst FILE_OPS/)
+  assert.match(out, /from "\.\/eberly"\n\nconst FILE_OPS/)
 })

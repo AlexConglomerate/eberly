@@ -13,10 +13,10 @@ export type DeepPartial<T> = T extends (infer U)[]
     : T
 
 /** Ошибка проваленной проверки `res.assert(...)`. */
-export class EbelyAssertionError extends Error {
+export class EberlyAssertionError extends Error {
   constructor(message: string) {
     super(message)
-    this.name = 'EbelyAssertionError'
+    this.name = 'EberlyAssertionError'
   }
 }
 
@@ -79,7 +79,7 @@ export function matchPartial(args: {
 
 /**
  * Чистая проверка ответа: статус сверяется строго, тело — опционально и
- * глубоко-частично. Кидает {@link EbelyAssertionError} при расхождении.
+ * глубоко-частично. Кидает {@link EberlyAssertionError} при расхождении.
  */
 export function assertResponse(args: {
   actualStatus: number
@@ -90,7 +90,7 @@ export function assertResponse(args: {
   const { actualStatus, actualBody, expectedStatus, expectedBody } = args
 
   if (actualStatus !== expectedStatus) {
-    throw new EbelyAssertionError(
+    throw new EberlyAssertionError(
       `Expected status ${expectedStatus}, got ${actualStatus}.\n` +
         `Response body: ${safeJson(actualBody)}`,
     )
@@ -100,7 +100,7 @@ export function assertResponse(args: {
 
   const mismatch = matchPartial({ actual: actualBody, expected: expectedBody })
   if (mismatch) {
-    throw new EbelyAssertionError(
+    throw new EberlyAssertionError(
       `Response body mismatch at "${mismatch.path || '<root>'}": ` +
         `expected ${safeJson(mismatch.expected)}, ` +
         `got ${safeJson(mismatch.actual)}.\n` +

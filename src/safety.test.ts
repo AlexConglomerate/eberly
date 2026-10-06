@@ -2,7 +2,7 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { EbelyUnsafeHostError, assertHostAllowed, isHostAllowed } from './safety'
+import { EberlyUnsafeHostError, assertHostAllowed, isHostAllowed } from './safety'
 
 test('loopback разрешён без списка', () => {
   for (const url of ['http://localhost:3000', 'http://127.0.0.1:8080/api', 'http://[::1]:3000']) {
@@ -39,9 +39,9 @@ test('текст ошибки содержит хост и подсказку', 
   assert.throws(
     () => assertHostAllowed({ url: 'https://api.prod.com:443/v1' }),
     (err: unknown) =>
-      err instanceof EbelyUnsafeHostError &&
+      err instanceof EberlyUnsafeHostError &&
       err.message.includes('"api.prod.com"') &&
-      err.message.includes('add the host to `allowedHosts` in ebely.ts'),
+      err.message.includes('add the host to `allowedHosts` in eberly.ts'),
   )
   assert.doesNotThrow(() => assertHostAllowed({ url: 'http://localhost:3000' }))
 })

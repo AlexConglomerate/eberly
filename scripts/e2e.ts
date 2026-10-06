@@ -2,7 +2,7 @@
 //
 // Собирает библиотеку и шаблон, затем для каждого примера по очереди
 // (все бэкенды слушают :3000): свагер → поднять бэкенд → клиент →
-// `tsc --noEmit` → vitest. В конце — смоук `npx ebely create` и таблица
+// `tsc --noEmit` → vitest. В конце — смоук `npx eberly create` и таблица
 // итогов. Код выхода 1 при любом провале.
 //
 //   pnpm e2e                 все примеры
@@ -166,7 +166,7 @@ async function waitForHttp({ backend }: { backend: Backend }): Promise<void> {
 
 async function runExample({ name }: { name: Example }): Promise<Result> {
   const appDir = join(ROOT, 'examples', name, 'your-app')
-  const testDir = join(ROOT, 'examples', name, 'test-with-ebely')
+  const testDir = join(ROOT, 'examples', name, 'test-with-eberly')
   const prefix = `[${name}]`
   let step = 'swagger'
   let backend: Backend | undefined
@@ -206,26 +206,26 @@ async function runExample({ name }: { name: Example }): Promise<Result> {
   }
 }
 
-/** `npx ebely create` в пустую временную папку: файлы и скиллы на месте, версия своя. */
+/** `npx eberly create` в пустую временную папку: файлы и скиллы на месте, версия своя. */
 async function smokeTemplate(): Promise<Result> {
   const name = 'template'
-  const dir = await mkdtemp(join(tmpdir(), 'ebely-create-'))
+  const dir = await mkdtemp(join(tmpdir(), 'eberly-create-'))
   try {
-    await run({ cmd: 'node', args: ['bin/ebely.mjs', 'create', dir], cwd: ROOT, prefix: `[${name}]` })
+    await run({ cmd: 'node', args: ['bin/eberly.mjs', 'create', dir], cwd: ROOT, prefix: `[${name}]` })
 
     const missing = [
-      'ebely/ebely.ts',
+      'eberly/eberly.ts',
       'vitest.config.ts',
       'tsconfig.json',
-      '.claude/skills/ebely-setup/SKILL.md',
-      '.claude/skills/ebely-write-tests/SKILL.md',
+      '.claude/skills/eberly-setup/SKILL.md',
+      '.claude/skills/eberly-write-tests/SKILL.md',
     ].filter((file) => !existsSync(join(dir, file)))
     if (missing.length > 0) throw new Error(`missing in the created project: ${missing.join(', ')}`)
 
     const { version } = JSON.parse(await readFile(join(ROOT, 'package.json'), 'utf8'))
     const pkg = JSON.parse(await readFile(join(dir, 'package.json'), 'utf8'))
-    if (pkg.dependencies?.ebely !== `^${version}`) {
-      throw new Error(`package.json has ebely "${pkg.dependencies?.ebely}", expected "^${version}"`)
+    if (pkg.dependencies?.eberly !== `^${version}`) {
+      throw new Error(`package.json has eberly "${pkg.dependencies?.eberly}", expected "^${version}"`)
     }
     return { name }
   } catch (error) {

@@ -10,14 +10,14 @@
 const LOOPBACK = ['localhost', '127.0.0.1', '[::1]']
 
 /** Ошибка: хост бэкенда не входит в `allowedHosts`. */
-export class EbelyUnsafeHostError extends Error {
+export class EberlyUnsafeHostError extends Error {
   constructor(public readonly host: string) {
     super(
-      `ebely: refusing to send requests to "${host}" — the host is not in allowedHosts. ` +
+      `eberly: refusing to send requests to "${host}" — the host is not in allowedHosts. ` +
         `Tests create and delete data. If this is a test environment, ` +
-        'add the host to `allowedHosts` in ebely.ts.',
+        'add the host to `allowedHosts` in eberly.ts.',
     )
-    this.name = 'EbelyUnsafeHostError'
+    this.name = 'EberlyUnsafeHostError'
   }
 }
 
@@ -42,7 +42,7 @@ export function isHostAllowed(args: { url: string; allowedHosts?: string[] }): b
   )
 }
 
-/** Бросает {@link EbelyUnsafeHostError}, если хост из `url` не разрешён. */
+/** Бросает {@link EberlyUnsafeHostError}, если хост из `url` не разрешён. */
 export function assertHostAllowed(args: { url: string; allowedHosts?: string[] }): void {
-  if (!isHostAllowed(args)) throw new EbelyUnsafeHostError(new URL(args.url).hostname)
+  if (!isHostAllowed(args)) throw new EberlyUnsafeHostError(new URL(args.url).hostname)
 }

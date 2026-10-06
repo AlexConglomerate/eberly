@@ -1,11 +1,11 @@
-# ebely
+# eberly
 
 **Typed end-to-end API tests for any backend with an OpenAPI 3 spec.**
 
-[![npm](https://img.shields.io/npm/v/ebely)](https://www.npmjs.com/package/ebely)
-[![license](https://img.shields.io/npm/l/ebely)](LICENSE)
+[![npm](https://img.shields.io/npm/v/eberly)](https://www.npmjs.com/package/eberly)
+[![license](https://img.shields.io/npm/l/eberly)](LICENSE)
 
-ebely reads your backend's `swagger.json` and generates a typed TypeScript
+eberly reads your backend's `swagger.json` and generates a typed TypeScript
 client for tests. Every test user gets their own state, hooks keep tokens and
 ids for you, and when the backend changes its contract, the tests stop
 compiling.
@@ -42,8 +42,8 @@ expect(res.status).toBe(403)
 expect((await res.json()).message).toBe('Only the author can do this')
 ```
 
-**After:** ebely
-([`tests/readme.test.ts`](examples/nest/test-with-ebely/tests/readme.test.ts)).
+**After:** eberly
+([`tests/readme.test.ts`](examples/nest/test-with-eberly/tests/readme.test.ts)).
 
 ```ts
 const world = new World()
@@ -58,12 +58,12 @@ res.assert(403, { message: 'Only the author can do this' })
 ```
 
 `signUp` is a scenario you write once in your
-[`userStore.ts`](examples/nest/test-with-ebely/ebely/userStore.ts). A hook
-([`hooks.ts`](examples/nest/test-with-ebely/ebely/hooks.ts)) adds the Bearer
+[`userStore.ts`](examples/nest/test-with-eberly/eberly/userStore.ts). A hook
+([`hooks.ts`](examples/nest/test-with-eberly/eberly/hooks.ts)) adds the Bearer
 token to every request of that user. `posts.create`, `posts.remove`, the body
 and the statuses `201` / `403` are all checked by TypeScript.
 
-## Why ebely
+## Why eberly
 
 - **Typed client from your swagger.** Request bodies, path params, response
   bodies and statuses come from the spec. The backend renames a field, and the
@@ -78,49 +78,49 @@ and the statuses `201` / `403` are all checked by TypeScript.
   suggests the statuses declared in the spec, checks only the fields you pass
   (at any depth) and narrows `res.body` to the type of that status.
 - **Transparent token refresh.** A `globalRetry` hook refreshes the token on
-  `401`, and ebely replays the request: the test sees `200`.
-- **File upload by path.** `{ body: { file: './avatar.png' } }`, and ebely
+  `401`, and eberly replays the request: the test sees `200`.
+- **File upload by path.** `{ body: { file: './avatar.png' } }`, and eberly
   builds the multipart form.
-- **Endpoint docs for AI agents.** The generator writes `ebely/api/`: one short
+- **Endpoint docs for AI agents.** The generator writes `eberly/api/`: one short
   Markdown file per endpoint, so an agent writes tests without reading the
   whole client or the backend code.
 
 ## Quick start
 
 ```sh
-npx ebely create my-tests   # template + Claude Code skills in my-tests/.claude/skills
+npx eberly create my-tests   # template + Claude Code skills in my-tests/.claude/skills
 cd my-tests
 ```
 
 **With Claude Code:** run `claude` in this folder, then
 
 ```
-/ebely-setup                                        # a few questions → config, client, stores, hooks, green smoke tests
-/ebely-write-tests Bob cannot delete Alice's post   # test written and run
+/eberly-setup                                        # a few questions → config, client, stores, hooks, green smoke tests
+/eberly-write-tests Bob cannot delete Alice's post   # test written and run
 ```
 
 **By hand:**
 
-1. In `ebely/ebely.ts`, set `url` (your backend) and `swagger` (a file or a
+1. In `eberly/eberly.ts`, set `url` (your backend) and `swagger` (a file or a
    URL of your spec).
 2. Install and generate the client:
 
    ```sh
    pnpm install
-   pnpm run client:generate   # writes ebely/generated.ts and ebely/api/
+   pnpm run client:generate   # writes eberly/generated.ts and eberly/api/
    ```
 
 3. The template's stores and `tests/` are written for the demo backend.
-   Replace them with your own (`/ebely-setup` does this for you).
+   Replace them with your own (`/eberly-setup` does this for you).
 4. Run the checks:
 
    ```sh
    pnpm typecheck && pnpm test
    ```
 
-**Existing project:** `pnpm add -D ebely`, then `npx ebely skills` (or
-`npx ebely skills --user` to install them into `~/.claude/skills`). Skills are
-copied, so run the command again after updating ebely.
+**Existing project:** `pnpm add -D eberly`, then `npx eberly skills` (or
+`npx eberly skills --user` to install them into `~/.claude/skills`). Skills are
+copied, so run the command again after updating eberly.
 
 ## Examples
 
@@ -129,10 +129,10 @@ backends in [`examples/`](examples).
 
 ### Auth and token refresh
 
-[`examples/simple-auth`](examples/simple-auth/test-with-ebely): one
+[`examples/simple-auth`](examples/simple-auth/test-with-eberly): one
 `globalBefore` adds the token to every request; `globalRetry` refreshes it on
-`401` and asks ebely to replay the request
-([`hooks.ts`](examples/simple-auth/test-with-ebely/ebely/hooks.ts)).
+`401` and asks eberly to replay the request
+([`hooks.ts`](examples/simple-auth/test-with-eberly/eberly/hooks.ts)).
 
 ```ts
 h.globalBefore(withBearer)
@@ -143,12 +143,12 @@ h.globalRetry(async ({ request, response, ctx }) => {
   if (request.path.startsWith('/auth/')) return false
   if (!ctx.get({ key: 'email' }) || !ctx.get({ key: 'password' })) return false
   await ctx.refresh()
-  return true // → ebely replays the request with the fresh token
+  return true // → eberly replays the request with the fresh token
 })
 ```
 
 The test revokes the session, and a single call still returns `200`
-([`refresh.test.ts`](examples/simple-auth/test-with-ebely/tests/refresh.test.ts)):
+([`refresh.test.ts`](examples/simple-auth/test-with-eberly/tests/refresh.test.ts)):
 
 ```ts
 await world.revoke({ email: 'dave@example.com' })
@@ -161,7 +161,7 @@ Replays are capped by `maxRetries` (default `3`).
 
 ### The id of a created entity is saved by a hook
 
-[`hooks.ts`](examples/nest/test-with-ebely/ebely/hooks.ts): `ctx` is the store
+[`hooks.ts`](examples/nest/test-with-eberly/eberly/hooks.ts): `ctx` is the store
 of the user who made the request, so ids never leak between users.
 
 ```ts
@@ -172,7 +172,7 @@ h.posts.create.after(({ response, ctx }) => {
 })
 ```
 
-[`posts.test.ts`](examples/nest/test-with-ebely/tests/posts.test.ts):
+[`posts.test.ts`](examples/nest/test-with-eberly/tests/posts.test.ts):
 
 ```ts
 const created = await alice.posts.create({ body: { title: 'Hello', content: 'First post' } })
@@ -187,7 +187,7 @@ expect(bob.get({ key: 'lastPostId' })).toBeUndefined()
 
 `CommentDto.replies` refers to itself. `assert` checks only the fields you pass,
 at any depth
-([`comments.test.ts`](examples/nest/test-with-ebely/tests/comments.test.ts)):
+([`comments.test.ts`](examples/nest/test-with-eberly/tests/comments.test.ts)):
 
 ```ts
 const tree = await bob.comments.list({ path })
@@ -196,8 +196,8 @@ tree.assert(200, [{ text: 'a', replies: [{ text: 'b', replies: [{ text: 'c', rep
 
 ### File upload
 
-Pass a path, ebely reads the file and builds the multipart form
-([`avatar.test.ts`](examples/nest/test-with-ebely/tests/avatar.test.ts)):
+Pass a path, eberly reads the file and builds the multipart form
+([`avatar.test.ts`](examples/nest/test-with-eberly/tests/avatar.test.ts)):
 
 ```ts
 const avatarPath = fileURLToPath(new URL('./fixtures/avatar.png', import.meta.url))
@@ -224,10 +224,10 @@ No test run, no backend needed.
 
 ## Writing tests with AI agents
 
-`pnpm run client:generate` writes, next to the client, an `ebely/api/` folder
+`pnpm run client:generate` writes, next to the client, an `eberly/api/` folder
 for agents:
 
-- [`INDEX.md`](examples/nest/test-with-ebely/ebely/api/INDEX.md): one line per
+- [`INDEX.md`](examples/nest/test-with-eberly/eberly/api/INDEX.md): one line per
   endpoint, grouped by tag.
 
   ```md
@@ -237,7 +237,7 @@ for agents:
   ```
 
 - `<group>.<method>.md`, e.g.
-  [`posts.create.md`](examples/nest/test-with-ebely/ebely/api/posts.create.md):
+  [`posts.create.md`](examples/nest/test-with-eberly/eberly/api/posts.create.md):
   description, a ready-to-paste call, input, responses by status and the types
   they use, with field descriptions from the spec.
 
@@ -247,12 +247,12 @@ backend) or the backend source. Less context spent, fewer made-up fields.
 
 Two Claude Code skills use this folder:
 
-- `/ebely-setup`: asks where the spec is, how auth works and how to reset data,
+- `/eberly-setup`: asks where the spec is, how auth works and how to reset data,
   then writes the config, stores, hooks and smoke tests until they are green.
-- `/ebely-write-tests <scenario>`: writes and runs a test for a scenario in
+- `/eberly-write-tests <scenario>`: writes and runs a test for a scenario in
   plain words.
 
-`npx ebely create` installs both; `npx ebely skills` installs them into an
+`npx eberly create` installs both; `npx eberly skills` installs them into an
 existing project.
 
 ## What your backend needs
@@ -285,7 +285,7 @@ return SwaggerModule.createDocument(app, config, {
 ```
 
 With `SwaggerModule.setup('docs', …)` Nest serves the spec at `/docs-json`.
-ebely's `swagger.url` must end in `.json`, so either download it into a file
+eberly's `swagger.url` must end in `.json`, so either download it into a file
 (`curl -fsSL http://localhost:3000/docs-json -o swagger.json`, then
 `swagger: { pathToFile: 'swagger.json' }`) or serve it at a `.json` URL, as
 the example does in [`main.ts`](examples/nest/your-app/src/main.ts):
@@ -318,22 +318,22 @@ files: { encoding: 'bracket-index' },
 
 - **`allowedHosts`: localhost only by default.** In `test` mode the client
   sends requests only to `localhost`, `127.0.0.1`, `[::1]` and the hosts you
-  list. Anything else throws `EbelyUnsafeHostError` in `new World()`, before
+  list. Anything else throws `EberlyUnsafeHostError` in `new World()`, before
   the first request. Add a staging host if you need one; never production.
 
   ```ts
-  export const ebely = {
+  export const eberly = {
     url: 'https://api.staging.example.com',
     allowedHosts: ['*.staging.example.com'],
     // …
-  } satisfies EbelyConfig
+  } satisfies EberlyConfig
   ```
 
 - **vitest doesn't check types.** A test with a type error still runs. Run
   `pnpm typecheck` (`tsc --noEmit`) in CI, before `pnpm test`.
 - **The spec changed → regenerate.** `pnpm run client:generate` after every
   change of the swagger, then `pnpm typecheck`.
-- **Commit `ebely/generated.ts` and `ebely/api/`.** Then a contract change
+- **Commit `eberly/generated.ts` and `eberly/api/`.** Then a contract change
   shows up in the diff of a pull request.
 - **A status from a variable needs `as const`.** Otherwise it is just
   `number`:
@@ -344,26 +344,26 @@ files: { encoding: 'bracket-index' },
 
 ## Config reference
 
-`ebely/ebely.ts` exports the config with `satisfies EbelyConfig`:
+`eberly/eberly.ts` exports the config with `satisfies EberlyConfig`:
 
 ```ts
-export const ebely = {
+export const eberly = {
   userStore: UserStore,
   worldStore: WorldStore,
 
   url: 'http://localhost:3000',
   swagger: { pathToFile: 'swagger.json' },
-  generateClientTo: 'ebely/generated.ts',
+  generateClientTo: 'eberly/generated.ts',
   hooks,
   mode: 'test',
-} satisfies EbelyConfig
+} satisfies EberlyConfig
 ```
 
 | Field | Default | Description |
 | --- | --- | --- |
 | `url` | (required) | Base URL of the backend under test. `new World({ url })` overrides it. |
 | `swagger` | (required) | Where to read the spec: `{ pathToFile: 'swagger.json' }` or `{ url: 'http://…/swagger.json' }`. |
-| `generateClientTo` | (required) | Path of the generated client, e.g. `'ebely/generated.ts'`. `ebely/api/` is written next to it. |
+| `generateClientTo` | (required) | Path of the generated client, e.g. `'eberly/generated.ts'`. `eberly/api/` is written next to it. |
 | `userStore` | (required) | Class extending `BaseStore`: variables and scenarios of one user. |
 | `worldStore` | none | Class extending `BaseStore`: app-level scenarios such as `reset()`, called as `world.reset()`. |
 | `hooks` | none | Hook registrar, typed as `Hooks<UserStore>` from the generated client. |
@@ -371,8 +371,8 @@ export const ebely = {
 | `maxRetries` | `3` | Max replays of one request when a `globalRetry` hook returns `true`. |
 | `files` | `{ encoding: 'repeat' }` | Field names for an array of files: `'repeat'` (`files`, `files`), `'bracket-index'` (`files[0]`), `'bracket-empty'` (`files[]`) or a function. |
 | `allowedHosts` | `[]` | Hosts besides loopback the client may call in `test` mode: exact names or `*.domain`. |
-| `userStoreImport` | `'ebely'` | Module the generated file imports `BaseStore` from. Only for unusual layouts. |
-| `configImport` | `'./ebely'` | Path from the generated file to this config. Only for unusual layouts. |
+| `userStoreImport` | `'eberly'` | Module the generated file imports `BaseStore` from. Only for unusual layouts. |
+| `configImport` | `'./eberly'` | Path from the generated file to this config. Only for unusual layouts. |
 
 `maxRetries`, `files` and `allowedHosts` are read at runtime: changing them
 doesn't need a regeneration.
@@ -380,9 +380,9 @@ doesn't need a regeneration.
 ## API cheat sheet
 
 ```ts
-import { World } from '../ebely/generated'
+import { World } from '../eberly/generated'
 
-const world = new World()             // reads ebely.ts: url, stores, hooks
+const world = new World()             // reads eberly.ts: url, stores, hooks
 const alice = world.createUser()      // a user with their own variables and token
 await world.reset()                   // a worldStore scenario
 
@@ -398,7 +398,7 @@ alice.set({ key: 'lastPostId', value: 1 })
 alice.get({ key: 'lastPostId' })      // number | undefined
 ```
 
-Stores (`ebely/userStore.ts`):
+Stores (`eberly/userStore.ts`):
 
 ```ts
 export class UserStore extends BaseStore<UserVars, WorldApi> {
@@ -408,7 +408,7 @@ export class UserStore extends BaseStore<UserVars, WorldApi> {
 }
 ```
 
-Hooks (`ebely/hooks.ts`):
+Hooks (`eberly/hooks.ts`):
 
 | Hook | When | Arguments |
 | --- | --- | --- |
@@ -433,3 +433,5 @@ of the user who made the request.
 ## License
 
 [MIT](LICENSE)
+
+Formerly published as [`ebely`](https://www.npmjs.com/package/ebely).

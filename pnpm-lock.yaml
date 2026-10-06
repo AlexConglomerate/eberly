@@ -24,9 +24,9 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
-  examples/nest/test-with-ebely:
+  examples/nest/test-with-eberly:
     dependencies:
-      ebely:
+      eberly:
         specifier: workspace:*
         version: link:../../..
     devDependencies:
@@ -80,9 +80,9 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
-  examples/simple-auth/test-with-ebely:
+  examples/simple-auth/test-with-eberly:
     dependencies:
-      ebely:
+      eberly:
         specifier: workspace:*
         version: link:../../..
     devDependencies:
@@ -133,9 +133,9 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
 
-  examples/simple/test-with-ebely:
+  examples/simple/test-with-eberly:
     dependencies:
-      ebely:
+      eberly:
         specifier: workspace:*
         version: link:../../..
     devDependencies:

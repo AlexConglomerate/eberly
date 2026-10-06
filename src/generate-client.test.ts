@@ -9,7 +9,7 @@ import { writeEndpointDocs } from './generate-client'
 import { DOCS_MARKER } from './generator/docs'
 
 test('writeEndpointDocs: удаляет только файлы с маркером, чужие не трогает', async () => {
-  const dir = await mkdtemp(join(tmpdir(), 'ebely-docs-'))
+  const dir = await mkdtemp(join(tmpdir(), 'eberly-docs-'))
   try {
     await writeFile(join(dir, 'posts.old.md'), `${DOCS_MARKER}\n# old\n`)
     await writeFile(join(dir, 'notes.md'), '# my notes\n')
@@ -25,7 +25,7 @@ test('writeEndpointDocs: удаляет только файлы с маркер�
 })
 
 test('writeEndpointDocs: создаёт папку, если её нет', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'ebely-docs-'))
+  const root = await mkdtemp(join(tmpdir(), 'eberly-docs-'))
   try {
     const dir = join(root, 'api')
     await writeEndpointDocs({ dir, files: [{ fileName: 'INDEX.md', content: 'x' }] })

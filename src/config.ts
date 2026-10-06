@@ -1,4 +1,4 @@
-// Тип пользовательского ebely-конфига (объект `ebely`, который импортирует
+// Тип пользовательского eberly-конфига (объект `eberly`, который импортирует
 // сгенерированный клиент). Пользователь применяет его через `satisfies`,
 // чтобы не потерять конкретный тип своего `userStore`.
 
@@ -20,8 +20,8 @@ import type { FileEncoding } from './files'
  */
 export type ClientMode = 'test' | 'frontend'
 
-/** Конфиг ebely, который пользователь объявляет в своём `ebely.ts`. */
-export type EbelyConfig = {
+/** Конфиг eberly, который пользователь объявляет в своём `eberly.ts`. */
+export type EberlyConfig = {
   /** URL бэкенда, который нужно тестировать. */
   url: string
   /**
@@ -56,7 +56,7 @@ export type EbelyConfig = {
   mode?: ClientMode
 
   /**
-   * Максимальное число ПОВТОРОВ запроса, которые ebely сделает, если
+   * Максимальное число ПОВТОРОВ запроса, которые eberly сделает, если
    * глобальный `retry`-хук (`h.globalRetry`) вернул `true`. Это потолок
    * на повторы СВЕРХ первой попытки: при `maxRetries: 3` запрос уйдёт
    * максимум 4 раза. Защита от бесконечного цикла, если хук упрямо просит
@@ -75,7 +75,7 @@ export type EbelyConfig = {
    *
    * Только режим `'test'`: хост проверяется при `new World()` /
    * `createUser()` — до первого запроса, в том числе для
-   * `new World({ url })`. Чужой хост → `EbelyUnsafeHostError`. В
+   * `new World({ url })`. Чужой хост → `EberlyUnsafeHostError`. В
    * `'frontend'` проверки нет (клиент из приложения ходит в прод).
    *
    * Рантайм-настройка (как `maxRetries`): перегенерация НЕ нужна.
@@ -89,16 +89,16 @@ export type EbelyConfig = {
    * клиент) и передаётся сюда одной переменной:
    *
    * ```ts
-   * // ebely/hooks.ts
+   * // eberly/hooks.ts
    * import type { Hooks } from './generated'
    * export const hooks: Hooks = (h) => {
    *   h.posts.create.after(({ response, ctx }) => {
    *     ctx.set({ key: 'lastPostId', value: response.body.id })
    *   })
    * }
-   * // ebely/ebely.ts
+   * // eberly/eberly.ts
    * import { hooks } from './hooks'
-   * export const ebely = { …, hooks } satisfies EbelyConfig
+   * export const eberly = { …, hooks } satisfies EberlyConfig
    * ```
    *
    * Регистратор вызывается ОДИН раз при `new World()`. Внутри хука `ctx`
@@ -128,18 +128,18 @@ export type EbelyConfig = {
 
   /**
    * Из какого модуля СГЕНЕРИРОВАННЫЙ файл импортирует `BaseStore`.
-   * По умолчанию `'ebely'` — имя npm-пакета библиотеки. Менять нужно
+   * По умолчанию `'eberly'` — имя npm-пакета библиотеки. Менять нужно
    * только в нестандартной раскладке (монорепо без публикации,
    * импорт по относительному пути или по alias из tsconfig).
-   * @default 'ebely'
+   * @default 'eberly'
    */
   userStoreImport?: string
   /**
-   * Из какого модуля СГЕНЕРИРОВАННЫЙ файл импортирует `ebely`-конфиг
-   * (нужен ему для значений по умолчанию: `ebely.url`, `ebely.userStore`).
+   * Из какого модуля СГЕНЕРИРОВАННЫЙ файл импортирует `eberly`-конфиг
+   * (нужен ему для значений по умолчанию: `eberly.url`, `eberly.userStore`).
    * Это путь ОТ сгенерированного файла К этому конфигу. По умолчанию
-   * `'./ebely'` — т.е. конфиг лежит рядом с генерируемым файлом.
-   * @default './ebely'
+   * `'./eberly'` — т.е. конфиг лежит рядом с генерируемым файлом.
+   * @default './eberly'
    */
   configImport?: string
 }

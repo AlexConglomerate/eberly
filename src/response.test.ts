@@ -5,7 +5,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   ApiResponse,
-  EbelyAssertionError,
+  EberlyAssertionError,
   assertResponse,
   matchPartial,
 } from './response'
@@ -42,7 +42,7 @@ test('matchPartial: тип-несовпадение объект vs примит
   assert.deepEqual(m, { path: '', expected: { id: '1' }, actual: 'str' })
 })
 
-test('assertResponse: статус не совпал → EbelyAssertionError', () => {
+test('assertResponse: статус не совпал → EberlyAssertionError', () => {
   assert.throws(
     () =>
       assertResponse({
@@ -51,7 +51,7 @@ test('assertResponse: статус не совпал → EbelyAssertionError', (
         expectedStatus: 200,
       }),
     (err: unknown) =>
-      err instanceof EbelyAssertionError && /Expected status 200, got 500/.test(String(err)),
+      err instanceof EberlyAssertionError && /Expected status 200, got 500/.test(String(err)),
   )
 })
 
@@ -70,7 +70,7 @@ test('assertResponse: частичное тело не совпало → оши
         expectedStatus: 200,
         expectedBody: { authorId: 'y' },
       }),
-    (err: unknown) => err instanceof EbelyAssertionError && /authorId/.test(String(err)),
+    (err: unknown) => err instanceof EberlyAssertionError && /authorId/.test(String(err)),
   )
 })
 
@@ -89,5 +89,5 @@ test('ApiResponse.assert: бросает при несовпадении ста�
     status: 404,
     body: { id: '42' },
   })
-  assert.throws(() => res.assert(200), EbelyAssertionError)
+  assert.throws(() => res.assert(200), EberlyAssertionError)
 })

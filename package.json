@@ -1,5 +1,5 @@
 {
-  "name": "ebely",
+  "name": "eberly",
   "version": "0.1.1",
   "description": "Typed end-to-end API tests for any backend with an OpenAPI 3 spec",
   "keywords": [
@@ -16,11 +16,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AlexConglomerate/evely.git"
+    "url": "git+https://github.com/AlexConglomerate/eberly.git"
   },
-  "homepage": "https://github.com/AlexConglomerate/evely#readme",
+  "homepage": "https://github.com/AlexConglomerate/eberly#readme",
   "bugs": {
-    "url": "https://github.com/AlexConglomerate/evely/issues"
+    "url": "https://github.com/AlexConglomerate/eberly/issues"
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -33,7 +33,7 @@
     }
   },
   "bin": {
-    "ebely": "bin/ebely.mjs"
+    "eberly": "bin/eberly.mjs"
   },
   "files": [
     "dist",

@@ -1,7 +1,7 @@
 # nest/your-app
 
 Игрушечный блог-бэкенд на NestJS, который мы тестируем. Данные в памяти.
-К библиотеке `ebely` отношения не имеет и от неё не зависит.
+К библиотеке `eberly` отношения не имеет и от неё не зависит.
 
 Нужен как источник «настоящего» свагера, которого не даёт oRPC: DTO в
 `components/schemas` и `$ref`, рекурсивная схема (`CommentDto.replies`),
@@ -15,9 +15,9 @@ OpenAPI 3.0 (`nullable: true`, `format: binary`), статусы 201/204,
 Из корня репозитория установите зависимости (`pnpm install`).
 
 ```bash
-pnpm --filter @ebely-examples/nest-your-app run start             # бэкенд на :3000
-TEST_MODE=1 pnpm --filter @ebely-examples/nest-your-app run start # + POST /test/reset
-pnpm --filter @ebely-examples/nest-your-app run swagger           # перегенерировать swagger/swagger.json
+pnpm --filter @eberly-examples/nest-your-app run start             # бэкенд на :3000
+TEST_MODE=1 pnpm --filter @eberly-examples/nest-your-app run start # + POST /test/reset
+pnpm --filter @eberly-examples/nest-your-app run swagger           # перегенерировать swagger/swagger.json
 ```
 
 - `http://localhost:3000/docs` — Swagger UI

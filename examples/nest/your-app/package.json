@@ -1,5 +1,5 @@
 {
-  "name": "@ebely-examples/nest-your-app",
+  "name": "@eberly-examples/nest-your-app",
   "version": "0.0.0",
   "private": true,
   "description": "Тестируемое приложение на NestJS (in-memory): DTO через $ref, рекурсивная схема, OpenAPI 3.0, 201/204, ошибки 4xx, описания.",

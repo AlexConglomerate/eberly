@@ -12,7 +12,7 @@
 
 import { mkdir, readdir, readFile, unlink, writeFile } from 'node:fs/promises'
 import { dirname, join, relative, resolve } from 'node:path'
-import type { EbelyConfig } from './config'
+import type { EberlyConfig } from './config'
 import { DOCS_MARKER, renderEndpointDocs } from './generator/docs'
 import { buildSchemaNames } from './generator/names'
 import { collectOperations } from './generator/operations'
@@ -28,17 +28,17 @@ export type { SwaggerSource } from './generator/swagger'
 /**
  * Читает swagger-схему и пишет типизированный клиент `World` в файл.
  * Это публичная точка входа библиотеки: пользователь вызывает её из
- * своего проекта, передавая собственный ebely-конфиг.
+ * своего проекта, передавая собственный eberly-конфиг.
  */
 export async function generateClient(
-  args: EbelyConfig,
+  args: EberlyConfig,
 ): Promise<{ outPath: string; operations: number; docsDir: string }> {
   const {
     swagger,
     generateClientTo,
     mode = 'test',
-    userStoreImport = 'ebely',
-    configImport = './ebely',
+    userStoreImport = 'eberly',
+    configImport = './eberly',
   } = args
 
   const outPath = resolve(process.cwd(), generateClientTo)
