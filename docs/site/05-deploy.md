@@ -16,16 +16,20 @@
    запускает `changesets/action`.
 2. **[ты]** Купить `eberly.dev` в Cloudflare Registrar (Cloudflare сам
    станет DNS — так и нужно).
-3. **[ты]** Cloudflare → Workers & Pages → Create → Pages → Connect to Git
-   → репозиторий `eberly`. Агент заранее даёт точные значения:
-   - production branch: `main`;
-   - build command: `pnpm install --frozen-lockfile && pnpm --filter @eberly-site/site build`
-     (`build` сайта сам собирает библиотеку и проверяет пример плейграунда);
-   - output directory: `site/dist`;
-   - переменная `NODE_VERSION` = `22`.
-   Проверить на выданном `*.pages.dev`, затем Custom domains → `eberly.dev`
-   (и `www` → редирект). `.dev` открывается только по HTTPS — сертификат
-   Pages выпускает сам.
+3. **[ты]** Cloudflare → Workers & Pages → Create. Cloudflare теперь
+   ведёт в **Workers** (а не Pages) — так и оставили: Worker `eberly` без
+   кода, только статика, конфиг — `wrangler.jsonc` в корне репо (имя Worker'а
+   в нём должно совпадать с именем в Cloudflare). Settings → Build:
+   - Git repository: `eberly`, production branch: `main`, root directory: `/`;
+   - build command: `pnpm --filter @eberly-site/site build`
+     (зависимости Workers Builds ставит сам; `build` сайта сам собирает
+     библиотеку и проверяет пример плейграунда);
+   - deploy command: `npx wrangler deploy`;
+   - build variables: `NODE_VERSION` = `22`, `PNPM_VERSION` = `10.33.0`.
+   Settings → Domains & Routes → Custom domain `eberly.dev`. `www` — не
+   custom domain, а DNS-запись `AAAA www → 100::` (Proxied) + Rules →
+   Redirect Rules → шаблон «Redirect from WWW to root». `.dev` открывается
+   только по HTTPS — сертификат Cloudflare выпускает сам.
 4. **[ты]** Аккаунт Umami Cloud (бесплатный тариф) → добавить сайт
    `eberly.dev` → передать агенту `website id`.
 5. **Аналитика в коде.** Скрипт Umami в `head` Starlight — **только** в

@@ -1,0 +1,28 @@
+---
+// Starlight's footer plus the analytics note, and the `copy_install` event on
+// the copy button of an install command (`npm i -D eberly`, `npx eberly create`).
+import Default from '@astrojs/starlight/components/Footer.astro'
+---
+
+<Default {...Astro.props} />
+<p class="analytics-note">Privacy-friendly analytics, no cookies.</p>
+
+<script>
+  import { track } from '../lib/analytics'
+
+  const INSTALL_COMMAND = /\b(npm i|npm install|pnpm add|yarn add)\b.*\beberly\b|\bnpx eberly create\b/
+
+  document.addEventListener('click', (event) => {
+    const button = (event.target as Element).closest<HTMLButtonElement>('.expressive-code .copy button')
+    if (button && INSTALL_COMMAND.test(button.dataset.code ?? '')) track({ name: 'copy_install' })
+  })
+</script>
+
+<style>
+  .analytics-note {
+    margin-top: 1.5rem;
+    text-align: center;
+    font-size: var(--sl-text-xs);
+    color: var(--sl-color-gray-3);
+  }
+</style>

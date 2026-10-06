@@ -131,9 +131,10 @@ npm-пакет.
 `site/` — сайт eberly.dev (`@eberly-site/site`, `private: true`, в npm не
 попадает): Astro + Starlight, только английский. Свой `tsconfig.json`
 (корневой не расширяет).
-  - `astro.config.mjs` — Starlight: заголовок, GitHub, сайдбар; React
-    (`@astrojs/react`, для плейграунда); Vite-плагин, который роняет
-    сборку, если в браузерный бандл попал `node:*`.
+  - `astro.config.mjs` — Starlight: заголовок, GitHub, сайдбар, скрипт
+    Umami в `head`, свой `Footer`; React (`@astrojs/react`, для
+    плейграунда); Vite-плагин, который роняет сборку, если в браузерный
+    бандл попал `node:*`.
   - `src/content/docs/index.mdx` — лендинг (`template: splash`), в разделе
     «Try it» — плейграунд и кнопка «Open in StackBlitz».
   - `src/content/docs/playground.mdx` — плейграунд отдельной страницей.
@@ -155,8 +156,13 @@ npm-пакет.
     (посты из Nest-схемы), `example.test.ts`, `eberly.ts` (скрытый
     конфиг), `vitest.d.ts` (заглушка `describe`/`test`). Исключены из
     `tsconfig` сайта — их проверяет `scripts/check-playground.ts`.
-  - `src/lib/analytics.ts` — `track({ name })`, пока no-op (подключит 05).
-    В события — только имя, никогда схему или имя файла.
+  - `src/lib/analytics.ts` — `track({ name })` → `umami.track`. В события —
+    только имя, никогда схему или имя файла.
+  - `src/components/Footer.astro` — футер Starlight + «Privacy-friendly
+    analytics, no cookies» и событие `copy_install` (кнопка копирования
+    команды установки). `open_stackblitz` — атрибут `data-umami-event` на
+    кнопке.
+  - `public/favicon.svg` — иконка.
   - `scripts/check-playground.ts` — генерирует клиент из `example.yaml` в
     `node_modules/.cache/eberly-playground/` и проверяет тест `tsc`-API.
     Первый шаг `build`: сломанный пример ломает сборку.
@@ -164,6 +170,13 @@ npm-пакет.
     файла регион `// #region docs:<имя>` … `// #endregion` и убирает отступ.
     Нет региона — ошибка сборки.
   - `src/styles/custom.css` — пока только акцентный цвет.
+
+Деплой сайта: Cloudflare **Worker** `eberly` (только статика, кода нет) с
+доменом `eberly.dev`, конфиг — `wrangler.jsonc` в корне (`assets.directory:
+./site/dist`). Workers Builds собирает каждый пуш в `main`: build
+`pnpm --filter @eberly-site/site build`, deploy `npx wrangler deploy`.
+Аналитика — Umami Cloud (cloud.umami.is), `data-domains="eberly.dev"`:
+с `localhost` и превью-URL не считается.
 
 **Код в документации — только регионами из зелёных тестов/примеров**:
 `import src from '…/x.test.ts?raw'` + `<Code code={snippet({ source: src,

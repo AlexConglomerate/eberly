@@ -24,6 +24,10 @@ function noNodeImportsInBrowser() {
   ]
 }
 
+// Umami Cloud: no cookies. `data-domains` keeps localhost and preview URLs
+// out of the stats. Events go through `track()` in `src/lib/analytics.ts`.
+const UMAMI_WEBSITE_ID = 'a17d5c1e-ae8e-4194-8248-c86f97460774'
+
 export default defineConfig({
   site: 'https://eberly.dev',
   vite: { plugins: noNodeImportsInBrowser() },
@@ -33,6 +37,18 @@ export default defineConfig({
       description: 'Typed end-to-end API tests for any backend with an OpenAPI 3 spec.',
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/AlexConglomerate/eberly' }],
       customCss: ['./src/styles/custom.css'],
+      components: { Footer: './src/components/Footer.astro' },
+      head: [
+        {
+          tag: 'script',
+          attrs: {
+            defer: true,
+            src: 'https://cloud.umami.is/script.js',
+            'data-website-id': UMAMI_WEBSITE_ID,
+            'data-domains': 'eberly.dev',
+          },
+        },
+      ],
       sidebar: [
         { label: 'Getting started', slug: 'getting-started' },
         { label: 'Playground', slug: 'playground' },

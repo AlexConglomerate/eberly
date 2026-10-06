@@ -1,8 +1,19 @@
-// Analytics events of the site. A no-op for now: task 05 wires it to Umami.
-// Events carry a name only: never the spec, its file name or the test code.
+// Analytics events of the site, sent to Umami Cloud (the script is added in
+// `astro.config.mjs` and only tracks on eberly.dev). Events carry a name only:
+// never the spec, its file name or the test code.
 
-export type EventName = 'playground_regenerate' | 'playground_upload_spec' | 'playground_type_error_shown'
+export type EventName =
+  | 'playground_regenerate'
+  | 'playground_upload_spec'
+  | 'playground_type_error_shown'
+  | 'copy_install'
+
+declare global {
+  interface Window {
+    umami?: { track: (name: string) => void }
+  }
+}
 
 export function track({ name }: { name: EventName }): void {
-  void name
+  window.umami?.track(name)
 }
