@@ -232,3 +232,45 @@
     поставит весь воркспейс и остановится на шелле).
   - 06: в README можно сослаться на кнопку или на ту же ссылку.
 - Поправил файлы плана: `05-deploy.md` (шаг 5, где кнопка).
+
+## 2026-10-06 — 05
+
+- Нашёл / пошло не по плану:
+  - **Cloudflare теперь ведёт в Workers, а не в Pages** — пользователь создал
+    Worker `eberly` (стартовый «Hello World»). Оставили Worker: статика там
+    бесплатна, домен уже привязан. Нужен `wrangler.jsonc` в корне (`name`
+    совпадает с именем Worker'а, `assets.directory: ./site/dist`,
+    `not_found_handling: 404-page`); Workers Builds: build
+    `pnpm --filter @eberly-site/site build`, deploy `npx wrangler deploy`,
+    build variables `NODE_VERSION=22`, `PNPM_VERSION=10.33.0`. Шаг 3 в
+    `05-deploy.md` переписан.
+  - `www.eberly.dev` нельзя добавить Custom domain'ом Worker'а («No zones
+    match») — сделали DNS `AAAA www → 100::` (Proxied) + Redirect Rule
+    `http.host eq "www.eberly.dev"` → `concat("https://eberly.dev",
+    http.request.uri.path)`, 301, query сохраняется. Сразу после создания
+    записи `www` у пользователя и у меня локально был NXDOMAIN из кэша
+    (Cloudflare кэширует «нет записи» до 30 мин) — на NS Cloudflare уже всё
+    было.
+  - CI: `packageManager: pnpm@10.33.0`, actions `checkout@v7`,
+    `setup-node@v7`, `pnpm/action-setup@v6` (версию берёт из
+    `packageManager`). `changesets/action` **оставлен на `@v1`**: в v2
+    переименованы входы и пуш тегов через API — публикация поменялась бы.
+    В CI добавлены `pnpm test` и сборка сайта.
+  - Umami: скрипт в `head` с `data-domains="eberly.dev"` — с `localhost` и
+    `*.workers.dev` трекер молчит сам, отдельной «только prod» сборки не
+    нужно. `open_stackblitz` — атрибут `data-umami-event` на ссылке
+    (`LinkButton` пробрасывает атрибуты), `copy_install` — в своём `Footer`
+    (клик по кнопке копирования expressive-code с командой установки).
+  - Ветка `New-features` влита в `main` fast-forward'ом; пуш в `main` даёт
+    PR «Version Packages» от changesets (0.3.0) — это ожидаемо, не мержить
+    без решения о релизе.
+  - Umami проверен: визиты и `copy_install` доходят (Chrome). **Brave и
+    блокировщики режут `cloud.umami.is`** — у таких посетителей нулей не
+    избежать. Лечится проксированием скрипта и `/api/send` через свой домен
+    (Worker) — не делали. Headless Chrome Umami считает ботом (`beep/boop`).
+  - Заголовок лендинга — `eberly | eberly` (splash-страница `title: eberly`
+    + имя сайта). Косметика, не трогал.
+- Следующему (06): `https://eberly.dev` и все страницы из записи 01
+  открываются, `www` → корень. StackBlitz: после пуша в `main` один раз
+  открыть кнопку самому (см. 04).
+- Поправил файлы плана: `05-deploy.md` (шаг 3 — Workers вместо Pages, `www`).
