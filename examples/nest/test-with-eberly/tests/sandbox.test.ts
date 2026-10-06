@@ -1,3 +1,4 @@
+import type { BodyOf } from 'eberly'
 import { beforeEach, describe, expect, test } from 'vitest'
 import { z } from 'zod'
 
@@ -57,8 +58,8 @@ describe('Песочница', () => {
     await alice.signUp()
 
     // создадим пост
-    type PostData = WType
-    const postData = { title: 'Hello', content: 'First post' }
+    type postDataType = BodyOf<typeof alice.posts.create>
+    const postData = { title: 'Hello', content: 'First post' } satisfies postDataType
     await alice.posts.create({ body: postData })
 
     // прочитаем пост

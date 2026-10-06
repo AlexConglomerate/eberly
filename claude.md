@@ -14,6 +14,10 @@
   `src/response.type-test.ts` (`@ts-expect-error`, проверяет `pnpm lint`).
   Во втором аргументе `assert` вместо любого значения — Standard Schema
   или матчер vitest (`expect.any(Number)`), см. `ARCHITECTURE.md §6`.
+- `src/endpoint-types.ts` — публичные типы `BodyOf` / `QueryOf` / `PathOf` /
+  `ResponseOf`: части вызова эндпоинта из его сигнатуры
+  (`BodyOf<typeof alice.posts.create>`). Только типы, генератор не трогает.
+  Тест типов — `src/endpoint-types.type-test.ts`.
 - `src/standard-schema.ts` — копия интерфейса Standard Schema v1 (Zod,
   Valibot, ArkType…) + `isStandardSchema`. Без зависимостей.
 - `src/safety.ts` — рантайм-ядро: защита от прода. `isHostAllowed` /

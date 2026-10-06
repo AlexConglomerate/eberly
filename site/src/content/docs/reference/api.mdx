@@ -1,6 +1,6 @@
 ---
 title: API cheat sheet
-description: World, users, responses and assert, stores and hooks on one page.
+description: World, users, responses and assert, endpoint types, stores and hooks on one page.
 sidebar:
   order: 2
 ---
@@ -9,6 +9,7 @@ import { Code } from '@astrojs/starlight/components'
 
 import { snippet } from '../../../lib/snippet'
 import userStore from '../../../../../examples/nest/test-with-eberly/eberly/userStore.ts?raw'
+import postsTest from '../../../../../examples/nest/test-with-eberly/tests/posts.test.ts?raw'
 
 ```ts
 import { World } from '../eberly/generated'
@@ -31,6 +32,20 @@ alice.set({ key: 'lastPostId', value: 1 })
 alice.get({ key: 'lastPostId' })      // number, throws if not set
 alice.getSafe({ key: 'lastPostId' })  // number | undefined
 ```
+
+## Endpoint types
+
+Request data declared before the call is checked only when it is passed, and an
+extra field in a variable is not an error at all. `BodyOf`, `QueryOf` and
+`PathOf` from `eberly` give the type of that part of a call, `ResponseOf` gives
+the response body of a status (the 2xx one by default). Pass the method itself,
+`typeof alice.posts.create`, or `WorldApi['posts']['create']` where there is no
+user ([`posts.test.ts`](https://github.com/AlexConglomerate/eberly/blob/main/examples/nest/test-with-eberly/tests/posts.test.ts)):
+
+<Code code={snippet({ source: postsTest, region: 'endpoint-types' })} lang="ts" />
+
+A part the endpoint does not have is `never`. In `'frontend'` mode
+`ResponseOf` is the returned body, the status is not used.
 
 ## Stores
 

@@ -2,6 +2,7 @@
 export { BaseStore } from './src/base-store'
 export { ApiResponse, EberlyAssertionError } from './src/response'
 export type { DeepPartial, Expected, UndeclaredErrorStatus } from './src/response'
+export type { BodyOf, QueryOf, PathOf, ResponseOf } from './src/endpoint-types'
 export type { StandardSchemaV1 } from './src/standard-schema'
 export { assertHostAllowed, EberlyUnsafeHostError } from './src/safety'
 export { HookRegistry } from './src/hooks'

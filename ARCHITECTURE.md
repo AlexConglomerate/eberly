@@ -548,6 +548,16 @@ type? }`, `{ content, name, type? }`, `Blob`/`File`.
 `schemaToType` аргументом `names`. Пользователь может импортировать
 типы: `import type { PostDto } from './generated'`.
 
+Тип части вызова без имени схемы — хелперы из `eberly`
+(`src/endpoint-types.ts`): `BodyOf` / `QueryOf` / `PathOf` /
+`ResponseOf<F, статус>`, где `F` — метод (`typeof alice.posts.create`) или
+`WorldApi['posts']['create']`. Выводятся из сигнатуры в `WorldApi`, поэтому
+генератор о них не знает и они работают и для инлайн-схем. Нужны для
+`satisfies`: у переменной, переданной в вызов, лишние поля TS не ловит.
+Синтаксис через точку (`World.posts.create.body`, namespace, слитый с
+классом) — возможный следующий шаг поверх них; мешают только
+зарезервированные слова (`delete`, `default`) в именах namespace.
+
 **Один источник типов вызовов.** Типы параметров и ответов описаны только
 в `WorldApi` (там же JSDoc `summary`). Реализация —
 `buildApiTree(request): WorldApi` — типизируется контекстно и типы не
