@@ -1,5 +1,52 @@
 # eberly
 
+## 0.3.0
+
+### Minor Changes
+
+- 0575073: Во втором аргументе `assert` вместо любого значения — Standard Schema
+  (Zod, Valibot, ArkType…) или асимметричный матчер vitest / Jest:
+  `res.assert(201, { createdAt: z.iso.datetime(), authorId: expect.any(Number) })`.
+  Без новых зависимостей. Из пакета экспортируются типы `Expected` и
+  `StandardSchemaV1`.
+- 0575073: `res.data` — тело 2xx без `assert` (на любой другой статус бросает
+  `EberlyAssertionError`); удобно для подготовки данных. Сообщения ошибок
+  `assert` / `data` начинаются с эндпоинта (`POST /posts: …`), а стек обрезан
+  по вызов: vitest показывает строку теста, а не `dist/index.mjs`.
+- 50c2268: **Ломающее изменение.** `BaseStore.get({ key })` теперь бросает ошибку,
+  если переменная не задана, и возвращает `Vars[K]` без `undefined` — в
+  тестах больше не нужен `!`. Для чтения, где значения может не быть (хуки
+  анонимного юзера, счётчики), — новый `getSafe({ key })` → `Vars[K] |
+undefined`. Миграция: в хуках и сценариях, где проверяли `undefined`,
+  замените `get` на `getSafe`. Группа `getSafe` из схемы получает суффикс
+  `Api`, как `get` и `set`.
+- 0575073: Path- и query-параметры типизированы по их схеме: `integer` / `number` →
+  `number`, `boolean` → `boolean`, `enum` из примитивов → союз литералов
+  (`$ref` разворачивается, `null` отбрасывается). Раньше path-параметр был
+  всегда `string`: `{ path: { postId: post.body.id } }` теперь без
+  `String(…)`. Массивы и объекты — как раньше. Типы в `api/*.md` — те же.
+- c3667a2: Схема в YAML и URL без `.json`.
+
+  - `swagger.pathToFile` принимает `.json`, `.yaml` и `.yml`.
+  - `swagger.url` — любой http(s)-URL: `http://localhost:3000/docs-json`
+    (Nest), `/v3/api-docs` (springdoc), `/openapi` — без скачивания curl-ом.
+  - Формат определяется по тексту: начинается с `{` → JSON, иначе YAML.
+    Битый текст или не объект — ошибка _"eberly: failed to parse the OpenAPI
+    spec from <source> as JSON or YAML: …"_.
+  - Новая рантайм-зависимость — `yaml` (без транзитивных зависимостей,
+    грузится лениво, только для YAML).
+
+### Patch Changes
+
+- 5fa17a2: Внутреннее: шаги генератора без IO вынесены в `buildClient`
+  (`src/generator/pipeline.ts`) — его переиспользует плейграунд на сайте.
+  `generateClient` и сгенерированные файлы не меняются.
+- f41159e: Комментарии и JSDoc в сгенерированном клиенте — на английском: шапка
+  («do not edit by hand»), `World`, `createUser`, `Hooks`, параметры
+  конструктора, комментарии внутри `request`. Код клиента не меняется.
+- f37a465: `homepage` пакета — сайт https://eberly.dev.
+- 3dcd094: README — витрина со ссылками на документацию https://eberly.dev; `eberly create` ссылается на https://eberly.dev/getting-started/.
+
 ## 0.2.0
 
 ### Minor Changes
