@@ -113,9 +113,10 @@ OpenAPI **3.0** (`nullable`, `format: binary`), 201/204, ошибки 4xx с
 `examples/nest/test-with-eberly` — тесты Nest-бэкенда через eberly
 (`@eberly-examples/nest-test-with-eberly`): `signUp` (register → login →
 токен), `world.reset()`, Bearer в `globalBefore`, `lastPostId` в
-`posts.create.after`. Тесты: `tests/{auth,posts,comments,avatar,readme}.test.ts`
+`posts.create.after`. Тесты: `tests/{auth,posts,comments,avatar,readme,sandbox}.test.ts`
 (`readme.test.ts` — пример «до и после» из `README.md`, один в один, оба
-блока: и eberly, и голый `fetch`);
+блока: и eberly, и голый `fetch`; `sandbox.test.ts` — песочница для
+экспериментов, в README не попадает);
 `tests/types.ts` — тест типов на настоящем клиенте (`@ts-expect-error`,
 проверяет `typecheck`, vitest его не запускает). Фикстура —
 `tests/fixtures/avatar.png`.

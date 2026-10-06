@@ -57,7 +57,7 @@ await alice.signUp({ email: 'alice@example.com', password: 'secret123' })
 await bob.signUp({ email: 'bob@example.com', password: 'secret123' })
 
 const post = await alice.posts.create({ body: { title: 'Hello', content: 'First post' } })
-const res = await bob.posts.remove({ path: { id: String(post.assert(201).body.id) } })
+const res = await bob.posts.remove({ path: { id: post.assert(201).body.id } })
 res.assert(403, { message: 'Only the author can do this' })
 ```
 
