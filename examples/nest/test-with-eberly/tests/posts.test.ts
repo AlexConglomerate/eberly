@@ -19,14 +19,16 @@ describe('posts', () => {
   })
 
   test('жизненный цикл поста: создать → чужой не удалит → опубликовать → удалить', async () => {
-    // Алиса создаёт черновик: 201 и publishedAt = null.
+    // Алиса создаёт черновик: 201 и publishedAt = null. after-хук кладёт
+    // id в стор именно Алисы.
+    // #region docs:last-post-id
     const created = await alice.posts.create({ body: { title: 'Hello', content: 'First post' } })
     created.assert(201, { title: 'Hello', publishedAt: null })
 
-    // after-хук положил id в стор именно Алисы.
     const postId = alice.get({ key: 'lastPostId' })!
     expect(postId).toBe(created.assert(201).body.id)
     expect(bob.get({ key: 'lastPostId' })).toBeUndefined()
+    // #endregion
     const path = { id: String(postId) }
 
     // Боб — не автор: 403.

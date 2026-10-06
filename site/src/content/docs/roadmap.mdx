@@ -1,0 +1,11 @@
+---
+title: Limitations and roadmap
+description: What eberly doesn't do yet.
+---
+
+- Swagger 2.0 is not supported (convert it to OpenAPI 3 first).
+- Method names come from `operationId` as is: default Nest or FastAPI ids
+  (`PostsController_create`, `read_items_items_get`) give awkward names.
+- Tests run sequentially; parallel runs need isolated data per test file.
+- Examples cover TypeScript backends only; Python, Go and Rust examples are
+  planned.

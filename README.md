@@ -216,7 +216,7 @@ Rename `title` to `headline` in the Nest backend's `CreatePostDto`, regenerate
 the client and run `pnpm typecheck`:
 
 ```
-tests/readme.test.ts(18,53): error TS2353: Object literal may only specify known properties, and 'title' does not exist in type 'CreatePostDto'.
+tests/readme.test.ts(20,53): error TS2353: Object literal may only specify known properties, and 'title' does not exist in type 'CreatePostDto'.
 ```
 
 Every test that sends the old field fails to compile, with the file and line.

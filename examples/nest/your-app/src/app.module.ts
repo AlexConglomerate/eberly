@@ -10,7 +10,8 @@ import { UsersController } from './users/users.controller.js'
 
 @Module({})
 export class AppModule {
-  /** `testMode` подключает `TestController` (`POST /test/reset`). */
+  // #region docs:test-mode
+  /** `testMode` mounts `TestController` (`POST /test/reset`). */
   static register({ testMode }: { testMode: boolean }): DynamicModule {
     return {
       module: AppModule,
@@ -24,4 +25,5 @@ export class AppModule {
       providers: [Store, AuthGuard],
     }
   }
+  // #endregion
 }

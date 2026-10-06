@@ -1,0 +1,97 @@
+---
+title: eberly
+description: Typed end-to-end API tests for any backend with an OpenAPI 3 spec.
+template: splash
+hero:
+  tagline: Typed end-to-end API tests for any backend with an OpenAPI 3 spec.
+  actions:
+    - text: Get started
+      link: /getting-started/
+      icon: right-arrow
+    - text: GitHub
+      link: https://github.com/AlexConglomerate/eberly
+      icon: github
+      variant: minimal
+---
+
+import { Aside, Card, CardGrid, Code } from '@astrojs/starlight/components'
+
+import { snippet } from '../../lib/snippet'
+import readmeTest from '../../../../examples/nest/test-with-eberly/tests/readme.test.ts?raw'
+
+```sh
+npm i -D eberly
+```
+
+eberly reads your backend's OpenAPI spec (JSON or YAML) and generates a typed TypeScript
+client for tests. Every test user gets their own state, hooks keep tokens and
+ids for you, and when the backend changes its contract, the tests stop
+compiling.
+
+## Before and after
+
+Scenario: Alice creates a post, Bob tries to delete it and must get `403`.
+
+**Before:** bare `fetch`, tokens by hand, `any` everywhere.
+
+<Code code={snippet({ source: readmeTest, region: 'readme-before' })} lang="ts" />
+
+**After:** eberly
+([`tests/readme.test.ts`](https://github.com/AlexConglomerate/eberly/blob/main/examples/nest/test-with-eberly/tests/readme.test.ts)).
+
+<Code code={snippet({ source: readmeTest, region: 'readme-after' })} lang="ts" />
+
+`signUp` is a scenario you write once in your
+[`userStore.ts`](https://github.com/AlexConglomerate/eberly/blob/main/examples/nest/test-with-eberly/eberly/userStore.ts). A hook
+([`hooks.ts`](https://github.com/AlexConglomerate/eberly/blob/main/examples/nest/test-with-eberly/eberly/hooks.ts)) adds the Bearer
+token to every request of that user. `posts.create`, `posts.remove`, the body
+and the statuses `201` / `403` are all checked by TypeScript.
+
+## Try it
+
+{/* PLAYGROUND: task 03 replaces this section with the playground island. */}
+{/* STACKBLITZ: task 04 adds the "Open in StackBlitz" button here. */}
+
+<Aside>
+  Coming soon: a playground to edit a spec and watch the test go red right
+  here, and a one-click StackBlitz project with a real backend.
+</Aside>
+
+## Why eberly
+
+<CardGrid>
+  <Card title="Typed client from your swagger" icon="seti:typescript">
+    Request bodies, path params, response bodies and statuses come from the
+    spec. The backend renames a field, and the test turns red before it even
+    runs.
+  </Card>
+  <Card title="Many users, each with their own state" icon="star">
+    `world.createUser()` gives a user with their own token and variables, so
+    "Bob can't touch Alice's post" is three lines.
+  </Card>
+  <Card title="Hooks keep tokens and ids for you" icon="puzzle">
+    A `before` hook adds the token, an `after` hook saves the id of the created
+    entity. Tests don't pass them around.
+  </Card>
+  <Card title="Status with autocomplete, partial body check" icon="approve-check">
+    `res.assert(201, { title })` suggests the statuses declared in the spec,
+    checks only the fields you pass (at any depth) and narrows `res.body` to
+    the type of that status.
+  </Card>
+  <Card title="Transparent token refresh" icon="random">
+    A `globalRetry` hook refreshes the token on `401`, and eberly replays the
+    request: the test sees `200`.
+  </Card>
+  <Card title="File upload by path" icon="document">
+    `{ body: { file: './avatar.png' } }`, and eberly builds the multipart form.
+  </Card>
+  <Card title="Endpoint docs for AI agents" icon="open-book">
+    The generator writes `eberly/api/`: one short Markdown file per endpoint,
+    so an agent writes tests without reading the whole client or the backend
+    code.
+  </Card>
+</CardGrid>
+
+---
+
+[MIT](https://github.com/AlexConglomerate/eberly/blob/main/LICENSE) · Formerly published as [`ebely`](https://www.npmjs.com/package/ebely).

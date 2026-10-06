@@ -1,0 +1,54 @@
+---
+title: API cheat sheet
+description: World, users, responses and assert, stores and hooks on one page.
+sidebar:
+  order: 2
+---
+
+import { Code } from '@astrojs/starlight/components'
+
+import { snippet } from '../../../lib/snippet'
+import userStore from '../../../../../examples/nest/test-with-eberly/eberly/userStore.ts?raw'
+
+```ts
+import { World } from '../eberly/generated'
+
+const world = new World()             // reads eberly.ts: url, stores, hooks
+const alice = world.createUser()      // a user with their own variables and token
+await world.reset()                   // a worldStore scenario
+
+const res = await alice.posts.get({ path: { id: '1' } })   // also: body, query
+res.status                            // number
+res.body                              // union of the declared response bodies
+res.assert(200)                       // status only
+res.assert(200, { title: 'Hello' })   // + deep-partial body check
+res.assert(200).body.title            // body narrowed to the 200 type
+res.assert(403)                       // any undeclared 4xx/5xx works without a cast
+
+alice.set({ key: 'lastPostId', value: 1 })
+alice.get({ key: 'lastPostId' })      // number | undefined
+```
+
+## Stores
+
+`eberly/userStore.ts`: variables and scenarios of one user.
+`this.api.<group>.<method>(…)` calls the API as this user
+([the Nest example](https://github.com/AlexConglomerate/eberly/blob/main/examples/nest/test-with-eberly/eberly/userStore.ts)):
+
+<Code code={snippet({ source: userStore, region: 'user-store' })} lang="ts" />
+
+## Hooks
+
+`eberly/hooks.ts`:
+
+| Hook | When | Arguments |
+| --- | --- | --- |
+| `h.globalBefore(fn)` | before every request | `{ request, ctx }` |
+| `h.<group>.<method>.before(fn)` | before this endpoint, after global ones | `{ request, ctx }` |
+| `h.<group>.<method>.after(fn)` | after this endpoint | `{ request, response, ctx }` |
+| `h.globalAfter(fn)` | after every request, after endpoint ones | `{ request, response, ctx }` |
+| `h.globalRetry(fn)` | after every request; return `true` to replay it | `{ request, response, ctx }` |
+
+`request` has `method`, `path`, `headers`, `query`, `body`; `ctx` is the store
+of the user who made the request. Examples: [auth and token refresh](/guides/auth-and-token-refresh/),
+[save ids with hooks](/guides/save-ids-with-hooks/).

@@ -15,10 +15,11 @@ export function createSwaggerDocument(app: INestApplication): OpenAPIObject {
     .addBearerAuth()
     .build()
 
+  // #region docs:operation-id
   return SwaggerModule.createDocument(app, config, {
-    // `PostsController` + `create` → `posts.create` (по умолчанию было бы
-    // `PostsController_create`).
+    // `PostsController` + `create` → `posts.create` (default: `PostsController_create`).
     operationIdFactory: (controllerKey, methodKey) =>
       `${controllerKey.replace(/Controller$/, '').toLowerCase()}.${methodKey}`,
   })
+  // #endregion
 }

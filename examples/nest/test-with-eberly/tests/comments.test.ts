@@ -31,8 +31,10 @@ describe('comments', () => {
     const c = await alice.comments.create({ path, body: { text: 'c', parentId: bId } })
     c.assert(201)
 
+    // #region docs:tree
     const tree = await bob.comments.list({ path })
     tree.assert(200, [{ text: 'a', replies: [{ text: 'b', replies: [{ text: 'c', replies: [] }] }] }])
+    // #endregion
   })
 
   test('parentId из чужого поста → 404', async () => {

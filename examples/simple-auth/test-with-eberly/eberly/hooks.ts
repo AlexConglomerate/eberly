@@ -20,7 +20,9 @@ export const hooks: Hooks<UserStore> = (h) => {
   // (= store текущего юзера). Один логин «прилипает» к юзеру и едет во все
   // последующие вызовы. На анонимных эндпоинтах (sign-in/sign-up) токена
   // в сторе нет — хук просто молчит.
+  // #region docs:global-before
   h.globalBefore(withBearer)
+  // #endregion
 
   // ── ГЛОБАЛЬНЫЙ retry ────────────────────────────────────────────────
   // Прозрачная обработка протухшего токена. На 401 идём за refresh, кладём
@@ -28,18 +30,22 @@ export const hooks: Hooks<UserStore> = (h) => {
   // же запрос: заново прогонит globalBefore (withBearer возьмёт уже
   // обновлённый токен) и пошлёт fetch. Для теста 401 «растворяется»: вызов
   // сразу отдаёт 200. Никаких ручных повторных вызовов.
+  // НЕ рефрешим сами auth-эндпоинты: иначе 401 на signIn (неверный пароль)
+  // → refresh → signIn → 401 → ... И /auth/session после signOut честно
+  // должен оставаться 401. (Плюс есть жёсткий потолок maxRetries в ядре.)
+  // refresh = повторный signIn; без сохранённых кредов (анонимный юзер,
+  // OAuth-юзер без пароля) рефрешить нечем — оставляем 401 как есть.
+  // Комментарии внутри региона — на английском: он виден на сайте.
+  // #region docs:global-retry
   h.globalRetry(async ({ request, response, ctx }) => {
     if (response.status !== 401) return false
-    // НЕ рефрешим сами auth-эндпоинты: иначе 401 на signIn (неверный пароль)
-    // → refresh → signIn → 401 → ... И /auth/session после signOut честно
-    // должен оставаться 401. (Плюс есть жёсткий потолок maxRetries в ядре.)
+    // Don't refresh auth endpoints themselves: a wrong password must stay 401.
     if (request.path.startsWith('/auth/')) return false
-    // refresh = повторный signIn; без сохранённых кредов (анонимный юзер,
-    // OAuth-юзер без пароля) рефрешить нечем — оставляем 401 как есть.
     if (!ctx.get({ key: 'email' }) || !ctx.get({ key: 'password' })) return false
     await ctx.refresh()
-    return true // → eberly переиграет запрос на свежем токене
+    return true // → eberly replays the request with the fresh token
   })
+  // #endregion
 
   // ── Поименный after ─────────────────────────────────────────────────
   // После создания поста — сохранить id у того юзера, который его создал.

@@ -15,8 +15,9 @@ export type UserVars = {
   lastPostId: number
 }
 
+// #region docs:user-store
 export class UserStore extends BaseStore<UserVars, WorldApi> {
-  /** Сценарий: register (201) → login (200) → сохранить токен. */
+  /** Scenario: register (201) → login (200) → save the token. */
   public async signUp(args: { email: string; password: string }): Promise<void> {
     const { email, password } = args
 
@@ -24,7 +25,7 @@ export class UserStore extends BaseStore<UserVars, WorldApi> {
     registered.assert(201, { email, avatarUrl: null })
 
     const loggedIn = await this.api.auth.login({ body: { email, password } })
-    // assert сужает тело до 200 (TokenDto) — `accessToken` без каста.
+    // assert narrows the body to the 200 type (TokenDto): `accessToken` without a cast.
     const { accessToken } = loggedIn.assert(200, { user: { email } }).body
 
     this.set({ key: 'email', value: email })
@@ -32,3 +33,4 @@ export class UserStore extends BaseStore<UserVars, WorldApi> {
     this.set({ key: 'accessToken', value: accessToken })
   }
 }
+// #endregion

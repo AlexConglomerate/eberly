@@ -1,0 +1,12 @@
+/* Only the accent color for now; a custom theme comes later. */
+:root {
+  --sl-color-accent-low: hsl(160, 60%, 14%);
+  --sl-color-accent: hsl(160, 84%, 36%);
+  --sl-color-accent-high: hsl(160, 70%, 80%);
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: hsl(160, 60%, 88%);
+  --sl-color-accent: hsl(160, 84%, 30%);
+  --sl-color-accent-high: hsl(160, 80%, 18%);
+}

@@ -1,0 +1,21 @@
+---
+title: Save ids with hooks
+description: An after hook saves the id of a created entity in the store of the user who made the request.
+sidebar:
+  order: 2
+---
+
+import { Code } from '@astrojs/starlight/components'
+
+import { snippet } from '../../../lib/snippet'
+import hooks from '../../../../../examples/nest/test-with-eberly/eberly/hooks.ts?raw'
+import postsTest from '../../../../../examples/nest/test-with-eberly/tests/posts.test.ts?raw'
+
+[`hooks.ts`](https://github.com/AlexConglomerate/eberly/blob/main/examples/nest/test-with-eberly/eberly/hooks.ts): `ctx` is the store
+of the user who made the request, so ids never leak between users.
+
+<Code code={snippet({ source: hooks, region: 'save-id' })} lang="ts" />
+
+[`posts.test.ts`](https://github.com/AlexConglomerate/eberly/blob/main/examples/nest/test-with-eberly/tests/posts.test.ts):
+
+<Code code={snippet({ source: postsTest, region: 'last-post-id' })} lang="ts" />

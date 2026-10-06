@@ -8,9 +8,11 @@ import { AppModule } from './app.module.js'
 import { createSwaggerDocument } from './openapi.js'
 
 const PORT = Number(process.env.PORT ?? 3000)
+// #region docs:test-mode
 const TEST_MODE = process.env.TEST_MODE === '1'
 
 const app = await NestFactory.create(AppModule.register({ testMode: TEST_MODE }))
+// #endregion
 app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
 
 // `/docs` — Swagger UI, `/swagger.json` — схема.

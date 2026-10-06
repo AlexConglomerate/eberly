@@ -105,7 +105,8 @@ OpenAPI **3.0** (`nullable`, `format: binary`), 201/204, ошибки 4xx с
 (`@eberly-examples/nest-test-with-eberly`): `signUp` (register → login →
 токен), `world.reset()`, Bearer в `globalBefore`, `lastPostId` в
 `posts.create.after`. Тесты: `tests/{auth,posts,comments,avatar,readme}.test.ts`
-(`readme.test.ts` — пример «до и после» из `README.md`, один в один);
+(`readme.test.ts` — пример «до и после» из `README.md`, один в один, оба
+блока: и eberly, и голый `fetch`);
 `tests/types.ts` — тест типов на настоящем клиенте (`@ts-expect-error`,
 проверяет `typecheck`, vitest его не запускает). Фикстура —
 `tests/fixtures/avatar.png`.
@@ -121,6 +122,26 @@ npm-пакет.
 `clone/tests` — шаблон для `npx eberly create`. **Генерируется** из
 `examples/simple/test-with-eberly` (`scripts/sync-template.ts`), в git не
 лежит, руками не править.
+
+`site/` — сайт eberly.dev (`@eberly-site/site`, `private: true`, в npm не
+попадает): Astro + Starlight, только английский. Свой `tsconfig.json`
+(корневой не расширяет).
+  - `astro.config.mjs` — Starlight: заголовок, GitHub, сайдбар.
+  - `src/content/docs/index.mdx` — лендинг (`template: splash`); места под
+    плейграунд (03) и StackBlitz (04) помечены комментариями `PLAYGROUND` /
+    `STACKBLITZ`.
+  - `src/content/docs/**` — документация (разделы README по страницам).
+  - `src/lib/snippet.ts` — `snippet({ source, region })`: вырезает из текста
+    файла регион `// #region docs:<имя>` … `// #endregion` и убирает отступ.
+    Нет региона — ошибка сборки.
+  - `src/styles/custom.css` — пока только акцентный цвет.
+
+**Код в документации — только регионами из зелёных тестов/примеров**:
+`import src from '…/x.test.ts?raw'` + `<Code code={snippet({ source: src,
+region: '…' })} lang="ts" />`. Руками код в `.mdx` не копировать.
+Регион `docs:*` в примерах — это API сайта: не удалять и не переименовывать,
+не поправив `.mdx` (иначе упадёт сборка сайта). Комментарии внутри
+регионов — на английском (они видны на сайте).
 
 Скрипты репозитория (`scripts/`, проверяются `pnpm lint`):
 - `e2e.ts` — `pnpm e2e` (см. ниже).
@@ -148,6 +169,11 @@ npm-пакет.
 
 `nest/test-with-eberly` (`pnpm --filter @eberly-examples/nest-test-with-eberly run <script>`):
 те же `client:generate`, `typecheck`, `test` (бэкенд — с `TEST_MODE=1`).
+
+`site` (`pnpm --filter @eberly-site/site run <script>`):
+- `dev` — сайт локально на `http://localhost:4321`.
+- `build` — собрать в `site/dist/` (заодно проверяет, что все регионы
+  `docs:*` на месте); `preview` — посмотреть сборку.
 
 `nest/your-app` (`pnpm --filter @eberly-examples/nest-your-app run <script>`):
 - `start` — собрать и поднять бэкенд (`:3000`; `TEST_MODE=1` включает

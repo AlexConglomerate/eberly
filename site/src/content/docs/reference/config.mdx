@@ -1,0 +1,34 @@
+---
+title: Config reference
+description: Every field of eberly/eberly.ts (EberlyConfig).
+sidebar:
+  order: 1
+---
+
+import { Code } from '@astrojs/starlight/components'
+
+import { snippet } from '../../../lib/snippet'
+import config from '../../../../../examples/nest/test-with-eberly/eberly/eberly.ts?raw'
+
+`eberly/eberly.ts` exports the config with `satisfies EberlyConfig`
+([the Nest example](https://github.com/AlexConglomerate/eberly/blob/main/examples/nest/test-with-eberly/eberly/eberly.ts)):
+
+<Code code={snippet({ source: config, region: 'config' })} lang="ts" />
+
+| Field | Default | Description |
+| --- | --- | --- |
+| `url` | (required) | Base URL of the backend under test. `new World({ url })` overrides it. |
+| `swagger` | (required) | Where to read the spec, JSON or YAML: a file `{ pathToFile: 'swagger.json' }` (`.json`, `.yaml` or `.yml`) or any http(s) URL `{ url: 'http://localhost:3000/docs-json' }`. |
+| `generateClientTo` | (required) | Path of the generated client, e.g. `'eberly/generated.ts'`. `eberly/api/` is written next to it. |
+| `userStore` | (required) | Class extending `BaseStore`: variables and scenarios of one user. |
+| `worldStore` | none | Class extending `BaseStore`: app-level scenarios such as `reset()`, called as `world.reset()`. |
+| `hooks` | none | Hook registrar, typed as `Hooks<UserStore>` from the generated client. |
+| `mode` | `'test'` | `'test'`: methods return a response with `.status`, `.body`, `.assert()`; non-2xx doesn't throw. `'frontend'`: methods return the body and throw on non-2xx. |
+| `maxRetries` | `3` | Max replays of one request when a `globalRetry` hook returns `true`. |
+| `files` | `{ encoding: 'repeat' }` | Field names for an array of files: `'repeat'` (`files`, `files`), `'bracket-index'` (`files[0]`), `'bracket-empty'` (`files[]`) or a function. |
+| `allowedHosts` | `[]` | Hosts besides loopback the client may call in `test` mode: exact names or `*.domain`. |
+| `userStoreImport` | `'eberly'` | Module the generated file imports `BaseStore` from. Only for unusual layouts. |
+| `configImport` | `'./eberly'` | Path from the generated file to this config. Only for unusual layouts. |
+
+`maxRetries`, `files` and `allowedHosts` are read at runtime: changing them
+doesn't need a regeneration.

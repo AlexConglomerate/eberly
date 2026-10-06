@@ -1,0 +1,39 @@
+---
+title: Writing tests with AI agents
+description: eberly/api/ gives an agent one short Markdown file per endpoint; two Claude Code skills use it.
+sidebar:
+  order: 6
+---
+
+import { Code } from '@astrojs/starlight/components'
+
+import index from '../../../../../examples/nest/test-with-eberly/eberly/api/INDEX.md?raw'
+
+`pnpm run client:generate` writes, next to the client, an `eberly/api/` folder
+for agents:
+
+- [`INDEX.md`](https://github.com/AlexConglomerate/eberly/blob/main/examples/nest/test-with-eberly/eberly/api/INDEX.md): one line per
+  endpoint, grouped by tag. The one generated for the Nest example:
+
+  <Code code={index} lang="md" />
+
+- `<group>.<method>.md`, e.g.
+  [`posts.create.md`](https://github.com/AlexConglomerate/eberly/blob/main/examples/nest/test-with-eberly/eberly/api/posts.create.md):
+  description, a ready-to-paste call, input, responses by status and the types
+  they use, with field descriptions from the spec.
+
+An agent reads the index, then opens only the endpoints of its scenario: a few
+dozen lines each, instead of the whole `generated.ts` (700+ lines for a small
+backend) or the backend source. Less context spent, fewer made-up fields.
+
+## Claude Code skills
+
+Two Claude Code skills use this folder:
+
+- `/eberly-setup`: asks where the spec is, how auth works and how to reset data,
+  then writes the config, stores, hooks and smoke tests until they are green.
+- `/eberly-write-tests <scenario>`: writes and runs a test for a scenario in
+  plain words.
+
+`npx eberly create` installs both; `npx eberly skills` installs them into an
+existing project.

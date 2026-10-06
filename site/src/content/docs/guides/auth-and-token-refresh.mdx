@@ -1,0 +1,35 @@
+---
+title: Auth and token refresh
+description: One globalBefore hook adds the token to every request, globalRetry refreshes it on 401.
+sidebar:
+  order: 1
+---
+
+import { Code } from '@astrojs/starlight/components'
+
+import { snippet } from '../../../lib/snippet'
+import hooks from '../../../../../examples/simple-auth/test-with-eberly/eberly/hooks.ts?raw'
+import refreshTest from '../../../../../examples/simple-auth/test-with-eberly/tests/refresh.test.ts?raw'
+
+All snippets in the guides come from tests that pass in `pnpm e2e` against real
+backends in [`examples/`](https://github.com/AlexConglomerate/eberly/tree/main/examples).
+
+[`examples/simple-auth`](https://github.com/AlexConglomerate/eberly/tree/main/examples/simple-auth/test-with-eberly): one
+`globalBefore` adds the token to every request; `globalRetry` refreshes it on
+`401` and asks eberly to replay the request
+([`hooks.ts`](https://github.com/AlexConglomerate/eberly/blob/main/examples/simple-auth/test-with-eberly/eberly/hooks.ts)).
+
+<Code
+  code={[
+    snippet({ source: hooks, region: 'global-before' }),
+    snippet({ source: hooks, region: 'global-retry' }),
+  ].join('\n\n')}
+  lang="ts"
+/>
+
+The test revokes the session, and a single call still returns `200`
+([`refresh.test.ts`](https://github.com/AlexConglomerate/eberly/blob/main/examples/simple-auth/test-with-eberly/tests/refresh.test.ts)):
+
+<Code code={snippet({ source: refreshTest, region: 'refresh' })} lang="ts" />
+
+Replays are capped by `maxRetries` (default `3`).

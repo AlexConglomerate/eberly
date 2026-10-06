@@ -1,0 +1,17 @@
+---
+title: Recursive schemas and deep-partial checks
+description: assert checks only the fields you pass, at any depth, even in a recursive schema.
+sidebar:
+  order: 3
+---
+
+import { Code } from '@astrojs/starlight/components'
+
+import { snippet } from '../../../lib/snippet'
+import commentsTest from '../../../../../examples/nest/test-with-eberly/tests/comments.test.ts?raw'
+
+`CommentDto.replies` refers to itself. `assert` checks only the fields you pass,
+at any depth
+([`comments.test.ts`](https://github.com/AlexConglomerate/eberly/blob/main/examples/nest/test-with-eberly/tests/comments.test.ts)):
+
+<Code code={snippet({ source: commentsTest, region: 'tree' })} lang="ts" />

@@ -8,7 +8,9 @@ import { beforeAll, describe, expect, test } from 'vitest'
 
 import { World } from '../eberly/generated'
 
+// #region docs:avatar-path
 const avatarPath = fileURLToPath(new URL('./fixtures/avatar.png', import.meta.url))
+// #endregion
 
 describe('avatar', () => {
   const world = new World()
@@ -20,9 +22,11 @@ describe('avatar', () => {
   })
 
   test('загрузка по пути → avatarUrl заполнен', async () => {
+    // #region docs:avatar-upload
     const res = await alice.users.uploadAvatar({ body: { file: avatarPath } })
     const user = res.assert(201).body
     expect(user.avatarUrl).toBe(`/avatars/${user.id}.png`)
+    // #endregion
 
     const me = await alice.auth.me()
     me.assert(200, { avatarUrl: user.avatarUrl })

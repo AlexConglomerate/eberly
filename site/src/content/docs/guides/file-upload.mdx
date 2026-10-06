@@ -1,0 +1,29 @@
+---
+title: File upload
+description: Pass a file path, and eberly reads the file and builds the multipart form.
+sidebar:
+  order: 4
+---
+
+import { Code } from '@astrojs/starlight/components'
+
+import { snippet } from '../../../lib/snippet'
+import avatarTest from '../../../../../examples/nest/test-with-eberly/tests/avatar.test.ts?raw'
+
+Pass a path, eberly reads the file and builds the multipart form
+([`avatar.test.ts`](https://github.com/AlexConglomerate/eberly/blob/main/examples/nest/test-with-eberly/tests/avatar.test.ts)):
+
+<Code
+  code={[
+    snippet({ source: avatarTest, region: 'avatar-path' }),
+    snippet({ source: avatarTest, region: 'avatar-upload' }),
+  ].join('\n\n')}
+  lang="ts"
+/>
+
+A file can also be a `URL`, `{ path, name?, type? }`, `{ content, name }`,
+`Blob` or `File`.
+
+A backend may expect other field names for an array of files (oRPC wants
+`files[0]`, `files[1]`): see `files` in the [config reference](/reference/config/)
+and the [oRPC recipe](/backend-requirements/#orpc).

@@ -28,13 +28,15 @@ describe('refresh on 401 (globalRetry)', () => {
     const ok = await dave.auth.session({})
     ok.assert(200, { email: 'dave@example.com' })
 
-    // Отзываем сессии: текущий bearer-токен теперь невалиден.
+    // Отзываем сессии: текущий bearer-токен теперь невалиден. Вызов ниже
+    // уходит со старым (протухшим) токеном → 401. retry-хук рефрешит
+    // и eberly прозрачно переигрывает запрос на свежем токене → сразу 200.
+    // #region docs:refresh
     await world.revoke({ email: 'dave@example.com' })
 
-    // Вызов уходит со старым (протухшим) токеном → 401. retry-хук рефрешит
-    // и eberly прозрачно переигрывает запрос на свежем токене → сразу 200.
     const res = await dave.posts.list({})
     res.assert(200)
+    // #endregion
   })
 
   test('retry не зацикливается на неверных кредах (auth-эндпоинты исключены)', async () => {

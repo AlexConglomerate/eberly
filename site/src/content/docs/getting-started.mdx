@@ -1,0 +1,47 @@
+---
+title: Getting started
+description: Create a test project with npx eberly create, then set it up with Claude Code or by hand.
+---
+
+```sh
+npx eberly create my-tests   # template + Claude Code skills in my-tests/.claude/skills
+cd my-tests
+```
+
+## With Claude Code
+
+Run `claude` in this folder, then
+
+```
+/eberly-setup                                        # a few questions → config, client, stores, hooks, green smoke tests
+/eberly-write-tests Bob cannot delete Alice's post   # test written and run
+```
+
+See [Writing tests with AI agents](/guides/ai-agents/) for what the skills do.
+
+## By hand
+
+1. In `eberly/eberly.ts`, set `url` (your backend) and `swagger` (a file or a
+   URL of your spec). All fields are in the [config reference](/reference/config/).
+2. Install and generate the client:
+
+   ```sh
+   pnpm install
+   pnpm run client:generate   # writes eberly/generated.ts and eberly/api/
+   ```
+
+3. The template's stores and `tests/` are written for the demo backend.
+   Replace them with your own (`/eberly-setup` does this for you).
+4. Run the checks:
+
+   ```sh
+   pnpm typecheck && pnpm test
+   ```
+
+## Existing project
+
+`pnpm add -D eberly`, then `npx eberly skills` (or `npx eberly skills --user`
+to install them into `~/.claude/skills`). Skills are copied, so run the command
+again after updating eberly.
+
+Before you write tests, check [what your backend needs](/backend-requirements/).

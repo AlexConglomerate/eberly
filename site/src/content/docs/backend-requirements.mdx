@@ -1,0 +1,55 @@
+---
+title: What your backend needs
+description: OpenAPI 3, tags on operations and a test mode, plus recipes for NestJS and oRPC.
+---
+
+import { Code } from '@astrojs/starlight/components'
+
+import { snippet } from '../../lib/snippet'
+import main from '../../../../examples/nest/your-app/src/main.ts?raw'
+import appModule from '../../../../examples/nest/your-app/src/app.module.ts?raw'
+import openapi from '../../../../examples/nest/your-app/src/openapi.ts?raw'
+
+- **OpenAPI 3.0 or 3.1**, as JSON or YAML. Swagger 2.0 is rejected with a
+  clear error.
+- **`tags` on operations.** The first tag is the group: `user.posts.create(…)`.
+  Without tags the group comes from the `operationId` prefix, then the path.
+- **A test mode.** Tests need to start from a known state and finish flows
+  without real email or SMS:
+  - an endpoint that resets data (only in test mode);
+  - predictable confirmation codes;
+  - no real emails or SMS.
+
+## Test mode in the Nest example
+
+[`main.ts`](https://github.com/AlexConglomerate/eberly/blob/main/examples/nest/your-app/src/main.ts) and
+[`app.module.ts`](https://github.com/AlexConglomerate/eberly/blob/main/examples/nest/your-app/src/app.module.ts) mount
+`POST /test/reset` only when `TEST_MODE=1`:
+
+<Code code={snippet({ source: main, region: 'test-mode' })} lang="ts" title="main.ts" />
+
+<Code code={snippet({ source: appModule, region: 'test-mode' })} lang="ts" title="app.module.ts" />
+
+## Recipes
+
+### NestJS
+
+By default Nest names operations `PostsController_create`. An
+`operationIdFactory` gives `posts.create`
+([`openapi.ts`](https://github.com/AlexConglomerate/eberly/blob/main/examples/nest/your-app/src/openapi.ts)):
+
+<Code code={snippet({ source: openapi, region: 'operation-id' })} lang="ts" />
+
+With `SwaggerModule.setup('docs', …)` Nest serves the spec at `/docs-json`.
+Point eberly straight at it: `swagger: { url: 'http://localhost:3000/docs-json' }`.
+Any http(s) URL works, with or without `.json` (springdoc's `/v3/api-docs`
+too).
+
+### oRPC
+
+Its OpenAPI handler expects arrays of files as `files[0]`,
+`files[1]`, so set:
+
+```ts
+files: { encoding: 'bracket-index' },
+```

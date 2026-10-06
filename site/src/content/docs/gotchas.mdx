@@ -1,0 +1,54 @@
+---
+title: Gotchas
+description: Sequential test files, allowedHosts, type checks in CI, regeneration and other things to know.
+---
+
+import { Code } from '@astrojs/starlight/components'
+
+import { snippet } from '../../lib/snippet'
+import vitestConfig from '../../../../examples/nest/test-with-eberly/vitest.config.ts?raw'
+
+## Tests run sequentially
+
+All test files share one backend and one database, and each resets it in
+`beforeAll`. In parallel they would wipe each other's data. The template
+already sets this in `vitest.config.ts`; with your own config add it yourself:
+
+<Code code={snippet({ source: vitestConfig, region: 'vitest-config' })} lang="ts" />
+
+## `allowedHosts`: localhost only by default
+
+In `test` mode the client sends requests only to `localhost`, `127.0.0.1`,
+`[::1]` and the hosts you list. Anything else throws `EberlyUnsafeHostError`
+in `new World()`, before the first request. Add a staging host if you need
+one; never production.
+
+```ts
+export const eberly = {
+  url: 'https://api.staging.example.com',
+  allowedHosts: ['*.staging.example.com'],
+  // …
+} satisfies EberlyConfig
+```
+
+## vitest doesn't check types
+
+A test with a type error still runs. Run `pnpm typecheck` (`tsc --noEmit`) in
+CI, before `pnpm test`.
+
+## The spec changed → regenerate
+
+`pnpm run client:generate` after every change of the swagger, then
+`pnpm typecheck`.
+
+## Commit `eberly/generated.ts` and `eberly/api/`
+
+Then a contract change shows up in the diff of a pull request.
+
+## A status from a variable needs `as const`
+
+Otherwise it is just `number`:
+
+```ts
+for (const s of [401, 403] as const) res.assert(s)
+```
