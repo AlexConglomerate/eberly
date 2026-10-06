@@ -6,6 +6,35 @@ import { World } from '../eberly/generated'
 describe('Песочница', () => {
   beforeEach(() => new World().reset())
 
+  test('Алиса создаёт, читает и удаляет пост', async () => {
+    const world = new World()
+    const alice = world.createUser()
+
+    await alice.signUp()
+
+    // создадим пост
+    const postData = { title: 'Hello', content: 'First post' }
+    await alice.posts.create({ body: postData })
+
+    // прочитаем пост
+    const postId = alice.get({ key: 'lastPostId' }) // из переменных Алисы (кладёт хук)
+    const aliceRead = await alice.posts.get({ path: { postId } })
+
+    // проверим ответ
+    aliceRead.assert(200, { // Типизированная проверка статуса
+      title: postData.title, // exact value
+      createdAt: z.iso.datetime(), // any Standard Schema: Zod, Valibot, ArkType etc
+      authorId: expect.any(Number) // Jest/vitest matcher
+    })
+
+    // Алиса пытается удалить пост дважды
+    const tryToRemove = await alice.posts.remove({ path: { postId } })
+    const tryToRemoveAgain = await alice.posts.remove({ path: { postId } })
+
+    tryToRemove.assert(204) // Успешно удалили
+    tryToRemoveAgain.assert(404) // Уже удалён, 404
+  })
+
   test.skip('Алиса создаёт, читает и удаляет пост, Боб — нет', async () => {
     const world = new World()
 
@@ -49,35 +78,4 @@ describe('Песочница', () => {
     aliceTryToRemove.assert(204) // Успешно удалили
     aliceTryToRemoveAgain.assert(404) // Уже удалён, 404
   })
-
-  test('Алиса создаёт, читает и удаляет пост', async () => {
-    const world = new World()
-    const alice = world.createUser()
-
-    await alice.signUp()
-
-    // создадим пост
-    type PostData = WType
-    const postData = { title: 'Hello', content: 'First post' }
-    await alice.posts.create({ body: postData })
-
-    // прочитаем пост
-    const postId = alice.get({ key: 'lastPostId' }) // из переменных Алисы (кладёт хук)
-    const aliceRead = await alice.posts.get({ path: { postId } })
-
-    // проверим ответ
-    aliceRead.assert(200, { // Типизированная проверка статуса
-      title: postData.title, // exact value
-      createdAt: z.iso.datetime(), // any Standard Schema: Zod, Valibot, ArkType etc
-      authorId: expect.any(Number) // Jest/vitest matcher
-    })
-
-    // Алиса пытается удалить пост дважды
-    const tryToRemove = await alice.posts.remove({ path: { postId } })
-    const tryToRemoveAgain = await alice.posts.remove({ path: { postId } })
-
-    tryToRemove.assert(204) // Успешно удалили
-    tryToRemoveAgain.assert(404) // Уже удалён, 404
-  })
-
 })
