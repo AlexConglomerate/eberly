@@ -14,6 +14,25 @@ client for tests. Every test user gets their own state, hooks keep tokens and
 ids for you, and when the backend changes its contract, the tests stop
 compiling.
 
+One `assert` checks the status and the body: exact values, schemas (Zod,
+Valibot, ArkType) and vitest matchers, all typed by the spec
+([`tests/readme.test.ts`](examples/nest/test-with-eberly/tests/readme.test.ts)).
+
+```ts
+const world = new World()
+const user = world.createUser()
+
+await user.signUp() // register + log in
+const body = { title: 'Hello', content: 'First post' }
+const created = await user.posts.create({ body })
+
+created.assert(201, { // typed status
+  title: 'Hello', // exact value
+  createdAt: z.iso.datetime(), // Zod, Valibot, ArkType…
+  authorId: expect.any(Number), // vitest / Jest matcher
+})
+```
+
 ## Before and after
 
 Scenario: Alice creates a post, Bob tries to delete it and must get `403`.

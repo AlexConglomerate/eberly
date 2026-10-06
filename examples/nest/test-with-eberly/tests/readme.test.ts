@@ -1,13 +1,32 @@
-// Пример «до и после» из корневого README.md и лендинга сайта (регионы
-// `docs:readme-before` / `docs:readme-after` → site/). Тела тестов
-// скопированы в README один в один — поменяли здесь, поменяйте и там.
+// Примеры из корневого README.md и лендинга сайта: короткий тест под
+// установкой (регион `docs:readme-hero`) и «до и после» (`docs:readme-before`
+// / `docs:readme-after`). Тела тестов скопированы в README один в один —
+// поменяли здесь, поменяйте и там.
 
 import { beforeEach, describe, expect, test } from 'vitest'
+import { z } from 'zod'
 
 import { World } from '../eberly/generated'
 
 describe('README', () => {
   beforeEach(() => new World().reset())
+
+  test('Автор создаёт пост, ответ проверен по статусу, значению, схеме и матчеру', async () => {
+    // #region docs:readme-hero
+    const world = new World()
+    const user = world.createUser()
+
+    await user.signUp() // register + log in
+    const body = { title: 'Hello', content: 'First post' }
+    const created = await user.posts.create({ body })
+
+    created.assert(201, { // typed status
+      title: 'Hello', // exact value
+      createdAt: z.iso.datetime(), // Zod, Valibot, ArkType…
+      authorId: expect.any(Number), // vitest / Jest matcher
+    })
+    // #endregion
+  })
 
   test('Боб не может удалить пост Алисы → 403', async () => {
     // #region docs:readme-after

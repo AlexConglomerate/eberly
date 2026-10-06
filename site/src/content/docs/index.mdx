@@ -30,6 +30,11 @@ client for tests. Every test user gets their own state, hooks keep tokens and
 ids for you, and when the backend changes its contract, the tests stop
 compiling.
 
+One `assert` checks the status and the body: exact values, schemas (Zod,
+Valibot, ArkType) and vitest matchers, all typed by the spec.
+
+<Code code={snippet({ source: readmeTest, region: 'readme-hero' })} lang="ts" />
+
 ## Before and after
 
 Scenario: Alice creates a post, Bob tries to delete it and must get `403`.

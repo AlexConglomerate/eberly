@@ -9,21 +9,6 @@ describe('Sandbox', () => {
   // Landing candidate
   test('A reader cannot delete the post of the author', async () => {
     const world = new World()
-    const user = world.createUser()
-
-    await user.signUp() // register + log in
-    const body = { title: 'Hello', content: 'First post' }
-    const created = await user.posts.create({ body })
-
-    const post = created.assert(201, { // typed status
-      title: 'Hello', // exact value
-      createdAt: z.iso.datetime(), // Zod, Valibot, ArkType…
-    })
-  })
-
-  // Landing candidate
-  test('A reader cannot delete the post of the author', async () => {
-    const world = new World()
     const author = world.createUser()
     const reader = world.createUser()
 
