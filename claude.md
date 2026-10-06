@@ -44,6 +44,11 @@
     эндпоинтов, параметров и полей схем (`*/` → `*\/`).
   - `docs.ts` — папка `api/` для агента: `renderEndpointDocs` (`INDEX.md`
     + `<группа>.<метод>.md`), `renderExampleValue`, `DOCS_MARKER`.
+  - `pipeline.ts` — `buildClient({ spec, mode, userStoreImport,
+    configImport })` → `{ source, operations, docs }`: весь конвейер без IO
+    (версия → имена → операции → рендер → `api/`). Его зовут
+    `generateClient` и плейграунд сайта; `node:` не импортирует (сторож —
+    тест в `pipeline.test.ts`).
   - `types.ts` — общий тип `Json`.
   - `test-utils.ts` — `makeSpec()` для юнит-тестов.
 
@@ -126,11 +131,33 @@ npm-пакет.
 `site/` — сайт eberly.dev (`@eberly-site/site`, `private: true`, в npm не
 попадает): Astro + Starlight, только английский. Свой `tsconfig.json`
 (корневой не расширяет).
-  - `astro.config.mjs` — Starlight: заголовок, GitHub, сайдбар.
-  - `src/content/docs/index.mdx` — лендинг (`template: splash`); места под
-    плейграунд (03) и StackBlitz (04) помечены комментариями `PLAYGROUND` /
+  - `astro.config.mjs` — Starlight: заголовок, GitHub, сайдбар; React
+    (`@astrojs/react`, для плейграунда); Vite-плагин, который роняет
+    сборку, если в браузерный бандл попал `node:*`.
+  - `src/content/docs/index.mdx` — лендинг (`template: splash`), в разделе
+    «Try it» — плейграунд; место под StackBlitz (04) помечено комментарием
     `STACKBLITZ`.
+  - `src/content/docs/playground.mdx` — плейграунд отдельной страницей.
   - `src/content/docs/**` — документация (разделы README по страницам).
+  - `src/components/Playground.astro` — блок плейграунда для `.mdx`: на
+    широком экране React-остров (`client:visible`), на узком — статичный
+    `example.test.ts` (остров скрыт, Monaco не грузится).
+  - `src/playground/` — плейграунд: `Playground.tsx` (остров, лениво
+    грузит остальное), `Workbench.tsx` (UI: схема → `parseSpecText` +
+    `buildClient` из `../../../src/generator/*` прямо в браузере),
+    `monaco.ts` (Monaco и TS-воркер из npm, виртуальные файлы:
+    `node_modules/eberly/index.d.ts` ← корневой `dist/index.d.ts`,
+    `eberly/eberly.ts`, `eberly/generated.ts`, `tests/example.test.ts`),
+    `compilerOptions.ts` (общие для Monaco и скрипта проверки).
+  - `src/playground/example/` — пример по умолчанию: `example.yaml`
+    (посты из Nest-схемы), `example.test.ts`, `eberly.ts` (скрытый
+    конфиг), `vitest.d.ts` (заглушка `describe`/`test`). Исключены из
+    `tsconfig` сайта — их проверяет `scripts/check-playground.ts`.
+  - `src/lib/analytics.ts` — `track({ name })`, пока no-op (подключит 05).
+    В события — только имя, никогда схему или имя файла.
+  - `scripts/check-playground.ts` — генерирует клиент из `example.yaml` в
+    `node_modules/.cache/eberly-playground/` и проверяет тест `tsc`-API.
+    Первый шаг `build`: сломанный пример ломает сборку.
   - `src/lib/snippet.ts` — `snippet({ source, region })`: вырезает из текста
     файла регион `// #region docs:<имя>` … `// #endregion` и убирает отступ.
     Нет региона — ошибка сборки.
@@ -171,9 +198,16 @@ region: '…' })} lang="ts" />`. Руками код в `.mdx` не копиро
 те же `client:generate`, `typecheck`, `test` (бэкенд — с `TEST_MODE=1`).
 
 `site` (`pnpm --filter @eberly-site/site run <script>`):
-- `dev` — сайт локально на `http://localhost:4321`.
-- `build` — собрать в `site/dist/` (заодно проверяет, что все регионы
-  `docs:*` на месте); `preview` — посмотреть сборку.
+- `dev` — сайт локально на `http://localhost:4321` (сначала `pnpm build`
+  библиотеки: плейграунду нужен `dist/index.d.ts`).
+- `build` — `pnpm build` библиотеки → `check:playground` → собрать в
+  `site/dist/` (заодно проверяет, что все регионы `docs:*` на месте);
+  `preview` — посмотреть сборку.
+- `check:playground` — только проверка примера плейграунда.
+
+В `dev` вместо плейграунда пусто, в консоли `_jsxDEV is not a function` —
+в кэше Vite production-React: `astro dev stop`, `rm -rf site/node_modules/.vite`,
+снова `dev`.
 
 `nest/your-app` (`pnpm --filter @eberly-examples/nest-your-app run <script>`):
 - `start` — собрать и поднять бэкенд (`:3000`; `TEST_MODE=1` включает

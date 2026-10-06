@@ -70,6 +70,7 @@ src/
     ├── render.ts            #   Operation[] → исходник World  — ВО ЧТО рендерим
     ├── jsdoc.ts             #   renderJsDoc() + экранирование — JSDoc из описаний
     ├── docs.ts              #   Operation[] → папка api/*.md   — ЧТО читает агент
+    ├── pipeline.ts          #   buildClient(): весь конвейер без IO
     └── test-utils.ts        #   makeSpec() для юнит-тестов (не *.test.ts)
 ```
 
@@ -110,13 +111,23 @@ src/
   подстановка path-параметров, query, заголовки, обработка ошибок),
   именованные типы схем и сгруппированные методы. Это единственное место, где
   задаётся форма публичного API сгенерированного клиента.
+- **`generator/pipeline.ts`** — `buildClient({ spec, mode,
+  userStoreImport, configImport })` → `{ source, operations, docs }`:
+  все шаги от разобранной схемы до текста файлов, без IO. Отдельно от
+  `generate-client.ts` потому, что тот импортирует `node:fs` / `node:path`,
+  а конвейер переиспользует плейграунд сайта в браузере (`site/src/playground/`
+  импортирует `pipeline.ts` и `parse.ts` напрямую, не через `index.ts`).
+  Тест в `pipeline.test.ts` следит, что по цепочке импортов `pipeline.ts`
+  и `parse.ts` нет `node:*` (`import type` не считается — он стирается).
 - **`generate-client.ts`** — больше ничего не делает сам, только
-  связывает три шага и пишет результат на диск:
+  загружает схему, зовёт конвейер и пишет результат на диск:
 
 ```
-loadSpec (swagger.ts) → assertSupportedVersion (version.ts) → buildSchemaNames (names.ts)
-  → collectOperations (operations.ts) → renderClient (render.ts) → writeFile
-  → renderEndpointDocs (docs.ts) → writeEndpointDocs (папка api/, §11)
+loadSpec (swagger.ts) → buildClient (pipeline.ts):
+    assertSupportedVersion (version.ts) → buildSchemaNames (names.ts)
+    → collectOperations (operations.ts) → renderClient (render.ts)
+    → renderEndpointDocs (docs.ts)
+  → writeFile + writeEndpointDocs (папка api/, §11)
 ```
 
 - **`config.ts`** и **`base-store.ts`** оставлены в корне `src/`,

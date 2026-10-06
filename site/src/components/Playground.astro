@@ -1,0 +1,35 @@
+---
+// The playground block for MDX pages. On a wide screen: the React island
+// (`client:visible`, Monaco is fetched only when it scrolls into view). On a
+// narrow screen the island stays hidden (`display: none` is never "visible",
+// so nothing is downloaded) and the example test is shown as plain code.
+import { Code } from '@astrojs/starlight/components'
+
+import Playground from '../playground/Playground'
+import exampleTest from '../playground/example/example.test.ts?raw'
+---
+
+<div class="playground-wide not-content">
+  <Playground client:visible />
+</div>
+<div class="playground-narrow">
+  <p>
+    The playground needs a wider screen: open this page on a desktop to edit the spec and watch the test
+    go red. This is the test it runs:
+  </p>
+  <Code code={exampleTest} lang="ts" title="example.test.ts" />
+</div>
+
+<style>
+  .playground-narrow {
+    display: none;
+  }
+  @media (max-width: 50rem) {
+    .playground-wide {
+      display: none;
+    }
+    .playground-narrow {
+      display: block;
+    }
+  }
+</style>

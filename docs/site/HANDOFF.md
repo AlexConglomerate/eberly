@@ -119,3 +119,68 @@
 - Следующему (03): весь текст от генератора в `generated.ts` теперь
   английский; русский может прийти только из описаний в схеме пользователя.
 - Поправил файлы плана: нет.
+
+## 2026-10-06 — 03
+
+- Нашёл / пошло не по плану:
+  - **Вес.** Лендинг до плейграунда — 46 KB gzip (181 KB raw). Плейграунд
+    (грузится только когда блок виден) — ещё **~2.7 MB gzip** (11.4 MB raw,
+    15 файлов): TS-воркер 1.46 MB, ядро Monaco ~1 MB, React 64 KB, наш
+    `Workbench` с генератором 46 KB. В `dist/_astro` 14 MB: Vite кладёт
+    туда и воркеры css/html/json, и чанки всех языков подсветки — они не
+    грузятся, пока не нужны. Ужать можно, импортируя не `monaco-editor`
+    целиком, а `editor.api` + нужные contrib-ы.
+  - **Телефон.** Ниже `50rem` остров скрыт CSS (`display: none` никогда не
+    «visible» → `client:visible` не срабатывает, Monaco не качается), вместо
+    него — статичный `example.test.ts` через `<Code>` и текст «open on a
+    desktop». Проверено: на 390px запросов к Monaco нет, горизонтального
+    скролла нет.
+  - Пример лежит в `site/src/playground/example/` (`example.yaml`,
+    `example.test.ts`, скрытый `eberly.ts`, `vitest.d.ts`), а не прямо в
+    `src/playground/`: папка исключена из `tsconfig` сайта (`./generated`
+    там есть только в виртуальном проекте). `vitest` — заглушка
+    `describe`/`test` в `vitest.d.ts`, тест выглядит как настоящий.
+  - Monaco 0.57: TS — в **верхнеуровневом** `monaco.typescript`
+    (`monaco.languages.typescript` — заглушка `{ deprecated: true }`),
+    Bundler-резолюция работает (внутри TS 5.9). Два подвоха: (1) воркер
+    перепроверяет модель, только когда меняется **её** текст — после
+    перегенерации `generated.ts` тест не краснел бы; лечится сменой
+    extra-lib (`setGeneratedSource` в `monaco.ts`), `setCompilerOptions`
+    не годится — перезапускает воркер; (2) `onDidChangeMarkers` не стреляет
+    при переходе «не проверено → 0 ошибок», поэтому счётчик спрашивает
+    воркер напрямую (`countTestErrors`).
+  - `check-playground.ts` под `tsx` из `site/` (ESM) получает `src/` корня
+    как CJS: именованные экспорты лежат в `default` — там маленький `load()`.
+  - **Баг библиотеки (не чинил — поменял бы `generated.ts` примеров):**
+    `class UserStore extends BaseStore<{ n: number }> {}` без собственных
+    членов, как и `userStore: BaseStore`, даёт в `generated.ts` TS2344 на
+    `Store extends BaseStore = InstanceType<typeof eberly.userStore>`
+    (дефолт `Vars` = `Record<string, never>`). С любым своим методом
+    ошибка пропадает — поэтому примеры её не ловят. Вероятный фикс в
+    `render.ts`: `Store extends BaseStore<any, any>`.
+  - **Ещё баг генератора:** `parameters` на уровне path item
+    (`/posts/{id}: { parameters: [...] }`, разрешено OpenAPI) игнорируются —
+    `collectOperations` читает только `op.parameters`. В `example.yaml`
+    параметры поэтому внутри операций.
+  - `astro dev` в Astro 7 — демон, один на проект («Dev server already
+    running», `astro dev stop|status|logs`). Новую страницу в
+    `content/docs` уже запущенный сервер не увидел — помог перезапуск.
+  - Chrome-расширение не было подключено: проверял `playwright-core` с
+    системным Chrome (скрипты в скретчпаде, в репо не попали).
+  - `favicon.svg` отдаёт 404 (в `site/public/` его нет) — было и до 03.
+  - **Пустое место вместо плейграунда в `dev`** и в консоли
+    `_jsxDEV is not a function`: в кэше Vite (`site/node_modules/.vite`)
+    оказалась production-сборка React (`jsxDEV = undefined`). Поймал после
+    того, как гонял `build`/`preview` при живом dev-демоне. Лечится:
+    `astro dev stop && rm -rf site/node_modules/.vite`, затем `dev`.
+- Следующему:
+  - 04: место — комментарий `STACKBLITZ` в `index.mdx` сразу после
+    `<Playground />`; `<Aside>` теперь говорит только про StackBlitz.
+  - 05: `build` сайта сам делает `pnpm --filter eberly run build` и
+    `check:playground` — build command в 05 упростил. `track()` —
+    `site/src/lib/analytics.ts`, события `playground_regenerate`,
+    `playground_upload_spec`, `playground_type_error_shown` (раз за сессию,
+    через `sessionStorage`). Favicon добавить.
+  - Баги выше (`BaseStore`-констрейнт, path-level `parameters`) — кандидаты
+    в отдельные задачи; плейграунд с загруженной чужой схемой их покажет.
+- Поправил файлы плана: `05-deploy.md` (build command, путь к `track()`).

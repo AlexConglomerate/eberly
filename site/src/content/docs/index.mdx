@@ -16,6 +16,7 @@ hero:
 
 import { Aside, Card, CardGrid, Code } from '@astrojs/starlight/components'
 
+import Playground from '../../components/Playground.astro'
 import { snippet } from '../../lib/snippet'
 import readmeTest from '../../../../examples/nest/test-with-eberly/tests/readme.test.ts?raw'
 
@@ -49,12 +50,17 @@ and the statuses `201` / `403` are all checked by TypeScript.
 
 ## Try it
 
-{/* PLAYGROUND: task 03 replaces this section with the playground island. */}
+Left: an OpenAPI spec. Right: a test on the client eberly generates from it.
+Rename `title` to `name` in `CreatePostDto`, click outside the editor, and the
+test turns red where the contract changed. Or upload your own spec: it is
+processed in your browser and never leaves it.
+
+<Playground />
+
 {/* STACKBLITZ: task 04 adds the "Open in StackBlitz" button here. */}
 
 <Aside>
-  Coming soon: a playground to edit a spec and watch the test go red right
-  here, and a one-click StackBlitz project with a real backend.
+  Coming soon: a one-click StackBlitz project with a real backend.
 </Aside>
 
 ## Why eberly

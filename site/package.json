@@ -2,15 +2,28 @@
   "name": "@eberly-site/site",
   "version": "0.0.0",
   "private": true,
-  "description": "eberly.dev: landing page and docs (Astro + Starlight).",
+  "description": "eberly.dev: landing page, docs and playground (Astro + Starlight).",
   "type": "module",
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview"
+    "dev": "pnpm --filter eberly run build && astro dev",
+    "build": "pnpm --filter eberly run build && tsx scripts/check-playground.ts && astro build",
+    "preview": "astro preview",
+    "check:playground": "tsx scripts/check-playground.ts"
   },
   "dependencies": {
+    "@astrojs/react": "^7.0.0",
     "@astrojs/starlight": "^0.42.5",
-    "astro": "^7.3.5"
+    "@monaco-editor/react": "^4.7.0",
+    "astro": "^7.3.5",
+    "eberly": "workspace:*",
+    "monaco-editor": "^0.57.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "tsx": "^4.22.1",
+    "typescript": "^6.0.3"
   }
 }

@@ -1,0 +1,112 @@
+/* Playground layout. Colors come from Starlight's variables, so it follows
+   the light/dark theme of the site. */
+.pg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  height: 34rem;
+  margin-block: 1.5rem;
+  font-size: var(--sl-text-sm);
+}
+
+.pg-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 0.5rem;
+  color: var(--sl-color-gray-3);
+}
+
+.pg-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: var(--sl-color-bg-nav);
+}
+
+.pg .pg-editor {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+}
+
+.pg .pg-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.4rem 0.6rem;
+  border-color: var(--sl-color-hairline);
+}
+
+.pg header.pg-bar {
+  border-bottom: 1px solid var(--sl-color-hairline);
+}
+
+.pg footer.pg-bar {
+  border-top: 1px solid var(--sl-color-hairline);
+}
+
+.pg button {
+  margin: 0;
+  padding: 0.2rem 0.7rem;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.3rem;
+  background: transparent;
+  color: var(--sl-color-white);
+  font: inherit;
+  cursor: pointer;
+}
+
+.pg button:hover {
+  border-color: var(--sl-color-accent);
+}
+
+.pg button[role='tab'] {
+  border-color: transparent;
+  font-family: var(--__sl-font-mono);
+}
+
+.pg button[role='tab'][aria-selected='true'] {
+  border-color: var(--sl-color-gray-5);
+  background: var(--sl-color-bg);
+}
+
+.pg .pg-file {
+  font-family: var(--__sl-font-mono);
+}
+
+.pg .pg-hint {
+  margin: 0 0 0 auto;
+  color: var(--sl-color-gray-3);
+  font-size: var(--sl-text-xs);
+}
+
+.pg .pg-error {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid var(--sl-color-red);
+  background: var(--sl-color-red-low);
+  color: var(--sl-color-red-high);
+  font-family: var(--__sl-font-mono);
+  font-size: var(--sl-text-xs);
+  white-space: pre-wrap;
+}
+
+.pg .pg-status {
+  margin: 0;
+  font-family: var(--__sl-font-mono);
+}
+
+.pg .pg-ok {
+  color: var(--sl-color-green);
+}
+
+.pg .pg-bad {
+  color: var(--sl-color-red);
+}

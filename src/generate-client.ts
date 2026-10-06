@@ -1,25 +1,18 @@
 // Публичная точка входа генератора. Это «оркестратор»: он ничего не
-// делает сам, а только связывает шаги конвейера —
+// делает сам, а только связывает шаги —
 //
-//   swagger.ts   → загрузить схему        (loadSpec)
-//   version.ts   → проверить версию        (assertSupportedVersion)
-//   names.ts     → имена типов для схем    (buildSchemaNames)
-//   operations.ts→ разобрать paths         (collectOperations)
-//   render.ts    → отрендерить файл        (renderClient)
-//   docs.ts      → папка api/ для агента   (renderEndpointDocs)
+//   swagger.ts   → загрузить схему                       (loadSpec)
+//   pipeline.ts  → схема → исходник клиента + папка api/  (buildClient)
 //
 // и пишет результат на диск. Сама логика разбора живёт в src/generator/*.
 
 import { mkdir, readdir, readFile, unlink, writeFile } from 'node:fs/promises'
 import { dirname, join, relative, resolve } from 'node:path'
 import type { EberlyConfig } from './config'
-import { DOCS_MARKER, renderEndpointDocs } from './generator/docs'
-import { buildSchemaNames } from './generator/names'
-import { collectOperations } from './generator/operations'
-import { renderClient } from './generator/render'
+import { DOCS_MARKER } from './generator/docs'
+import { buildClient } from './generator/pipeline'
 import { loadSpec } from './generator/swagger'
 import type { Json } from './generator/types'
-import { assertSupportedVersion } from './generator/version'
 
 // Реэкспорт, чтобы публичный API (index.ts) и config.ts видели тип
 // источника схемы как часть generate-client, не зная про устройство папки.
@@ -44,22 +37,11 @@ export async function generateClient(
   const outPath = resolve(process.cwd(), generateClientTo)
 
   const spec: Json = await loadSpec({ swagger })
-  assertSupportedVersion({ spec })
-  const names = buildSchemaNames({ spec })
-  const operations = collectOperations({ spec, names })
-  const source = renderClient({
-    spec,
-    names,
-    operations,
-    mode,
-    userStoreImport,
-    configImport,
-  })
+  const { source, operations, docs } = buildClient({ spec, mode, userStoreImport, configImport })
 
   await writeFile(outPath, source, 'utf8')
 
   const docsDir = join(dirname(outPath), 'api')
-  const docs = renderEndpointDocs({ spec, operations, names, mode })
   await writeEndpointDocs({ dir: docsDir, files: docs })
 
   console.log(`

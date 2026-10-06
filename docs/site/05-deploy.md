@@ -19,7 +19,8 @@
 3. **[ты]** Cloudflare → Workers & Pages → Create → Pages → Connect to Git
    → репозиторий `eberly`. Агент заранее даёт точные значения:
    - production branch: `main`;
-   - build command: `pnpm install --frozen-lockfile && pnpm build && pnpm --filter @eberly-site/site build`;
+   - build command: `pnpm install --frozen-lockfile && pnpm --filter @eberly-site/site build`
+     (`build` сайта сам собирает библиотеку и проверяет пример плейграунда);
    - output directory: `site/dist`;
    - переменная `NODE_VERSION` = `22`.
    Проверить на выданном `*.pages.dev`, затем Custom domains → `eberly.dev`
@@ -29,7 +30,8 @@
    `eberly.dev` → передать агенту `website id`.
 5. **Аналитика в коде.** Скрипт Umami в `head` Starlight — **только** в
    продакшен-сборке (не на `localhost`, не на превью `*.pages.dev`).
-   Обёртку `track()` из 03 подключить к `umami.track`. Событие
+   Обёртку `track()` из 03 (`site/src/lib/analytics.ts`, пока no-op)
+   подключить к `umami.track`. Событие
    `open_stackblitz` на кнопку из 04, `copy_install` на копирование
    команды установки. В футере: *Privacy-friendly analytics, no cookies.*
 6. `package.json` → `homepage: "https://eberly.dev"` (changeset `patch`,
