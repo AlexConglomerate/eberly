@@ -141,7 +141,7 @@ async function createProject({ dir }) {
       `  # edit eberly/eberly.ts (url, swagger path) for your backend\n` +
       `  pnpm run client:generate     # generate the typed client\n` +
       `  pnpm typecheck && pnpm test\n\n` +
-      `See the README: https://github.com/AlexConglomerate/eberly#quick-start\n`,
+      `Docs: https://eberly.dev/getting-started/\n`,
   )
 }
 

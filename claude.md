@@ -59,10 +59,14 @@
 
 Подробный разбор архитектуры — в `ARCHITECTURE.md`.
 
-`README.md` — на английском, это страница пакета и лендинг. Каждый
-фрагмент кода в нём скопирован из теста, зелёного в `pnpm e2e` (пример
-«до и после» — `examples/nest/test-with-eberly/tests/readme.test.ts`).
-Поменяли API или тест — сверьте README.
+`README.md` — на английском, витрина пакета (GitHub и npm): слоган,
+ссылки на сайт / плейграунд / StackBlitz, «до и после», Quick start
+(якорь `#quick-start`), список возможностей со ссылками на страницы
+`eberly.dev`. TS-код в нём — из тестов, зелёных в `pnpm e2e` («до и после» —
+`examples/nest/test-with-eberly/tests/readme.test.ts`, один в один).
+Подробности — только на сайте (`site/`), код там — регионами из тестов.
+Поменяли API или тест — сверьте README и страницы сайта; переименовали
+страницу сайта — поправьте ссылки в README и `bin/eberly.mjs`.
 
 Примеры (НЕ попадают в npm-пакет — `files: ["dist"]` + отдельный workspace,
 `examples/*/*`, каждый `private: true`). `examples/simple` — это два
