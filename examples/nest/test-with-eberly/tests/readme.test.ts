@@ -12,14 +12,39 @@ describe('README', () => {
   test('Боб не может удалить пост Алисы → 403', async () => {
     // #region docs:readme-after
     const world = new World()
+
+    // Создаём двух пользователей
     const alice = world.createUser()
     const bob = world.createUser()
-    await alice.signUp({ email: 'alice@example.com', password: 'secret123' })
-    await bob.signUp({ email: 'bob@example.com', password: 'secret123' })
 
-    const post = await alice.posts.create({ body: { title: 'Hello', content: 'First post' } })
-    const res = await bob.posts.remove({ path: { id: String(post.assert(201).body.id) } })
-    res.assert(403, { message: 'Only the author can do this' })
+    // Алиса и Боб регистрируются и логинятся, токены сохраняются в сторы
+    await alice.signUp({ email: 'alice@example.com', password: 'secret123' })
+    await bob.signUp() // random email/password, Если не задали
+
+    // Алиса создаёт пост
+    const postData = { title: 'Hello', content: 'First post' }
+    const post = await alice.posts.create({ body: postData })
+
+    const alicePostIdFromStore = alice.get({ key: 'lastPostId' }) // Автоматически сохраняется внутри Алисы. 
+    const alicePostIdFromBody = post.assert(201).body.id // То же самое можем получить из ответа
+    expect(alicePostIdFromStore).toEqual(alicePostIdFromBody)
+    const alicePostId = post.assert(201).body.id
+
+    // Алиса и Боб читают пост
+    const bobRead = await bob.posts.get({ path: { id: alicePostId } })
+    const aliceRead = await alice.posts.get({ path: { id: alicePostId } })
+
+    bobRead.assert(200, postData) // Можем проверить все поля
+    aliceRead.assert(200, { title: postData.title }) // Можем проверить только часть полей
+
+    // Алиса и Боб пытаются удалить пост
+    const bobTryToRemove = await bob.posts.remove({ path: { id: alicePostId } })
+    const aliceTryToRemove = await alice.posts.remove({ path: { id: alicePostId } })
+    const aliceTryToRemoveAgain = await alice.posts.remove({ path: { id: alicePostId } })
+
+    bobTryToRemove.assert(403) // Боб не может удалить чужой пост
+    aliceTryToRemove.assert(204) // Успешно удалили
+    aliceTryToRemoveAgain.assert(404) // Уже удалён, 404
     // #endregion
   })
 

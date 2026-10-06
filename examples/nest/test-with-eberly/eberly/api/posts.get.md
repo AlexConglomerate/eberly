@@ -7,7 +7,7 @@ Returns any post, drafts included. No authorization needed.
 
 ## Call
 ```ts
-const res = await user.posts.get({ path: { id: "0" } })
+const res = await user.posts.get({ path: { id: 0 } })
 res.assert(200)
 ```
 
@@ -15,7 +15,7 @@ res.assert(200)
 ```ts
 { path: {
   /** Post id. */
-  "id": string
+  "id": number
 } }
 ```
 

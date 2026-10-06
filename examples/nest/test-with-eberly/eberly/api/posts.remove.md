@@ -7,7 +7,7 @@ Deletes the post and all its comments. Only the author may delete, otherwise 403
 
 ## Call
 ```ts
-const res = await user.posts.remove({ path: { id: "0" } })
+const res = await user.posts.remove({ path: { id: 0 } })
 res.assert(204)
 ```
 
@@ -15,7 +15,7 @@ res.assert(204)
 ```ts
 { path: {
   /** Post id. */
-  "id": string
+  "id": number
 } }
 ```
 

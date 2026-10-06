@@ -135,9 +135,33 @@ test('пример вызова: только обязательные поля,
   )
 })
 
-test('пример вызова: path-параметр строкой из example, assert с первым 2xx', () => {
+test('пример вызова: integer path-параметр числом из example, assert с первым 2xx', () => {
   const call = section({ content: docs().get('posts.delete.md')!, title: 'Call' })
-  assert.equal(call, 'const res = await user.posts.delete({ path: { id: "7" } })\nres.assert(204)')
+  assert.equal(call, 'const res = await user.posts.delete({ path: { id: 7 } })\nres.assert(204)')
+})
+
+test('пример вызова: значение параметра под его тип', () => {
+  const spec = makeSpec({
+    paths: {
+      '/posts/{slug}': {
+        get: {
+          operationId: 'posts.get',
+          parameters: [
+            { name: 'slug', in: 'path', schema: { type: 'string', example: 5 } },
+            { name: 'tags', in: 'query', required: true, schema: { type: 'array', items: { type: 'string' } } },
+          ],
+          responses: {},
+        },
+      },
+    },
+  })
+  const names = buildSchemaNames({ spec })
+  const [file] = renderEndpointDocs({ spec, operations: collectOperations({ spec, names }), names, mode: 'frontend' })
+    .filter((f) => f.fileName === 'posts.get.md')
+  assert.equal(
+    section({ content: file!.content, title: 'Call' }),
+    'const data = await user.posts.get({ path: { slug: "5" }, query: { tags: "[]" } })',
+  )
 })
 
 test('frontend: вызов без assert', () => {

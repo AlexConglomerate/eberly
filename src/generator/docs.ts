@@ -13,7 +13,7 @@
 
 import type { ClientMode } from '../config'
 import type { SchemaNames } from './names'
-import type { Operation } from './operations'
+import type { Operation, Param } from './operations'
 import { buildInputType } from './render'
 import { isFileSchema, resolveRef, SCHEMA_REF_PREFIX, schemaToType } from './schema'
 import type { Json } from './types'
@@ -116,25 +116,29 @@ function renderEndpointDoc(args: { spec: Json; op: Operation; names: SchemaNames
   return `${out.join('\n')}\n`
 }
 
+/**
+ * Пример значения path/query-параметра под его тип: сложное значение →
+ * JSON-строка, параметр типа `string` → строка (`example: 5` у
+ * строкового параметра не должен ломать пример).
+ */
+function exampleParamValue(args: { param: Param; spec: Json }): unknown {
+  const { param, spec } = args
+  const value = renderExampleValue({ schema: param.schema ?? { type: 'string' }, spec })
+  if (!['string', 'number', 'boolean'].includes(typeof value)) return JSON.stringify(value)
+  return param.type === 'string' ? String(value) : value
+}
+
 /** Строки блока Call: вызов с обязательными полями + `assert` (режим `test`). */
 function renderCall(args: { spec: Json; op: Operation; mode: ClientMode }): string[] {
   const { spec, op, mode } = args
   const input: Record<string, unknown> = {}
 
   if (op.pathParams.length > 0) {
-    input.path = Object.fromEntries(
-      op.pathParams.map((p) => [p.name, String(renderExampleValue({ schema: p.schema ?? { type: 'string' }, spec }))]),
-    )
+    input.path = Object.fromEntries(op.pathParams.map((param) => [param.name, exampleParamValue({ param, spec })]))
   }
   const query = op.queryParams.filter((p) => p.required)
   if (query.length > 0) {
-    input.query = Object.fromEntries(
-      query.map((p) => {
-        const value = renderExampleValue({ schema: p.schema ?? { type: 'string' }, spec })
-        const primitive = ['string', 'number', 'boolean'].includes(typeof value)
-        return [p.name, primitive ? value : JSON.stringify(value)]
-      }),
-    )
+    input.query = Object.fromEntries(query.map((param) => [param.name, exampleParamValue({ param, spec })]))
   }
   if (op.bodySchema) input.body = renderExampleValue({ schema: op.bodySchema, spec })
 

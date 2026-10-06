@@ -7,7 +7,7 @@ Sets `publishedAt` to the current time. Only the author may publish, otherwise 4
 
 ## Call
 ```ts
-const res = await user.posts.publish({ path: { id: "0" } })
+const res = await user.posts.publish({ path: { id: 0 } })
 res.assert(200)
 ```
 
@@ -15,7 +15,7 @@ res.assert(200)
 ```ts
 { path: {
   /** Post id. */
-  "id": string
+  "id": number
 } }
 ```
 

@@ -29,7 +29,7 @@ describe('posts', () => {
     expect(postId).toBe(created.assert(201).body.id)
     expect(bob.get({ key: 'lastPostId' })).toBeUndefined()
     // #endregion
-    const path = { id: String(postId) }
+    const path = { id: postId }
 
     // Боб — не автор: 403.
     const foreign = await bob.posts.remove({ path })
@@ -54,7 +54,7 @@ describe('posts', () => {
 
     const ready = await alice.posts.create({ body: { title: 'Ready', content: 'ready' } })
     const readyId = ready.assert(201).body.id
-    ;(await alice.posts.publish({ path: { id: String(readyId) } })).assert(200)
+    ;(await alice.posts.publish({ path: { id: readyId } })).assert(200)
 
     const list = await bob.posts.list()
     const ids = list.assert(200).body.map((p) => p.id)

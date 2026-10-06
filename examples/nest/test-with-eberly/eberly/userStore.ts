@@ -4,6 +4,8 @@
 // одной строкой, а токен сохраняется в стор и дальше сам едет во все
 // запросы этого юзера (глобальный before-хук в `./hooks.ts`).
 
+import { randomUUID } from 'node:crypto'
+
 import { BaseStore } from 'eberly'
 
 import type { WorldApi } from './generated'
@@ -17,9 +19,15 @@ export type UserVars = {
 
 // #region docs:user-store
 export class UserStore extends BaseStore<UserVars, WorldApi> {
-  /** Scenario: register (201) → login (200) → save the token. */
-  public async signUp(args: { email: string; password: string }): Promise<void> {
-    const { email, password } = args
+  /**
+   * Scenario: register (201) → login (200) → save the token.
+   * No email/password passed → a unique random one is generated.
+   */
+  public async signUp(args: { email?: string; password?: string } = {}): Promise<void> {
+    const {
+      email = `user-${randomUUID()}@example.com`,
+      password = 'secret123'
+    } = args
 
     const registered = await this.api.auth.register({ body: { email, password } })
     registered.assert(201, { email, avatarUrl: null })

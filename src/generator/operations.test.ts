@@ -291,14 +291,42 @@ test('описание, deprecated, параметры объектами и с�
   assert.equal(op.description, 'Long text')
   assert.equal(op.deprecated, true)
   assert.deepEqual(op.pathParams, [
-    { name: 'id', description: 'Post id', required: true, schema: { type: 'string' } },
+    { name: 'id', description: 'Post id', required: true, type: 'string', schema: { type: 'string' } },
   ])
   assert.deepEqual(op.queryParams, [
-    { name: 'draft', required: false, schema: { type: 'boolean' } },
-    { name: 'page', required: true },
+    { name: 'draft', required: false, type: 'boolean', schema: { type: 'boolean' } },
+    { name: 'page', required: true, type: 'string | number | boolean' },
   ])
   assert.deepEqual(op.bodySchema, bodySchema)
   assert.deepEqual(op.responses, [
     { status: 200, bodyType: 'unknown', schema: undefined, description: 'Updated' },
   ])
+})
+
+test('тип параметра из схемы; без схемы / сложная схема → фолбэк по месту', () => {
+  const spec = makeSpec({
+    paths: {
+      '/posts/{id}/{slug}': {
+        get: {
+          operationId: 'posts.get',
+          parameters: [
+            { name: 'id', in: 'path', schema: { type: 'integer' } },
+            { name: 'slug', in: 'path' },
+            { name: 'status', in: 'query', schema: { type: 'string', enum: ['draft', 'published'] } },
+            { name: 'tags', in: 'query', schema: { type: 'array', items: { type: 'string' } } },
+          ],
+          responses: {},
+        },
+      },
+    },
+  })
+  const op = collect(spec)[0]!
+  assert.deepEqual(
+    op.pathParams.map((p) => [p.name, p.type]),
+    [['id', 'number'], ['slug', 'string']],
+  )
+  assert.deepEqual(
+    op.queryParams.map((p) => [p.name, p.type]),
+    [['status', '"draft" | "published"'], ['tags', 'string | number | boolean']],
+  )
 })

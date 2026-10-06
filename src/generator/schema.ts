@@ -138,6 +138,41 @@ export function renderSchemaDecls(args: { spec: Json; names: SchemaNames }): str
     .join('\n\n')
 }
 
+const PARAM_PRIMITIVES = new Map([
+  ['string', 'string'],
+  ['number', 'number'],
+  ['integer', 'number'],
+  ['boolean', 'boolean'],
+])
+
+/**
+ * Тип path/query-параметра по его схеме — только для примитивов:
+ * `string` / `number` / `integer` / `boolean` и `enum` из примитивов
+ * (`$ref` разворачивается). `null` (3.1 `type: [..., 'null']`, `nullable`,
+ * `null` в `enum`) отбрасывается: в URL его не передать. Массив, объект,
+ * пустая схема → `null`: для них рантайм не умеет `style` / `explode`,
+ * вызывающий подставляет свой фолбэк.
+ */
+export function paramSchemaToType(args: { schema: Json | undefined; spec: Json }): string | null {
+  const { spec } = args
+  const schema =
+    typeof args.schema?.$ref === 'string' ? resolveRef({ ref: args.schema.$ref, spec }) : args.schema
+  if (!schema) return null
+
+  if (Array.isArray(schema.enum)) {
+    const values: unknown[] = schema.enum.filter((v: unknown) => v !== null)
+    const primitive = values.every((v) => ['string', 'number', 'boolean'].includes(typeof v))
+    return values.length > 0 && primitive ? values.map((v) => JSON.stringify(v)).join(' | ') : null
+  }
+
+  const types: unknown[] = (Array.isArray(schema.type) ? schema.type : [schema.type]).filter(
+    (t: unknown) => t !== 'null',
+  )
+  const rendered = types.map((t) => (typeof t === 'string' ? PARAM_PRIMITIVES.get(t) : undefined))
+  if (rendered.length === 0 || rendered.some((t) => t === undefined)) return null
+  return [...new Set(rendered)].join(' | ')
+}
+
 /** Разрешает локальную $ref-ссылку внутри схемы. */
 export function resolveRef(args: { ref: string; spec: Json }): Json | undefined {
   const { ref, spec } = args

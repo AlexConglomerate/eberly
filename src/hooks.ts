@@ -13,7 +13,7 @@
 export type HookRequest = {
   method: string
   path: string
-  pathParams: Record<string, string>
+  pathParams: Record<string, string | number | boolean>
   query: Record<string, string | number | boolean | undefined>
   body: unknown
   headers: Record<string, string>

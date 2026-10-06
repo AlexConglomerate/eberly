@@ -17,7 +17,7 @@ const op: Operation = {
   name: 'get',
   method: 'get',
   path: '/posts/{id}',
-  pathParams: [{ name: 'id', required: true }],
+  pathParams: [{ name: 'id', required: true, type: 'string' }],
   queryParams: [],
   bodyType: null,
   bodyRequired: false,
@@ -340,6 +340,33 @@ test('JSDoc параметров path / query; без описаний — в о
   const worldApi = worldApiType(renderSpec({ spec }))
   assert.match(worldApi, /path: \{\n {10}\/\*\* Post id \*\/\n {10}"id": string\n {8}\}/)
   assert.match(worldApi, /query\?: \{ "full"\?: string \| number \| boolean \}/)
+})
+
+test('типы path / query из схемы параметра: number, enum, фолбэк', () => {
+  const spec = makeSpec({
+    paths: {
+      '/posts/{id}': {
+        get: {
+          operationId: 'posts.get',
+          parameters: [
+            { name: 'id', in: 'path', schema: { type: 'integer' } },
+            { name: 'status', in: 'query', schema: { enum: ['draft', 'published'] } },
+            { name: 'full', in: 'query' },
+          ],
+          responses: {},
+        },
+      },
+    },
+  })
+  const worldApi = worldApiType(renderSpec({ spec }))
+  assert.match(worldApi, /path: \{ "id": number \}/)
+  assert.match(worldApi, /query\?: \{ "status"\?: "draft" \| "published"; "full"\?: string \| number \| boolean \}/)
+})
+
+test('рантайм: path-параметры не только строки (в URL — через String)', () => {
+  const out = render('test')
+  assert.match(out, /path\?: Record<string, string \| number \| boolean>/)
+  assert.match(out, /encodeURIComponent\(\s*String\(v\)/)
 })
 
 test('JSDoc полей схемы: description и deprecated', () => {

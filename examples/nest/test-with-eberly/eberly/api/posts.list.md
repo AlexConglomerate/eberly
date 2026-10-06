@@ -15,7 +15,7 @@ res.assert(200)
 ```ts
 { query?: {
   /** Only return posts of this author. */
-  "authorId"?: string | number | boolean
+  "authorId"?: number
 } }
 ```
 

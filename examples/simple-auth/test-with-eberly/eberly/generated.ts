@@ -11,7 +11,7 @@ import { eberly } from "./eberly"
 const FILE_OPS: Record<string, FileFieldMeta[]> = {}
 
 type RequestInput = {
-  path?: Record<string, string>
+  path?: Record<string, string | number | boolean>
   query?: Record<string, string | number | boolean | undefined>
   body?: unknown
 }

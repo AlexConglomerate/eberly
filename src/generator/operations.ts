@@ -23,6 +23,7 @@ import type { Json } from './types'
 import {
   collectResponseSchemas,
   isFileSchema,
+  paramSchemaToType,
   pickResponseSchema,
   resolveRef,
   schemaToType,
@@ -36,6 +37,11 @@ export interface Param {
   name: string
   description?: string
   required: boolean
+  /**
+   * TS-тип значения: из схемы для примитивов и `enum`, иначе фолбэк —
+   * `string` в path, `string | number | boolean` в query.
+   */
+  type: string
   /** Сырая схема параметра (для примера вызова в `api/*.md`). */
   schema?: Json
 }
@@ -135,10 +141,13 @@ export function collectOperations(args: { spec: Json; names: SchemaNames }): Ope
   return operations
 }
 
+/** Тип параметра без схемы или со сложной схемой (массив, объект). */
+const PARAM_FALLBACK_TYPE = { path: 'string', query: 'string | number | boolean' } as const
+
 /**
  * Параметры операции в `path` или `query`. `$ref` на параметр
  * (`components/parameters`) разворачивается; path-параметр обязателен
- * всегда (так требует OpenAPI).
+ * всегда (так требует OpenAPI). Тип — по схеме (`paramSchemaToType`).
  */
 function collectParams(args: { parameters: Json[]; spec: Json; location: 'path' | 'query' }): Param[] {
   const { parameters, spec, location } = args
@@ -149,6 +158,7 @@ function collectParams(args: { parameters: Json[]; spec: Json; location: 'path' 
       name: p.name as string,
       ...(typeof p.description === 'string' ? { description: p.description } : {}),
       required: location === 'path' || p.required === true,
+      type: paramSchemaToType({ schema: p.schema, spec }) ?? PARAM_FALLBACK_TYPE[location],
       ...(p.schema ? { schema: p.schema } : {}),
     }))
 }

@@ -20,7 +20,7 @@ describe('comments', () => {
 
   test('ответы вкладываются в replies', async () => {
     const created = await alice.posts.create({ body: { title: 'Tree', content: 'comments' } })
-    const path = { id: String(created.assert(201).body.id) }
+    const path = { id: created.assert(201).body.id }
 
     const a = await alice.comments.create({ path, body: { text: 'a' } })
     const aId = a.assert(201, { text: 'a', replies: [] }).body.id
@@ -40,8 +40,8 @@ describe('comments', () => {
   test('parentId из чужого поста → 404', async () => {
     const first = await alice.posts.create({ body: { title: 'One', content: '1' } })
     const second = await alice.posts.create({ body: { title: 'Two', content: '2' } })
-    const firstPath = { id: String(first.assert(201).body.id) }
-    const secondPath = { id: String(second.assert(201).body.id) }
+    const firstPath = { id: first.assert(201).body.id }
+    const secondPath = { id: second.assert(201).body.id }
 
     const parent = await alice.comments.create({ path: firstPath, body: { text: 'root' } })
     const parentId = parent.assert(201).body.id

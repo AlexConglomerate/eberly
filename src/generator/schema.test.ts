@@ -5,7 +5,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { buildSchemaNames } from './names'
-import { isFileSchema, renderSchemaDecls, schemaToType } from './schema'
+import { isFileSchema, paramSchemaToType, renderSchemaDecls, schemaToType } from './schema'
 import { makeSpec } from './test-utils'
 import type { Json } from './types'
 
@@ -149,4 +149,40 @@ test('3.1 type: [string, null] работает как раньше', () => {
 
 test('renderSchemaDecls: без схем → пустая строка', () => {
   assert.equal(renderSchemaDecls(withSchemas({})), '')
+})
+
+test('paramSchemaToType: примитивы → TS-тип, integer → number', () => {
+  const type = (schema: Json | undefined) => paramSchemaToType({ schema, spec })
+  assert.equal(type({ type: 'string' }), 'string')
+  assert.equal(type({ type: 'number' }), 'number')
+  assert.equal(type({ type: 'integer', format: 'int64' }), 'number')
+  assert.equal(type({ type: 'boolean' }), 'boolean')
+  assert.equal(type({ type: ['integer', 'string'] }), 'number | string')
+})
+
+test('paramSchemaToType: null отбрасывается (nullable, 3.1, enum)', () => {
+  const type = (schema: Json) => paramSchemaToType({ schema, spec })
+  assert.equal(type({ type: 'integer', nullable: true }), 'number')
+  assert.equal(type({ type: ['integer', 'null'] }), 'number')
+  assert.equal(type({ enum: ['draft', 'published', null] }), '"draft" | "published"')
+})
+
+test('paramSchemaToType: enum и $ref на enum → union литералов', () => {
+  const withEnum = makeSpec({ schemas: { Status: { type: 'string', enum: ['draft', 'published'] } } })
+  assert.equal(paramSchemaToType({ schema: { enum: [1, 2] }, spec }), '1 | 2')
+  assert.equal(
+    paramSchemaToType({ schema: { $ref: '#/components/schemas/Status' }, spec: withEnum }),
+    '"draft" | "published"',
+  )
+})
+
+test('paramSchemaToType: нет схемы / сложная схема → null (фолбэк у вызывающего)', () => {
+  const type = (schema: Json | undefined) => paramSchemaToType({ schema, spec })
+  assert.equal(type(undefined), null)
+  assert.equal(type({}), null)
+  assert.equal(type({ type: 'array', items: { type: 'string' } }), null)
+  assert.equal(type({ type: 'object' }), null)
+  assert.equal(type({ type: 'null' }), null)
+  assert.equal(type({ enum: [{ a: 1 }] }), null)
+  assert.equal(type({ $ref: '#/components/schemas/Missing' }), null)
 })

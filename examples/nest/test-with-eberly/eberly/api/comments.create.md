@@ -7,7 +7,7 @@ Adds a comment to any post, drafts included. Pass `parentId` to reply to another
 
 ## Call
 ```ts
-const res = await user.comments.create({ path: { id: "0" }, body: { text: "Nice post!" } })
+const res = await user.comments.create({ path: { id: 0 }, body: { text: "Nice post!" } })
 res.assert(201)
 ```
 
@@ -15,7 +15,7 @@ res.assert(201)
 ```ts
 { path: {
   /** Post id. */
-  "id": string
+  "id": number
 }; body: CreateCommentDto }
 ```
 

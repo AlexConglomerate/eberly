@@ -92,7 +92,7 @@ const FILE_OPS: Record<string, FileFieldMeta[]> = {
 }
 
 type RequestInput = {
-  path?: Record<string, string>
+  path?: Record<string, string | number | boolean>
   query?: Record<string, string | number | boolean | undefined>
   body?: unknown
 }
@@ -155,7 +155,7 @@ export type WorldApi = {
        */
       "list": (input?: { query?: {
           /** Only return posts of this author. */
-          "authorId"?: string | number | boolean
+          "authorId"?: number
         } }) => Promise<ApiResponse<{ 200: Array<PostDto> }>>
       /**
        * Create a post
@@ -174,7 +174,7 @@ export type WorldApi = {
        */
       "get": (input: { path: {
           /** Post id. */
-          "id": string
+          "id": number
         } }) => Promise<ApiResponse<{ 200: PostDto; 404: ErrorDto }>>
       /**
        * Delete a post
@@ -185,7 +185,7 @@ export type WorldApi = {
        */
       "remove": (input: { path: {
           /** Post id. */
-          "id": string
+          "id": number
         } }) => Promise<ApiResponse<{ 204: unknown; 401: ErrorDto; 403: ErrorDto; 404: ErrorDto }>>
       /**
        * Publish a post
@@ -196,7 +196,7 @@ export type WorldApi = {
        */
       "publish": (input: { path: {
           /** Post id. */
-          "id": string
+          "id": number
         } }) => Promise<ApiResponse<{ 200: PostDto; 401: ErrorDto; 403: ErrorDto; 404: ErrorDto }>>
     }
     "comments": {
@@ -209,7 +209,7 @@ export type WorldApi = {
        */
       "list": (input: { path: {
           /** Post id. */
-          "id": string
+          "id": number
         } }) => Promise<ApiResponse<{ 200: Array<CommentDto>; 404: ErrorDto }>>
       /**
        * Comment on a post
@@ -220,7 +220,7 @@ export type WorldApi = {
        */
       "create": (input: { path: {
           /** Post id. */
-          "id": string
+          "id": number
         }; body: CreateCommentDto }) => Promise<ApiResponse<{ 201: CommentDto; 400: ErrorDto; 401: ErrorDto; 404: ErrorDto }>>
     }
     "users": {

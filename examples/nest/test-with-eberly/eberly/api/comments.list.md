@@ -7,7 +7,7 @@ Returns top-level comments, oldest first. Replies are nested in `replies` at any
 
 ## Call
 ```ts
-const res = await user.comments.list({ path: { id: "0" } })
+const res = await user.comments.list({ path: { id: 0 } })
 res.assert(200)
 ```
 
@@ -15,7 +15,7 @@ res.assert(200)
 ```ts
 { path: {
   /** Post id. */
-  "id": string
+  "id": number
 } }
 ```
 

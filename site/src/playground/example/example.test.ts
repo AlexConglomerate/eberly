@@ -16,12 +16,10 @@ describe('posts', () => {
     // Statuses come from the spec, the body is
     // checked partially and typed by the status.
     const post = res.assert(201, { title: 'Hello' }).body
-    const id = String(post.id)
-
-    const removed = await bob.posts.remove({ path: { id } })
+    const removed = await bob.posts.remove({ path: { id: post.id } })
     removed.assert(403, { message: 'Only the author can do this' })
 
-    const found = await alice.posts.get({ path: { id } })
+    const found = await alice.posts.get({ path: { id: post.id } })
     found.assert(200, { id: post.id, publishedAt: null })
   })
 })

@@ -70,13 +70,13 @@ export function buildInputType(args: {
   const parts: string[] = []
 
   if (op.pathParams.length > 0) {
-    const fields = renderParamFields({ params: op.pathParams, fieldType: () => ': string', indent })
+    const fields = renderParamFields({ params: op.pathParams, fieldType: (p) => `: ${p.type}`, indent })
     parts.push(`path: ${fields}`)
   }
   if (op.queryParams.length > 0) {
     const fields = renderParamFields({
       params: op.queryParams,
-      fieldType: () => '?: string | number | boolean',
+      fieldType: (p) => `?: ${p.type}`,
       indent,
     })
     parts.push(`query?: ${fields}`)
@@ -343,7 +343,7 @@ ${renderImports({ mode, userStoreImport, configImport })}
 ${decls ? `${decls}\n\n` : ''}${renderFileOps(operations)}
 
 type RequestInput = {
-  path?: Record<string, string>
+  path?: Record<string, string | number | boolean>
   query?: Record<string, string | number | boolean | undefined>
   body?: unknown
 }
