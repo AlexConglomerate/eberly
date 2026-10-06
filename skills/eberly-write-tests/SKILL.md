@@ -93,8 +93,9 @@ describe('posts', () => {
 - `res.data`: the 2xx body, throws on any other status. Use it in setup
   steps; when the status is what the test checks, use `assert`.
 - Raw access without asserting: `res.status`, `res.body` (any status).
-- Data declared before the call: `const post = { … } satisfies BodyOf<typeof alice.posts.create>`
-  (`import type { BodyOf } from 'eberly'`; also `QueryOf`, `PathOf`, `ResponseOf<F, status>`).
+- Data declared before the call: `const post = { … } satisfies BodyOf<typeof api.posts.create>`
+  (`BodyOf` from `'eberly'`, `api` from `'../eberly/generated'`, types only, never call it;
+  also `QueryOf`, `PathOf`, `ResponseOf<F, status>`).
 - Store vars: `alice.get({ key: 'lastPostId' })` (throws if not set) / `alice.set({ key, value })`;
   where a value may be missing (hooks, anonymous user) use `getSafe` → `T | undefined`;
   inside store methods `this.get` / `this.set`, endpoints via `this.api.<group>.<method>`.

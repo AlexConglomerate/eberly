@@ -38,14 +38,17 @@ alice.getSafe({ key: 'lastPostId' })  // number | undefined
 Request data declared before the call is checked only when it is passed, and an
 extra field in a variable is not an error at all. `BodyOf`, `QueryOf` and
 `PathOf` from `eberly` give the type of that part of a call, `ResponseOf` gives
-the response body of a status (the 2xx one by default). Pass the method itself,
-`typeof alice.posts.create`, or `WorldApi['posts']['create']` where there is no
-user ([`posts.test.ts`](https://github.com/AlexConglomerate/eberly/blob/main/examples/nest/test-with-eberly/tests/posts.test.ts)):
+the response body of a status (the 2xx one by default). Pass the method:
+`typeof api.posts.create`, where `api` comes from `eberly/generated.ts` and works
+anywhere, even with no user at hand. `typeof alice.posts.create` and
+`WorldApi['posts']['create']` work too
+([`posts.test.ts`](https://github.com/AlexConglomerate/eberly/blob/main/examples/nest/test-with-eberly/tests/posts.test.ts)):
 
 <Code code={snippet({ source: postsTest, region: 'endpoint-types' })} lang="ts" />
 
-A part the endpoint does not have is `never`. In `'frontend'` mode
-`ResponseOf` is the returned body, the status is not used.
+`api` is for types only: it does not call the backend, and any access to it at
+run time throws. A part the endpoint does not have is `never`. In `'frontend'`
+mode `ResponseOf` is the returned body, the status is not used.
 
 ## Stores
 

@@ -74,7 +74,7 @@ and the statuses `201` / `403` are all checked by TypeScript.
   test turns red before it even runs
   ([contract changes](https://eberly.dev/guides/contract-changes/)).
   Data declared before the call is typed too:
-  `satisfies BodyOf<typeof alice.posts.create>`
+  `satisfies BodyOf<typeof api.posts.create>`
   ([endpoint types](https://eberly.dev/reference/api/#endpoint-types)).
 - **Many users, each with their own state.** `world.createUser()` gives a user
   with their own token and variables

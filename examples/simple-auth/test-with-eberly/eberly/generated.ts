@@ -200,6 +200,21 @@ export type WorldApi = {
     }
 }
 
+/**
+ * The endpoint tree for TYPES only: `BodyOf<typeof api.posts.create>`
+ * (also `QueryOf`, `PathOf`, `ResponseOf` from "eberly").
+ * It does not call the backend, any access throws: use `world.createUser()`.
+ */
+export const api: WorldApi = new Proxy({} as WorldApi, {
+  get(_, key) {
+    if (typeof key === 'symbol') return undefined
+    throw new Error(
+      'api from the generated client is for types only (typeof api.<group>.<method>). ' +
+        'To call the backend, use world.createUser().',
+    )
+  },
+})
+
 type EberlyHookTree<Store extends BaseStore> = {
     globalBefore(fn: BeforeHook<Store>): void
     globalAfter(fn: AfterHook<Store>): void

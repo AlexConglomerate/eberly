@@ -7,7 +7,7 @@ import { beforeAll, describe, expect, test } from 'vitest'
 import type { BodyOf, PathOf, ResponseOf } from 'eberly'
 import { z } from 'zod'
 
-import { World, type WorldApi } from '../eberly/generated'
+import { World, api } from '../eberly/generated'
 
 describe('posts', () => {
   const world = new World()
@@ -92,21 +92,22 @@ describe('posts', () => {
   test('данные запроса объявлены заранее и типизированы по эндпоинту', async () => {
     // #region docs:endpoint-types
     // Typed where it is declared: a typo or an extra field fails on this line
-    const newPost = { title: 'Hello', content: 'First post' } satisfies BodyOf<typeof alice.posts.create>
+    const newPost = { title: 'Hello', content: 'First post' } satisfies BodyOf<typeof api.posts.create>
     const created = await alice.posts.create({ body: newPost })
     created.assert(201, { title: newPost.title })
 
     // Response body of a status, the 2xx one by default: here ErrorDto
-    type CreateError = ResponseOf<typeof alice.posts.create, 400>
+    type CreateError = ResponseOf<typeof api.posts.create, 400>
     const empty = await alice.posts.create({ body: { title: '', content: '' } })
     const error: CreateError = empty.assert(400).body
 
-    // No user at hand (a helper file)? Index WorldApi instead
-    const path: PathOf<WorldApi['posts']['publish']> = { postId: created.data.id }
+    const path: PathOf<typeof api.posts.publish> = { postId: created.data.id }
     ;(await alice.posts.publish({ path })).assert(200)
     // #endregion
 
     expect(error.statusCode).toBe(400)
+    // `api` is for types only: it does not call the backend
+    expect(() => api.posts.create).toThrow('api from the generated client is for types only')
   })
 
   test('без токена создать пост нельзя → 401', async () => {

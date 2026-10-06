@@ -16,7 +16,9 @@
   или матчер vitest (`expect.any(Number)`), см. `ARCHITECTURE.md §6`.
 - `src/endpoint-types.ts` — публичные типы `BodyOf` / `QueryOf` / `PathOf` /
   `ResponseOf`: части вызова эндпоинта из его сигнатуры
-  (`BodyOf<typeof alice.posts.create>`). Только типы, генератор не трогает.
+  (`BodyOf<typeof api.posts.create>`). Только типы. `api` — значение типа
+  `WorldApi` в сгенерированном клиенте (Proxy, любое обращение бросает),
+  нужно только ради точки в `typeof`.
   Тест типов — `src/endpoint-types.type-test.ts`.
 - `src/standard-schema.ts` — копия интерфейса Standard Schema v1 (Zod,
   Valibot, ArkType…) + `isStandardSchema`. Без зависимостей.
@@ -48,6 +50,7 @@
   - `render.ts` — рендер исходника клиента (класс `World`), форма зависит
     от `mode` (`'test'` / `'frontend'`). Типы вызовов — только в `WorldApi`
     (там же JSDoc эндпоинта: summary, description, маршрут, `@deprecated`).
+    Плюс `export const api: WorldApi` — только для `typeof api.<группа>.<метод>`.
   - `jsdoc.ts` — `renderJsDoc` / `escapeJsDoc`: общий рендер JSDoc для
     эндпоинтов, параметров и полей схем (`*/` → `*\/`).
   - `docs.ts` — папка `api/` для агента: `renderEndpointDocs` (`INDEX.md`
