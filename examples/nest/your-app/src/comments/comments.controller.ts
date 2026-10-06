@@ -16,7 +16,7 @@ import { type CommentRecord, Store, type UserRecord } from '../store.js'
 import { CommentDto, CreateCommentDto } from './comment.dto.js'
 
 @ApiTags('comments')
-@Controller('posts/:id/comments')
+@Controller('posts/:postId/comments')
 export class CommentsController {
   constructor(private readonly store: Store) {}
 
@@ -36,7 +36,7 @@ export class CommentsController {
   })
   create(
     @CurrentUser() user: UserRecord,
-    @Param('id', ParseIntPipe) postId: number,
+    @Param('postId', ParseIntPipe) postId: number,
     @Body() body: CreateCommentDto,
   ): CommentDto {
     this.assertPostExists(postId)
@@ -65,7 +65,7 @@ export class CommentsController {
   @ApiParam(POST_ID_PARAM)
   @ApiOkResponse({ type: [CommentDto] })
   @ApiNotFoundResponse(POST_NOT_FOUND)
-  list(@Param('id', ParseIntPipe) postId: number): CommentDto[] {
+  list(@Param('postId', ParseIntPipe) postId: number): CommentDto[] {
     this.assertPostExists(postId)
     const comments = [...this.store.comments.values()].filter((c) => c.postId === postId)
     const toTree = (parentId: number | null): CommentDto[] =>

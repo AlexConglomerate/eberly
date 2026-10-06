@@ -29,7 +29,7 @@ import { ErrorDto } from '../common/error.dto.js'
 import { type PostRecord, Store, type UserRecord } from '../store.js'
 import { CreatePostDto, PostDto, toPostDto } from './post.dto.js'
 
-export const POST_ID_PARAM = { name: 'id', type: Number, description: 'Post id.' } as const
+export const POST_ID_PARAM = { name: 'postId', type: Number, description: 'Post id.' } as const
 export const POST_NOT_FOUND = { type: ErrorDto, description: 'No post with this id.' } as const
 
 @ApiTags('posts')
@@ -61,7 +61,7 @@ export class PostsController {
   @Auth()
   @ApiOperation({
     summary: 'Create a post',
-    description: 'Creates a draft (`publishedAt: null`) owned by the current user. Publish it with `POST /posts/{id}/publish`.',
+    description: 'Creates a draft (`publishedAt: null`) owned by the current user. Publish it with `POST /posts/{postId}/publish`.',
   })
   @ApiCreatedResponse({ type: PostDto })
   @ApiBadRequestResponse({ type: ErrorDto, description: 'Empty title or content.' })
@@ -78,7 +78,7 @@ export class PostsController {
     return toPostDto(post)
   }
 
-  @Get(':id')
+  @Get(':postId')
   @ApiOperation({
     summary: 'Get a post by id',
     description: 'Returns any post, drafts included. No authorization needed.',
@@ -86,11 +86,11 @@ export class PostsController {
   @ApiParam(POST_ID_PARAM)
   @ApiOkResponse({ type: PostDto })
   @ApiNotFoundResponse(POST_NOT_FOUND)
-  get(@Param('id', ParseIntPipe) id: number): PostDto {
-    return toPostDto(this.findPost(id))
+  get(@Param('postId', ParseIntPipe) postId: number): PostDto {
+    return toPostDto(this.findPost(postId))
   }
 
-  @Post(':id/publish')
+  @Post(':postId/publish')
   @HttpCode(200)
   @Auth()
   @ApiOperation({
@@ -102,13 +102,13 @@ export class PostsController {
   @ApiOkResponse({ type: PostDto })
   @ApiForbiddenResponse({ type: ErrorDto, description: 'The current user is not the author.' })
   @ApiNotFoundResponse(POST_NOT_FOUND)
-  publish(@CurrentUser() user: UserRecord, @Param('id', ParseIntPipe) id: number): PostDto {
-    const post = this.findOwnPost({ id, user })
+  publish(@CurrentUser() user: UserRecord, @Param('postId', ParseIntPipe) postId: number): PostDto {
+    const post = this.findOwnPost({ id: postId, user })
     post.publishedAt ??= new Date().toISOString()
     return toPostDto(post)
   }
 
-  @Delete(':id')
+  @Delete(':postId')
   @HttpCode(204)
   @Auth()
   @ApiOperation({
@@ -119,8 +119,8 @@ export class PostsController {
   @ApiNoContentResponse({ description: 'Deleted. Empty body.' })
   @ApiForbiddenResponse({ type: ErrorDto, description: 'The current user is not the author.' })
   @ApiNotFoundResponse(POST_NOT_FOUND)
-  remove(@CurrentUser() user: UserRecord, @Param('id', ParseIntPipe) id: number): void {
-    const post = this.findOwnPost({ id, user })
+  remove(@CurrentUser() user: UserRecord, @Param('postId', ParseIntPipe) postId: number): void {
+    const post = this.findOwnPost({ id: postId, user })
     this.store.posts.delete(post.id)
     for (const comment of this.store.comments.values()) {
       if (comment.postId === post.id) this.store.comments.delete(comment.id)

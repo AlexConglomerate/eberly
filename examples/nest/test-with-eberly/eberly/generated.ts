@@ -160,7 +160,7 @@ export type WorldApi = {
       /**
        * Create a post
        *
-       * Creates a draft (`publishedAt: null`) owned by the current user. Publish it with `POST /posts/{id}/publish`.
+       * Creates a draft (`publishedAt: null`) owned by the current user. Publish it with `POST /posts/{postId}/publish`.
        *
        * `POST /posts`
        */
@@ -170,33 +170,33 @@ export type WorldApi = {
        *
        * Returns any post, drafts included. No authorization needed.
        *
-       * `GET /posts/{id}`
+       * `GET /posts/{postId}`
        */
       "get": (input: { path: {
           /** Post id. */
-          "id": number
+          "postId": number
         } }) => Promise<ApiResponse<{ 200: PostDto; 404: ErrorDto }>>
       /**
        * Delete a post
        *
        * Deletes the post and all its comments. Only the author may delete, otherwise 403.
        *
-       * `DELETE /posts/{id}`
+       * `DELETE /posts/{postId}`
        */
       "remove": (input: { path: {
           /** Post id. */
-          "id": number
+          "postId": number
         } }) => Promise<ApiResponse<{ 204: unknown; 401: ErrorDto; 403: ErrorDto; 404: ErrorDto }>>
       /**
        * Publish a post
        *
        * Sets `publishedAt` to the current time. Only the author may publish, otherwise 403. Publishing an already published post keeps the original `publishedAt`.
        *
-       * `POST /posts/{id}/publish`
+       * `POST /posts/{postId}/publish`
        */
       "publish": (input: { path: {
           /** Post id. */
-          "id": number
+          "postId": number
         } }) => Promise<ApiResponse<{ 200: PostDto; 401: ErrorDto; 403: ErrorDto; 404: ErrorDto }>>
     }
     "comments": {
@@ -205,22 +205,22 @@ export type WorldApi = {
        *
        * Returns top-level comments, oldest first. Replies are nested in `replies` at any depth.
        *
-       * `GET /posts/{id}/comments`
+       * `GET /posts/{postId}/comments`
        */
       "list": (input: { path: {
           /** Post id. */
-          "id": number
+          "postId": number
         } }) => Promise<ApiResponse<{ 200: Array<CommentDto>; 404: ErrorDto }>>
       /**
        * Comment on a post
        *
        * Adds a comment to any post, drafts included. Pass `parentId` to reply to another comment of the same post.
        *
-       * `POST /posts/{id}/comments`
+       * `POST /posts/{postId}/comments`
        */
       "create": (input: { path: {
           /** Post id. */
-          "id": number
+          "postId": number
         }; body: CreateCommentDto }) => Promise<ApiResponse<{ 201: CommentDto; 400: ErrorDto; 401: ErrorDto; 404: ErrorDto }>>
     }
     "users": {
@@ -626,40 +626,40 @@ export class World<
         "get": async (input) =>
           new ApiResponse({ ...(await request({
             method: "GET",
-            path: "/posts/{id}",
+            path: "/posts/{postId}",
             opKey: "posts.get",
             input: input as RequestInput,
-          })), endpoint: "GET /posts/{id}" }) as never,
+          })), endpoint: "GET /posts/{postId}" }) as never,
         "remove": async (input) =>
           new ApiResponse({ ...(await request({
             method: "DELETE",
-            path: "/posts/{id}",
+            path: "/posts/{postId}",
             opKey: "posts.remove",
             input: input as RequestInput,
-          })), endpoint: "DELETE /posts/{id}" }) as never,
+          })), endpoint: "DELETE /posts/{postId}" }) as never,
         "publish": async (input) =>
           new ApiResponse({ ...(await request({
             method: "POST",
-            path: "/posts/{id}/publish",
+            path: "/posts/{postId}/publish",
             opKey: "posts.publish",
             input: input as RequestInput,
-          })), endpoint: "POST /posts/{id}/publish" }) as never,
+          })), endpoint: "POST /posts/{postId}/publish" }) as never,
       },
       "comments": {
         "list": async (input) =>
           new ApiResponse({ ...(await request({
             method: "GET",
-            path: "/posts/{id}/comments",
+            path: "/posts/{postId}/comments",
             opKey: "comments.list",
             input: input as RequestInput,
-          })), endpoint: "GET /posts/{id}/comments" }) as never,
+          })), endpoint: "GET /posts/{postId}/comments" }) as never,
         "create": async (input) =>
           new ApiResponse({ ...(await request({
             method: "POST",
-            path: "/posts/{id}/comments",
+            path: "/posts/{postId}/comments",
             opKey: "comments.create",
             input: input as RequestInput,
-          })), endpoint: "POST /posts/{id}/comments" }) as never,
+          })), endpoint: "POST /posts/{postId}/comments" }) as never,
       },
       "users": {
         "uploadAvatar": async (input) =>

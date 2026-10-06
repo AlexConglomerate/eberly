@@ -210,7 +210,7 @@
         ]
       },
       "post": {
-        "description": "Creates a draft (`publishedAt: null`) owned by the current user. Publish it with `POST /posts/{id}/publish`.",
+        "description": "Creates a draft (`publishedAt: null`) owned by the current user. Publish it with `POST /posts/{postId}/publish`.",
         "operationId": "posts.create",
         "parameters": [],
         "requestBody": {
@@ -266,13 +266,13 @@
         ]
       }
     },
-    "/posts/{id}": {
+    "/posts/{postId}": {
       "get": {
         "description": "Returns any post, drafts included. No authorization needed.",
         "operationId": "posts.get",
         "parameters": [
           {
-            "name": "id",
+            "name": "postId",
             "required": true,
             "in": "path",
             "description": "Post id.",
@@ -313,7 +313,7 @@
         "operationId": "posts.remove",
         "parameters": [
           {
-            "name": "id",
+            "name": "postId",
             "required": true,
             "in": "path",
             "description": "Post id.",
@@ -368,13 +368,13 @@
         ]
       }
     },
-    "/posts/{id}/publish": {
+    "/posts/{postId}/publish": {
       "post": {
         "description": "Sets `publishedAt` to the current time. Only the author may publish, otherwise 403. Publishing an already published post keeps the original `publishedAt`.",
         "operationId": "posts.publish",
         "parameters": [
           {
-            "name": "id",
+            "name": "postId",
             "required": true,
             "in": "path",
             "description": "Post id.",
@@ -436,13 +436,13 @@
         ]
       }
     },
-    "/posts/{id}/comments": {
+    "/posts/{postId}/comments": {
       "post": {
         "description": "Adds a comment to any post, drafts included. Pass `parentId` to reply to another comment of the same post.",
         "operationId": "comments.create",
         "parameters": [
           {
-            "name": "id",
+            "name": "postId",
             "required": true,
             "in": "path",
             "description": "Post id.",
@@ -518,7 +518,7 @@
         "operationId": "comments.list",
         "parameters": [
           {
-            "name": "id",
+            "name": "postId",
             "required": true,
             "in": "path",
             "description": "Post id.",

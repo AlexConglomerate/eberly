@@ -11,13 +11,13 @@ Open `<group>.<method>.md` for details. Call as `user.<group>.<method>(…)`.
 ## posts
 - posts.list — GET /posts — List published posts
 - posts.create — POST /posts — Create a post
-- posts.get — GET /posts/{id} — Get a post by id
-- posts.remove — DELETE /posts/{id} — Delete a post
-- posts.publish — POST /posts/{id}/publish — Publish a post
+- posts.get — GET /posts/{postId} — Get a post by id
+- posts.remove — DELETE /posts/{postId} — Delete a post
+- posts.publish — POST /posts/{postId}/publish — Publish a post
 
 ## comments
-- comments.list — GET /posts/{id}/comments — Comment tree of a post
-- comments.create — POST /posts/{id}/comments — Comment on a post
+- comments.list — GET /posts/{postId}/comments — Comment tree of a post
+- comments.create — POST /posts/{postId}/comments — Comment on a post
 
 ## users
 - users.uploadAvatar — POST /users/me/avatar — Upload an avatar

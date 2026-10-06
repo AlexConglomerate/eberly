@@ -37,11 +37,11 @@ pnpm --filter @eberly-examples/nest-your-app run swagger           # перег�
 | `GET /auth/whoami` | bearer | то же, `deprecated` |
 | `GET /posts?authorId=` | — | опубликованные посты |
 | `POST /posts` | bearer | создать черновик, 201 |
-| `GET /posts/:id` | — | любой пост, 404 |
-| `POST /posts/:id/publish` | bearer, автор | опубликовать, 403 / 404 |
-| `DELETE /posts/:id` | bearer, автор | удалить, 204 / 403 / 404 |
-| `POST /posts/:id/comments` | bearer | комментарий или ответ (`parentId`) |
-| `GET /posts/:id/comments` | — | дерево комментариев |
+| `GET /posts/:postId` | — | любой пост, 404 |
+| `POST /posts/:postId/publish` | bearer, автор | опубликовать, 403 / 404 |
+| `DELETE /posts/:postId` | bearer, автор | удалить, 204 / 403 / 404 |
+| `POST /posts/:postId/comments` | bearer | комментарий или ответ (`parentId`) |
+| `GET /posts/:postId/comments` | — | дерево комментариев |
 | `POST /users/me/avatar` | bearer | multipart, поле `file` |
 | `POST /test/reset` | только `TEST_MODE=1` | очистить все данные |
 

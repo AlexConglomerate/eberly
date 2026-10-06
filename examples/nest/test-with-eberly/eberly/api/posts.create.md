@@ -3,7 +3,7 @@
 
 Create a post
 
-Creates a draft (`publishedAt: null`) owned by the current user. Publish it with `POST /posts/{id}/publish`.
+Creates a draft (`publishedAt: null`) owned by the current user. Publish it with `POST /posts/{postId}/publish`.
 
 ## Call
 ```ts

@@ -28,8 +28,8 @@ describe('Песочница', () => {
     const alicePostId = v1
 
     // Алиса и Боб читают пост
-    const bobRead = await bob.posts.get({ path: { id: alicePostId } })
-    const aliceRead = await alice.posts.get({ path: { id: alicePostId } })
+    const bobRead = await bob.posts.get({ path: { postId: alicePostId } })
+    const aliceRead = await alice.posts.get({ path: { postId: alicePostId } })
 
     bobRead.assert(200) // Можем проверить только статус
 
@@ -41,9 +41,9 @@ describe('Песочница', () => {
     })
 
     // Алиса и Боб пытаются удалить пост
-    const bobTryToRemove = await bob.posts.remove({ path: { id: alicePostId } })
-    const aliceTryToRemove = await alice.posts.remove({ path: { id: alicePostId } })
-    const aliceTryToRemoveAgain = await alice.posts.remove({ path: { id: alicePostId } })
+    const bobTryToRemove = await bob.posts.remove({ path: { postId: alicePostId } })
+    const aliceTryToRemove = await alice.posts.remove({ path: { postId: alicePostId } })
+    const aliceTryToRemoveAgain = await alice.posts.remove({ path: { postId: alicePostId } })
 
     bobTryToRemove.assert(403) // Боб не может удалить чужой пост
     aliceTryToRemove.assert(204) // Успешно удалили
@@ -62,7 +62,7 @@ describe('Песочница', () => {
 
     // прочитаем пост
     const postId = alice.get({ key: 'lastPostId' }) // из переменных Алисы (кладёт хук)
-    const aliceRead = await alice.posts.get({ path: { id: postId } })
+    const aliceRead = await alice.posts.get({ path: { postId } })
 
     // проверим ответ
     aliceRead.assert(200, { // Типизированная проверка статуса
@@ -72,8 +72,8 @@ describe('Песочница', () => {
     })
 
     // Алиса пытается удалить пост дважды
-    const tryToRemove = await alice.posts.remove({ path: { id: postId } })
-    const tryToRemoveAgain = await alice.posts.remove({ path: { id: postId } })
+    const tryToRemove = await alice.posts.remove({ path: { postId } })
+    const tryToRemoveAgain = await alice.posts.remove({ path: { postId } })
 
     tryToRemove.assert(204) // Успешно удалили
     tryToRemoveAgain.assert(404) // Уже удалён, 404
