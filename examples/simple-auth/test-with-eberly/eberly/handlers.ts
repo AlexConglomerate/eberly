@@ -15,7 +15,7 @@ import type { UserStore } from './userStore'
  * молча ничего не делает (анонимный запрос).
  */
 export const withBearer: BeforeHook<UserStore> = ({ request, ctx }) => {
-  const token = ctx.get({ key: 'token' })
+  const token = ctx.getSafe({ key: 'token' })
   if (token) {
     request.headers['authorization'] = `Bearer ${token}`
   }

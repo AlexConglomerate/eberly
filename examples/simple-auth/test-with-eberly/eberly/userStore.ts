@@ -55,8 +55,8 @@ export class UserStore extends BaseStore<UserVars, WorldApi> {
    * него eberly прозрачно переигрывает упавший запрос на свежем токене.
    */
   public async refresh(): Promise<void> {
-    const email = this.get({ key: 'email' })
-    const password = this.get({ key: 'password' })
+    const email = this.getSafe({ key: 'email' })
+    const password = this.getSafe({ key: 'password' })
     if (!email || !password) {
       throw new Error('refresh: нет сохранённых кредов — сначала signUp/signIn')
     }

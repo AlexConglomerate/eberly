@@ -51,7 +51,7 @@ async function uploadScreenshots({ token, names }: { token: string; names: strin
 Вызов внутри теста:
 
 ```ts
-const token = user.get({ key: "token" })!
+const token = user.get({ key: "token" })
 const pictures = items.filter((i) => i.type === "picture").map((i) => i.picture)
 const upload = await uploadScreenshots({ token, names: pictures })
 expect(upload.status).toBe(200)

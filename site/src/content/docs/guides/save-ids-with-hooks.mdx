@@ -19,3 +19,7 @@ of the user who made the request, so ids never leak between users.
 [`posts.test.ts`](https://github.com/AlexConglomerate/eberly/blob/main/examples/nest/test-with-eberly/tests/posts.test.ts):
 
 <Code code={snippet({ source: postsTest, region: 'last-post-id' })} lang="ts" />
+
+`get` throws if the value is not set (say, the request failed and the hook
+skipped it), so the test fails right there with a clear message. Where a value
+may legitimately be missing, use `getSafe`: it returns `undefined` instead.

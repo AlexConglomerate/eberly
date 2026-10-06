@@ -88,7 +88,8 @@ describe('posts', () => {
   Returns the response, so `.assert(200).body` is typed. Status from a
   variable needs `as const`: `for (const s of [401, 403] as const) res.assert(s)`.
 - Raw access without asserting: `res.status`, `res.body`.
-- Store vars: `alice.get({ key: 'lastPostId' })` / `alice.set({ key, value })`;
+- Store vars: `alice.get({ key: 'lastPostId' })` (throws if not set) / `alice.set({ key, value })`;
+  where a value may be missing (hooks, anonymous user) use `getSafe` → `T | undefined`;
   inside store methods `this.get` / `this.set`, endpoints via `this.api.<group>.<method>`.
 - File upload: where the md shows `FileInput`, pass a path, a file URL
   (`new URL('./fixtures/a.png', import.meta.url)`), `{ content, name }` or a `Blob`.
@@ -99,7 +100,7 @@ Hooks (`eberly/hooks.ts`, `ctx` is the store of the user who made the request):
 ```ts
 export const hooks: Hooks<UserStore> = (h) => {
   h.globalBefore(({ request, ctx }) => {               // every request
-    const token = ctx.get({ key: 'accessToken' })
+    const token = ctx.getSafe({ key: 'accessToken' })
     if (token) request.headers.Authorization = `Bearer ${token}`
   })
   h.posts.create.after(({ response, ctx }) => {        // one endpoint

@@ -64,6 +64,7 @@ export const RESERVED_TYPE_NAMES: ReadonlySet<string> = new Set([
  */
 export const RESERVED_GROUP_NAMES: ReadonlySet<string> = new Set([
   'get',
+  'getSafe',
   'set',
   'api',
   'store',

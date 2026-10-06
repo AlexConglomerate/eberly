@@ -26,7 +26,8 @@ res.assert(200).body.title            // body narrowed to the 200 type
 res.assert(403)                       // any undeclared 4xx/5xx works without a cast
 
 alice.set({ key: 'lastPostId', value: 1 })
-alice.get({ key: 'lastPostId' })      // number | undefined
+alice.get({ key: 'lastPostId' })      // number, throws if not set
+alice.getSafe({ key: 'lastPostId' })  // number | undefined
 ```
 
 ## Stores

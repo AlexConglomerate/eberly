@@ -41,7 +41,7 @@ export const hooks: Hooks<UserStore> = (h) => {
     if (response.status !== 401) return false
     // Don't refresh auth endpoints themselves: a wrong password must stay 401.
     if (request.path.startsWith('/auth/')) return false
-    if (!ctx.get({ key: 'email' }) || !ctx.get({ key: 'password' })) return false
+    if (!ctx.getSafe({ key: 'email' }) || !ctx.getSafe({ key: 'password' })) return false
     await ctx.refresh()
     return true // → eberly replays the request with the fresh token
   })

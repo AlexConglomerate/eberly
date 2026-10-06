@@ -543,7 +543,7 @@ camelCase (`User Management` → `userManagement`). Фолбэки по поря
 префикс `operationId` до точки (oRPC без тегов) → первый статический
 сегмент пути (`/posts/{id}` → `posts`) → `default`. Группа становится
 свойством объекта пользователя (`Object.assign(store, tree)`) и дерева
-хуков, поэтому `get`, `set`, `api`, `store`, `globalBefore`,
+хуков, поэтому `get`, `getSafe`, `set`, `api`, `store`, `globalBefore`,
 `globalAfter`, `globalRetry`, `constructor` (`RESERVED_GROUP_NAMES`)
 получают суффикс `Api`: `store` → `storeApi`. Имя метода не меняется
 (после первой точки `operationId`, иначе целиком, иначе

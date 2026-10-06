@@ -23,7 +23,7 @@ export type InternalVariable = {
 export class UserStore extends BaseStore<InternalVariable, WorldApi> {
     /** Пример производного метода: id первого созданного поста. */
     public getFirstPostId(): string | undefined {
-        const createdPosts = this.get({ key: "createdPosts" })
+        const createdPosts = this.getSafe({ key: "createdPosts" })
         return createdPosts?.[0]?.postId
     }
 

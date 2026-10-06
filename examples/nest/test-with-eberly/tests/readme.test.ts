@@ -25,10 +25,11 @@ describe('README', () => {
     const postData = { title: 'Hello', content: 'First post' }
     const post = await alice.posts.create({ body: postData })
 
-    const alicePostIdFromStore = alice.get({ key: 'lastPostId' }) // Автоматически сохраняется внутри Алисы. 
-    const alicePostIdFromBody = post.assert(201).body.id // То же самое можем получить из ответа
-    expect(alicePostIdFromStore).toEqual(alicePostIdFromBody)
-    const alicePostId = post.assert(201).body.id
+    // Как посмотреть ID поста? 
+    const store = alice.get({ key: 'lastPostId' }) // Можем достать из внутренних переменных Алисы.  
+    const body = post.assert(201).body.id // То же самое можем получить из ответа
+    expect(store).toEqual(body)
+    const alicePostId = store
 
     // Алиса и Боб читают пост
     const bobRead = await bob.posts.get({ path: { id: alicePostId } })

@@ -19,7 +19,7 @@ export const hooks: Hooks<UserStore> = (h) => {
   // автоматически несут заголовок. У разных юзеров — свои токены (ctx — это
   // store того, кто сделал запрос), так что они не «текут» между собой.
   h.globalBefore(({ request, ctx }) => {
-    const token = ctx.get({ key: 'accessToken' })
+    const token = ctx.getSafe({ key: 'accessToken' })
     if (token) request.headers.Authorization = `Bearer ${token}`
   })
 

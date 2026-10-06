@@ -25,9 +25,9 @@ describe('posts', () => {
     const created = await alice.posts.create({ body: { title: 'Hello', content: 'First post' } })
     created.assert(201, { title: 'Hello', publishedAt: null })
 
-    const postId = alice.get({ key: 'lastPostId' })!
+    const postId = alice.get({ key: 'lastPostId' })
     expect(postId).toBe(created.assert(201).body.id)
-    expect(bob.get({ key: 'lastPostId' })).toBeUndefined()
+    expect(bob.getSafe({ key: 'lastPostId' })).toBeUndefined()
     // #endregion
     const path = { id: postId }
 

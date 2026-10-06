@@ -49,6 +49,7 @@ test('группа: тег → camelCase', () => {
 test('группа: зарезервированное имя → суффикс Api', () => {
   assert.equal(toGroupName('store'), 'storeApi')
   assert.equal(toGroupName('Get'), 'getApi')
+  assert.equal(toGroupName('Get Safe'), 'getSafeApi')
   assert.equal(toGroupName('api'), 'apiApi')
 })
 

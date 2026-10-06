@@ -26,7 +26,7 @@ describe("posts", () => {
         })
         created.assert(200)
 
-        const lastPostId = user1.get({ key: "lastPostId" })!
+        const lastPostId = user1.get({ key: "lastPostId" })
         const res = await user1.posts.get({ path: { id: lastPostId } })
         res.assert(200, { id: lastPostId, title: created.body.title })
     })
@@ -43,8 +43,8 @@ describe("posts", () => {
         })
         created2.assert(200, { content: testContent })
 
-        const p1 = user1.get({ key: "lastPostId" })!
-        const p2 = user2.get({ key: "lastPostId" })!
+        const p1 = user1.get({ key: "lastPostId" })
+        const p2 = user2.get({ key: "lastPostId" })
 
         // Тот же хук, но ctx = store user2 → у каждого свой lastPostId.
         expect(p1).toBeTruthy()

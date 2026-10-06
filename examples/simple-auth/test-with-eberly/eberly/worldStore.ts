@@ -19,7 +19,7 @@ export class WorldStore extends BaseStore<WorldVars, WorldApi> {
   public async clearDatabase(): Promise<void> {
     const res = await this.api.admin.clearDatabase()
     res.assert(200, { success: true })
-    this.set({ key: 'resets', value: (this.get({ key: 'resets' }) ?? 0) + 1 })
+    this.set({ key: 'resets', value: (this.getSafe({ key: 'resets' }) ?? 0) + 1 })
   }
 
   /** Поднять/опустить роль конкретного пользователя по email. */

@@ -8,10 +8,16 @@
 // дженериком и может добавлять производные методы поверх this.get/this.set.
 
 export class BaseStore<
-  Vars extends Record<string, unknown> = Record<string, never>,
+  // По умолчанию `unknown`, не `never`: голый `BaseStore` — ограничение в
+  // сгенерированных `World` / `Hooks`, он должен принимать любой стор, а с
+  // `never` строгий тип возврата `get` его отвергнет.
+  Vars extends Record<string, unknown> = Record<string, unknown>,
   Api = unknown,
 > {
-  private store = new Map<keyof Vars, unknown>()
+  // Ключ — `PropertyKey`, а не `keyof Vars`: иначе приватное поле делает
+  // `BaseStore<UserVars>` несовместимым с голым `BaseStore` (в `.d.ts` тип
+  // приватного поля стирается, а в исходнике — нет).
+  private store = new Map<PropertyKey, unknown>()
 
   /**
    * Типизированный доступ к эндпоинтам ИЗНУТРИ методов-сценариев
@@ -39,8 +45,24 @@ export class BaseStore<
     this.store.set(args.key, args.value)
   }
 
-  /** Прочитать внутреннюю переменную пользователя (undefined, если не задана). */
-  get<K extends keyof Vars>(args: { key: K }): Vars[K] | undefined {
+  /**
+   * Read a user variable. Throws if it is not set.
+   * If the value may be missing (e.g. in a hook for an anonymous user), use `getSafe`.
+   * @throws {Error} when the key has no value
+   */
+  get<K extends keyof Vars>(args: { key: K }): Vars[K] {
+    if (!this.store.has(args.key)) {
+      const key = String(args.key)
+      throw new Error(
+        `eberly: "${key}" is not set on this user. It is usually set by a hook or a scenario — ` +
+          `check that the request ran and succeeded. If the value may be missing, use getSafe({ key: '${key}' }).`,
+      )
+    }
+    return this.store.get(args.key) as Vars[K]
+  }
+
+  /** Read a user variable, or `undefined` if it is not set. Never throws. */
+  getSafe<K extends keyof Vars>(args: { key: K }): Vars[K] | undefined {
     return this.store.get(args.key) as Vars[K] | undefined
   }
 }

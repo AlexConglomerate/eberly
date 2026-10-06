@@ -7,7 +7,7 @@ import type { UserStore } from './userStore'
 export const hooks: Hooks<UserStore> = (h) => {
   // Токен из стора — в каждый запрос. Нет токена (аноним) — нет заголовка.
   h.globalBefore(({ request, ctx }) => {
-    const token = ctx.get({ key: 'accessToken' })
+    const token = ctx.getSafe({ key: 'accessToken' })
     if (token) request.headers.Authorization = `Bearer ${token}`
   })
 
