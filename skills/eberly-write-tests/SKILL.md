@@ -16,8 +16,9 @@ response instead.
 ## Steps
 
 1. **Fresh client.** If the backend's swagger changed (or the user says so),
-   refresh it first: re-download `swagger.json` if `eberly/eberly.ts` uses
-   `pathToFile` and the user gave a URL, then `pnpm run client:generate`.
+   refresh it first: re-download the spec file (JSON or YAML) if
+   `eberly/eberly.ts` uses `pathToFile` and the user gave a URL (with
+   `{ url }` there is nothing to download), then `pnpm run client:generate`.
 2. **Pick endpoints.** Read `eberly/api/INDEX.md` and choose the endpoints
    the scenario needs.
 3. **Read only those docs:** `eberly/api/<group>.<method>.md`. Each one has a

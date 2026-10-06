@@ -36,3 +36,28 @@
 - `bin/eberly.mjs:144` ссылается на `github.com/…/eberly#quick-start` — при
   сокращении README (06) якорь должен остаться или ссылка — смениться.
 - Домен `eberly.dev` на 2026-10-06 свободен (RDAP реестра `.dev` — 404).
+
+## 2026-10-06 — NEXT-yaml-spec
+
+- Нашёл / пошло не по плану: `parseSpecText` **готов**, но лежит не в
+  `swagger.ts`, а в новом `src/generator/parse.ts` — `swagger.ts`
+  импортирует `node:fs` / `node:path`, а `parse.ts` без `node:`, его можно
+  бандлить в браузер. Сигнатура: `parseSpecText({ text, source }):
+  Promise<Json>` — **async** (YAML-парсер грузится лениво,
+  `await import('yaml')`). `{` после `trim()` → `JSON.parse`, иначе YAML;
+  битый текст / скаляр / массив / пустой текст — `Error` с сообщением
+  `eberly: failed to parse the OpenAPI spec from <source> as JSON or YAML: …`.
+  `yaml` — первая рантайм-зависимость (`dependencies`, `^2.9.1`), tsup её не
+  бандлит. Тесты — `src/generator/swagger.test.ts`, типы —
+  `swagger.type-test.ts`. `pnpm test` / `lint` / `e2e` зелёные. Пример на
+  YAML-схему (пункт «по желанию») не переводил: `examples/simple` — это
+  шаблон `eberly create`, YAML там сменил бы схему у всех новых проектов.
+- Следующему (03): импортировать `../../src/generator/parse` и `await
+  parseSpecText({ text, source: 'editor' })`; сообщение ошибки можно
+  показывать как есть. `yaml` резолвится из корневого `node_modules` (импорт
+  идёт из `src/`), отдельно ставить в `site/` не нужно — но если Vite
+  не найдёт, добавить `yaml` в `site/package.json`. В README рецепт Nest
+  теперь `swagger: { url: 'http://localhost:3000/docs-json' }` без
+  `jsonDocumentUrl`; сам Nest-пример всё ещё отдаёт `/swagger.json` — это
+  не мешает.
+- Поправил файлы плана: нет.

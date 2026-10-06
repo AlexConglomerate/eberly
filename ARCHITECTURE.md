@@ -62,6 +62,7 @@ src/
 └── generator/               # внутренности генератора (не публичные)
     ├── types.ts             #   общий тип Json
     ├── swagger.ts           #   SwaggerSource + loadSpec()  — ОТКУДА брать схему
+    ├── parse.ts             #   parseSpecText()             — текст JSON/YAML → объект
     ├── version.ts           #   assertSupportedVersion()    — КАКУЮ версию берём
     ├── names.ts             #   имена типов и групп         — КАК называть
     ├── schema.ts            #   JSON-Schema → строка TS-типа — КАК типизировать
@@ -75,9 +76,20 @@ src/
 Зачем именно так:
 
 - **`generator/swagger.ts`** — единственное место, которое знает про
-  файлы и сеть. `loadSpec()` берёт схему либо из файла (`pathToFile`),
-  либо по `url`. Тип `SwaggerSource` устроен так, что нельзя указать оба
+  файлы и сеть. `loadSpec()` читает текст схемы либо из файла
+  (`pathToFile`: `.json` / `.yaml` / `.yml` — расширение ограничено, чтобы
+  ловить опечатки), либо по `url` (любой `http(s)`, без требования `.json`:
+  `/docs-json` у Nest, `/v3/api-docs` у springdoc), и отдаёт его в
+  `parseSpecText`. Тип `SwaggerSource` устроен так, что нельзя указать оба
   поля одновременно.
+- **`generator/parse.ts`** — чистая `parseSpecText({ text, source })`:
+  формат определяется по тексту, а не по расширению или `content-type` —
+  после `trim()` начинается с `{` → `JSON.parse`, иначе YAML (пакет
+  `yaml`, единственная рантайм-зависимость, грузится лениво через
+  `import('yaml')`). Битый текст или не объект на выходе (скаляр, массив,
+  пустой файл) — одна ошибка *"failed to parse the OpenAPI spec from
+  <source> as JSON or YAML"*. Без `node:`-импортов — её переиспользует
+  плейграунд в браузере.
 - **`generator/schema.ts`** — чистая функция `schemaToType()`: узел
   JSON-Schema → строка TypeScript-типа (`{ "id": string }` и т.п.).
   Плюс помощники `resolveRef` (разворачивает `$ref`) и

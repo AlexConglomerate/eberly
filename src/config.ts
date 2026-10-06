@@ -43,7 +43,7 @@ export type EberlyConfig = {
    */
   worldStore?: new () => BaseStore<any, any>
 
-  /** Откуда брать swagger-схему: из файла (`pathToFile`) или по `url`. */
+  /** Откуда брать swagger-схему (JSON или YAML): из файла (`pathToFile`) или по `url`. */
   swagger: SwaggerSource
 
   /** Путь, куда писать сгенерированный клиент (резолвится от process.cwd()). */

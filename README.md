@@ -5,7 +5,7 @@
 [![npm](https://img.shields.io/npm/v/eberly)](https://www.npmjs.com/package/eberly)
 [![license](https://img.shields.io/npm/l/eberly)](LICENSE)
 
-eberly reads your backend's `swagger.json` and generates a typed TypeScript
+eberly reads your backend's OpenAPI spec (JSON or YAML) and generates a typed TypeScript
 client for tests. Every test user gets their own state, hooks keep tokens and
 ids for you, and when the backend changes its contract, the tests stop
 compiling.
@@ -257,7 +257,8 @@ existing project.
 
 ## What your backend needs
 
-- **OpenAPI 3.0 or 3.1.** Swagger 2.0 is rejected with a clear error.
+- **OpenAPI 3.0 or 3.1**, as JSON or YAML. Swagger 2.0 is rejected with a
+  clear error.
 - **`tags` on operations.** The first tag is the group: `user.posts.create(…)`.
   Without tags the group comes from the `operationId` prefix, then the path.
 - **A test mode.** Tests need to start from a known state and finish flows
@@ -285,14 +286,9 @@ return SwaggerModule.createDocument(app, config, {
 ```
 
 With `SwaggerModule.setup('docs', …)` Nest serves the spec at `/docs-json`.
-eberly's `swagger.url` must end in `.json`, so either download it into a file
-(`curl -fsSL http://localhost:3000/docs-json -o swagger.json`, then
-`swagger: { pathToFile: 'swagger.json' }`) or serve it at a `.json` URL, as
-the example does in [`main.ts`](examples/nest/your-app/src/main.ts):
-
-```ts
-SwaggerModule.setup('docs', app, createSwaggerDocument(app), { jsonDocumentUrl: 'swagger.json' })
-```
+Point eberly straight at it: `swagger: { url: 'http://localhost:3000/docs-json' }`.
+Any http(s) URL works, with or without `.json` (springdoc's `/v3/api-docs`
+too).
 
 **oRPC.** Its OpenAPI handler expects arrays of files as `files[0]`,
 `files[1]`, so set:
@@ -362,7 +358,7 @@ export const eberly = {
 | Field | Default | Description |
 | --- | --- | --- |
 | `url` | (required) | Base URL of the backend under test. `new World({ url })` overrides it. |
-| `swagger` | (required) | Where to read the spec: `{ pathToFile: 'swagger.json' }` or `{ url: 'http://…/swagger.json' }`. |
+| `swagger` | (required) | Where to read the spec, JSON or YAML: a file `{ pathToFile: 'swagger.json' }` (`.json`, `.yaml` or `.yml`) or any http(s) URL `{ url: 'http://localhost:3000/docs-json' }`. |
 | `generateClientTo` | (required) | Path of the generated client, e.g. `'eberly/generated.ts'`. `eberly/api/` is written next to it. |
 | `userStore` | (required) | Class extending `BaseStore`: variables and scenarios of one user. |
 | `worldStore` | none | Class extending `BaseStore`: app-level scenarios such as `reset()`, called as `world.reset()`. |

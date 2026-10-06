@@ -24,7 +24,10 @@
 - `src/config.ts` — публичный тип `EberlyConfig` (+ `ClientMode`, `allowedHosts`).
 - `src/generate-client.ts` — оркестратор: связывает шаги генератора и пишет файл.
 - `src/generator/` — внутренности генератора (НЕ публичные):
-  - `swagger.ts` — `SwaggerSource` + загрузка схемы (`loadSpec`).
+  - `swagger.ts` — `SwaggerSource` + загрузка схемы (`loadSpec`): файл
+    `.json`/`.yaml`/`.yml` или любой http(s)-URL.
+  - `parse.ts` — `parseSpecText`: текст схемы → объект (`{` → JSON, иначе
+    YAML через ленивый `import('yaml')`). Без `node:` — для браузера.
   - `version.ts` — `assertSupportedVersion`: 3.0/3.1 ок, Swagger 2.0 и
     прочее — ошибка.
   - `names.ts` — имена типов для `components/schemas` (`buildSchemaNames`,

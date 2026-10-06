@@ -19,7 +19,8 @@ These cannot be derived from the swagger. Ask in one message, suggest
 defaults, and skip what the user already told you:
 
 1. **Swagger source:** URL of the running backend (`/swagger.json`,
-   `/openapi.json`, Nest: `/docs-json`, FastAPI: `/openapi.json`) or a file.
+   `/openapi.json`, Nest: `/docs-json`, FastAPI: `/openapi.json`) or a
+   JSON/YAML file.
 2. **Backend URL** (default `http://localhost:3000`). If it is not
    localhost / 127.0.0.1, ask explicitly: "Is this a test environment and
    **not production**?" Only on a clear yes add its host to `allowedHosts`.
@@ -51,9 +52,11 @@ generating, clear it out, otherwise `client:generate` fails on the imports:
 ## 3. Config: `eberly/eberly.ts`
 
 - `url`: the backend URL.
-- `swagger`: prefer a committed file, `{ pathToFile: 'swagger.json' }`.
-  Download it with `curl -fsSL <swagger-url> -o swagger.json` (re-run when
-  the backend changes). `{ url }` works only for URLs ending in `.json`.
+- `swagger`: prefer a committed file, `{ pathToFile: 'swagger.json' }`
+  (`.json`, `.yaml` or `.yml`). Download it with
+  `curl -fsSL <swagger-url> -o swagger.json` (re-run when the backend
+  changes). `{ url }` takes any http(s) URL, with or without `.json`
+  (e.g. Nest's `/docs-json`). JSON or YAML is detected from the content.
 - `allowedHosts: ['staging.example.com']` only for a confirmed non-prod host.
 - Backend on oRPC with arrays of files: `files: { encoding: 'bracket-index' }`.
 - Keep `userStore`, `worldStore`, `hooks`, `generateClientTo`, `mode: 'test'`.
