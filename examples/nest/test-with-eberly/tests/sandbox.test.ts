@@ -6,8 +6,36 @@ import { World } from '../eberly/generated'
 describe('Sandbox', () => {
   beforeEach(() => new World().reset())
 
-    // Landing candidate: two users, three kinds of matchers, statuses from the spec.
-  test.only('Bob cannot delete the post of Alice', async () => {
+  // Landing candidate v2
+  test.only('A reader cannot delete the post of the author', async () => {
+    const world = new World()
+    const author = world.createUser()
+    const reader = world.createUser()
+
+    await author.signUp() // register + log in
+    await reader.signUp()
+
+    const postData = { title: 'Hello', content: 'First post' }
+    const created = await author.posts.create({ body: st post' } })
+    const post = created.assert(201, { // typed status
+      title: 'Hello', // exact value
+      createdAt: z.iso.datetime(), // any Standard Schema: Zod, Valibot, ArkType…
+      authorId: expect.any(Number), // vitest / Jest matcher
+    })
+
+    const postId = post.body.id
+    const byReader = await reader.posts.remove({ path: { postId } })
+    byReader.assert(403) // not the author
+
+    const byAuthor = await author.posts.remove({ path: { postId } })
+    byAuthor.assert(204) // deleted
+
+    const twice = await author.posts.remove({ path: { postId } })
+    twice.assert(404) // already gone
+  })
+
+  // Landing candidate: two users, three kinds of matchers, statuses from the spec.
+  test('Bob cannot delete the post of Alice', async () => {
     const world = new World()
     const alice = world.createUser()
     const james = world.createUser()
@@ -64,29 +92,33 @@ describe('Sandbox', () => {
     tryToRemoveAgain.assert(404) // already gone
   })
 
-  // Landing candidate: two users, three kinds of matchers, statuses from the spec.
-  test('Bob cannot delete the post of Alice', async () => {
+  // Landing candidate v2
+  test('A reader cannot delete the post of the author', async () => {
     const world = new World()
-    const alice = world.createUser()
-    const bob = world.createUser()
-    await alice.signUp() // register + log in: the token goes into every request of Alice
-    await bob.signUp()
+    const author = world.createUser()
+    const reader = world.createUser()
 
-    const created = await alice.posts.create({ body: { title: 'Hello', content: 'First post' } })
-    const post = created.assert(201, { // only the statuses declared in the spec
-      title: 'Hello', // exact value
+    await author.signUp() // register + log in
+    await reader.signUp()
+
+    const postData = { title: 'Hello', content: 'First post' }
+    const created = await author.posts.create({ body: postData })
+
+    const post = created.assert(201, { // typed status
+      title: postData.title, // exact value
       createdAt: z.iso.datetime(), // any Standard Schema: Zod, Valibot, ArkType…
       authorId: expect.any(Number), // vitest / Jest matcher
-    }).body // typed as PostDto from here on
+    })
 
-    const byBob = await bob.posts.remove({ path: { postId: post.id } })
-    byBob.assert(403)
+    const postId = post.body.id
+    const byReader = await reader.posts.remove({ path: { postId } })
+    byReader.assert(403) // not the author
 
-    const byAlice = await alice.posts.remove({ path: { postId: post.id } })
-    byAlice.assert(204)
+    const byAuthor = await author.posts.remove({ path: { postId } })
+    byAuthor.assert(204) // deleted
 
-    const again = await alice.posts.remove({ path: { postId: post.id } })
-    again.assert(404)
+    const twice = await author.posts.remove({ path: { postId } })
+    twice.assert(404) // already gone
   })
 
   test.skip('Alice creates, reads and deletes a post, Bob cannot', async () => {
