@@ -48,9 +48,9 @@ pnpm --filter @eberly-examples/auth-your-app run swagger  # перегенери
 | `POST /auth/oauth/google/login`| публичный                       |
 | `GET  /auth/session`           | bearer (любой user)             |
 | `POST /auth/sign-out`          | bearer (любой user)             |
-| `GET  /posts`, `/posts/{id}`   | bearer (любой user)             |
+| `GET  /posts`, `/posts/{postId}`   | bearer (любой user)             |
 | `POST /posts`                  | bearer (любой user)             |
-| `PATCH /posts/{id}`            | bearer (автор поста ИЛИ admin)  |
-| `DELETE /posts/{id}`           | bearer (только admin)           |
+| `PATCH /posts/{postId}`            | bearer (автор поста ИЛИ admin)  |
+| `DELETE /posts/{postId}`           | bearer (только admin)           |
 | `POST /admin/clear-database`   | публичный (тест-хелпер)         |
 | `POST /admin/promote`          | публичный (тест-хелпер)         |

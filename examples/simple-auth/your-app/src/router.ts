@@ -211,14 +211,14 @@ const listPosts = authed
 const getPost = authed
   .route({
     method: 'GET',
-    path: '/posts/{id}',
+    path: '/posts/{postId}',
     summary: 'Get a single post (auth required)',
     tags: ['Posts'],
   })
-  .input(z.object({ id: z.string() }))
+  .input(z.object({ postId: z.string() }))
   .output(PostSchema)
   .handler(({ input }) => {
-    const post = posts.findById({ id: input.id })
+    const post = posts.findById({ id: input.postId })
     if (!post) throw new ORPCError('NOT_FOUND', { message: 'Post not found' })
     return post
   })
@@ -239,27 +239,27 @@ const createPost = authed
 const updatePost = authed
   .route({
     method: 'PATCH',
-    path: '/posts/{id}',
+    path: '/posts/{postId}',
     summary: 'Update a post (author OR admin)',
     tags: ['Posts'],
   })
   .input(
     z.object({
-      id: z.string(),
+      postId: z.string(),
       title: z.string().min(1).optional(),
       content: z.string().min(1).optional(),
     }),
   )
   .output(PostSchema)
   .handler(({ input, context }) => {
-    const existing = posts.findById({ id: input.id })
+    const existing = posts.findById({ id: input.postId })
     if (!existing) throw new ORPCError('NOT_FOUND', { message: 'Post not found' })
     const isAuthor = existing.authorId === context.user.id
     const isAdmin = context.user.role === 'admin'
     if (!isAuthor && !isAdmin) {
       throw new ORPCError('FORBIDDEN', { message: 'You can only update your own posts' })
     }
-    const updated = posts.update({ id: input.id, title: input.title, content: input.content })
+    const updated = posts.update({ id: input.postId, title: input.title, content: input.content })
     if (!updated) throw new ORPCError('NOT_FOUND', { message: 'Post not found' })
     return updated
   })
@@ -267,14 +267,14 @@ const updatePost = authed
 const deletePost = adminOnly
   .route({
     method: 'DELETE',
-    path: '/posts/{id}',
+    path: '/posts/{postId}',
     summary: 'Delete a post (admin only)',
     tags: ['Posts'],
   })
-  .input(z.object({ id: z.string() }))
+  .input(z.object({ postId: z.string() }))
   .output(SuccessSchema)
   .handler(({ input }) => {
-    const removed = posts.remove({ id: input.id })
+    const removed = posts.remove({ id: input.postId })
     if (!removed) throw new ORPCError('NOT_FOUND', { message: 'Post not found' })
     return { success: true }
   })

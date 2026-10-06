@@ -12,9 +12,9 @@ Open `<group>.<method>.md` for details. Call as `user.<group>.<method>(…)`.
 ## posts
 - posts.list — GET /posts — List all posts (auth required)
 - posts.create — POST /posts — Create a post (any authenticated user; authorId = current user)
-- posts.get — GET /posts/{id} — Get a single post (auth required)
-- posts.update — PATCH /posts/{id} — Update a post (author OR admin)
-- posts.delete — DELETE /posts/{id} — Delete a post (admin only)
+- posts.get — GET /posts/{postId} — Get a single post (auth required)
+- posts.update — PATCH /posts/{postId} — Update a post (author OR admin)
+- posts.delete — DELETE /posts/{postId} — Delete a post (admin only)
 
 ## admin
 - admin.clearDatabase — POST /admin/clear-database — Wipe ALL data (тест-хелпер, не для прода)

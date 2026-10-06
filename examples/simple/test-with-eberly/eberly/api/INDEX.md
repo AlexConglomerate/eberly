@@ -5,9 +5,9 @@ Open `<group>.<method>.md` for details. Call as `user.<group>.<method>(…)`.
 ## posts
 - posts.list — GET /posts — List all posts
 - posts.create — POST /posts — Create a post
-- posts.get — GET /posts/{id} — Get a single post by id
-- posts.update — PATCH /posts/{id} — Update a post
-- posts.delete — DELETE /posts/{id} — Delete a post
+- posts.get — GET /posts/{postId} — Get a single post by id
+- posts.update — PATCH /posts/{postId} — Update a post
+- posts.delete — DELETE /posts/{postId} — Delete a post
 
 ## auth
 - auth.register — POST /auth/register — Register (stub: echoes input)

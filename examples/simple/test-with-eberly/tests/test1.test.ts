@@ -27,12 +27,12 @@ describe("posts", () => {
         created.assert(200)
 
         const lastPostId = user1.get({ key: "lastPostId" })
-        const res = await user1.posts.get({ path: { id: lastPostId } })
+        const res = await user1.posts.get({ path: { postId: lastPostId } })
         res.assert(200, { id: lastPostId, title: created.body.title })
     })
 
     test("несуществующий пост → 404", async () => {
-        const missing = await user1.posts.get({ path: { id: "does-not-exist" } })
+        const missing = await user1.posts.get({ path: { postId: "does-not-exist" } })
         missing.assert(404)
     })
 

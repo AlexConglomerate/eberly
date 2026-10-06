@@ -42,7 +42,7 @@ describe('oauth (fake Google)', () => {
   test('OAuth-юзер БЕЗ роли admin не может удалять — 403', async () => {
     const created = await googler.posts.create({ body: { title: 't', content: 'c' } })
     created.assert(200)
-    const del = await googler.posts.delete({ path: { id: created.body.id } })
+    const del = await googler.posts.delete({ path: { postId: created.body.id } })
     del.assert(403)
   })
 })

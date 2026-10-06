@@ -75,8 +75,8 @@ describe('posts', () => {
 
   test('non-author gets 403 on delete', async () => {
     const created = await alice.posts.create({ body: { title: 'Hi', content: 'x' } })
-    const id = created.assert(201, { title: 'Hi' }).body.id // body narrowed to the 201 type
-    const res = await bob.posts.remove({ path: { id } }) // path params are typed from the spec
+    const postId = created.assert(201, { title: 'Hi' }).body.id // body narrowed to the 201 type
+    const res = await bob.posts.remove({ path: { postId } }) // path params are typed from the spec
     res.assert(403, { message: 'Only the author can do this' })
   })
 })

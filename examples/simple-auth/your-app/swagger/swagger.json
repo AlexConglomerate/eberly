@@ -413,7 +413,7 @@
         }
       }
     },
-    "/posts/{id}": {
+    "/posts/{postId}": {
       "get": {
         "operationId": "posts.get",
         "summary": "Get a single post (auth required)",
@@ -422,7 +422,7 @@
         ],
         "parameters": [
           {
-            "name": "id",
+            "name": "postId",
             "in": "path",
             "required": true,
             "schema": {
@@ -479,7 +479,7 @@
         ],
         "parameters": [
           {
-            "name": "id",
+            "name": "postId",
             "in": "path",
             "required": true,
             "schema": {
@@ -556,7 +556,7 @@
         ],
         "parameters": [
           {
-            "name": "id",
+            "name": "postId",
             "in": "path",
             "required": true,
             "schema": {

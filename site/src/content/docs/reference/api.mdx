@@ -17,7 +17,7 @@ const world = new World()             // reads eberly.ts: url, stores, hooks
 const alice = world.createUser()      // a user with their own variables and token
 await world.reset()                   // a worldStore scenario
 
-const res = await alice.posts.get({ path: { id: '1' } })   // also: body, query
+const res = await alice.posts.get({ path: { postId: '1' } })   // also: body, query
 res.status                            // number
 res.body                              // union of the declared response bodies
 res.data                              // 2xx body; any other status throws

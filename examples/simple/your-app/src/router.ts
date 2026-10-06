@@ -25,14 +25,14 @@ const listPosts = os
 const getPost = os
   .route({
     method: 'GET',
-    path: '/posts/{id}',
+    path: '/posts/{postId}',
     summary: 'Get a single post by id',
     tags: ['Posts'],
   })
-  .input(z.object({ id: z.string() }))
+  .input(z.object({ postId: z.string() }))
   .output(PostSchema)
   .handler(({ input }) => {
-    const post = db.findById({ id: input.id })
+    const post = db.findById({ id: input.postId })
     if (!post) {
       throw new ORPCError('NOT_FOUND', { message: 'Post not found' })
     }
@@ -58,13 +58,13 @@ const createPost = os
 const updatePost = os
   .route({
     method: 'PATCH',
-    path: '/posts/{id}',
+    path: '/posts/{postId}',
     summary: 'Update a post',
     tags: ['Posts'],
   })
   .input(
     z.object({
-      id: z.string(),
+      postId: z.string(),
       title: z.string().min(1).optional(),
       content: z.string().min(1).optional(),
     }),
@@ -72,7 +72,7 @@ const updatePost = os
   .output(PostSchema)
   .handler(({ input }) => {
     const post = db.update({
-      id: input.id,
+      id: input.postId,
       title: input.title,
       content: input.content,
     })
@@ -85,14 +85,14 @@ const updatePost = os
 const deletePost = os
   .route({
     method: 'DELETE',
-    path: '/posts/{id}',
+    path: '/posts/{postId}',
     summary: 'Delete a post',
     tags: ['Posts'],
   })
-  .input(z.object({ id: z.string() }))
+  .input(z.object({ postId: z.string() }))
   .output(z.object({ success: z.boolean() }))
   .handler(({ input }) => {
-    const removed = db.remove({ id: input.id })
+    const removed = db.remove({ id: input.postId })
     if (!removed) {
       throw new ORPCError('NOT_FOUND', { message: 'Post not found' })
     }

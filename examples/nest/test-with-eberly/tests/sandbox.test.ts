@@ -57,6 +57,7 @@ describe('Песочница', () => {
     await alice.signUp()
 
     // создадим пост
+    type PostData = WType
     const postData = { title: 'Hello', content: 'First post' }
     await alice.posts.create({ body: postData })
 

@@ -35,17 +35,17 @@ describe('roles (user vs admin)', () => {
   test('user НЕ может удалить пост (даже свой) — 403', async () => {
     const created = await user.posts.create({ body: { title: 'Doomed', content: 'x' } })
     created.assert(200)
-    const del = await user.posts.delete({ path: { id: created.body.id } })
+    const del = await user.posts.delete({ path: { postId: created.body.id } })
     del.assert(403)
   })
 
   test('admin удаляет любой пост — 200', async () => {
     const created = await user.posts.create({ body: { title: 'Trash', content: 'x' } })
     created.assert(200)
-    const del = await admin.posts.delete({ path: { id: created.body.id } })
+    const del = await admin.posts.delete({ path: { postId: created.body.id } })
     del.assert(200, { success: true })
     // и теперь он действительно пропал
-    const gone = await admin.posts.get({ path: { id: created.body.id } })
+    const gone = await admin.posts.get({ path: { postId: created.body.id } })
     gone.assert(404)
   })
 
@@ -53,7 +53,7 @@ describe('roles (user vs admin)', () => {
     const adminPost = await admin.posts.create({ body: { title: 'Admin post', content: 'a' } })
     adminPost.assert(200)
     const tryUpdate = await user.posts.update({
-      path: { id: adminPost.body.id },
+      path: { postId: adminPost.body.id },
       body: { title: 'hacked' },
     })
     tryUpdate.assert(403)
@@ -63,7 +63,7 @@ describe('roles (user vs admin)', () => {
     const my = await user.posts.create({ body: { title: 'My', content: 'mine' } })
     my.assert(200)
     const upd = await user.posts.update({
-      path: { id: my.body.id },
+      path: { postId: my.body.id },
       body: { title: 'My (edited)' },
     })
     upd.assert(200, { title: 'My (edited)' })
@@ -73,7 +73,7 @@ describe('roles (user vs admin)', () => {
     const usersPost = await user.posts.create({ body: { title: 'For moderation', content: 'm' } })
     usersPost.assert(200)
     const upd = await admin.posts.update({
-      path: { id: usersPost.body.id },
+      path: { postId: usersPost.body.id },
       body: { content: 'moderated by admin' },
     })
     upd.assert(200, { content: 'moderated by admin' })

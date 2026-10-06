@@ -132,9 +132,9 @@ export type WorldApi = {
       /**
        * Get a single post (auth required)
        *
-       * `GET /posts/{id}`
+       * `GET /posts/{postId}`
        */
-      "get": (input: { path: { "id": string } }) => Promise<ApiResponse<{ 200: {
+      "get": (input: { path: { "postId": string } }) => Promise<ApiResponse<{ 200: {
           "id": string
           "title": string
           "content": string
@@ -145,9 +145,9 @@ export type WorldApi = {
       /**
        * Update a post (author OR admin)
        *
-       * `PATCH /posts/{id}`
+       * `PATCH /posts/{postId}`
        */
-      "update": (input: { path: { "id": string }; body?: {
+      "update": (input: { path: { "postId": string }; body?: {
           "title"?: string
           "content"?: string
         } }) => Promise<ApiResponse<{ 200: {
@@ -161,9 +161,9 @@ export type WorldApi = {
       /**
        * Delete a post (admin only)
        *
-       * `DELETE /posts/{id}`
+       * `DELETE /posts/{postId}`
        */
-      "delete": (input: { path: { "id": string } }) => Promise<ApiResponse<{ 200: {
+      "delete": (input: { path: { "postId": string } }) => Promise<ApiResponse<{ 200: {
           "success": boolean
         } }>>
     }
@@ -670,24 +670,24 @@ export class World<
         "get": async (input) =>
           new ApiResponse({ ...(await request({
             method: "GET",
-            path: "/posts/{id}",
+            path: "/posts/{postId}",
             opKey: "posts.get",
             input: input as RequestInput,
-          })), endpoint: "GET /posts/{id}" }) as never,
+          })), endpoint: "GET /posts/{postId}" }) as never,
         "update": async (input) =>
           new ApiResponse({ ...(await request({
             method: "PATCH",
-            path: "/posts/{id}",
+            path: "/posts/{postId}",
             opKey: "posts.update",
             input: input as RequestInput,
-          })), endpoint: "PATCH /posts/{id}" }) as never,
+          })), endpoint: "PATCH /posts/{postId}" }) as never,
         "delete": async (input) =>
           new ApiResponse({ ...(await request({
             method: "DELETE",
-            path: "/posts/{id}",
+            path: "/posts/{postId}",
             opKey: "posts.delete",
             input: input as RequestInput,
-          })), endpoint: "DELETE /posts/{id}" }) as never,
+          })), endpoint: "DELETE /posts/{postId}" }) as never,
       },
       "admin": {
         "clearDatabase": async (input) =>
