@@ -32,7 +32,8 @@
    продакшен-сборке (не на `localhost`, не на превью `*.pages.dev`).
    Обёртку `track()` из 03 (`site/src/lib/analytics.ts`, пока no-op)
    подключить к `umami.track`. Событие
-   `open_stackblitz` на кнопку из 04, `copy_install` на копирование
+   `open_stackblitz` на кнопку из 04 (`site/src/components/OpenInStackBlitz.astro`,
+   статичная ссылка — нужен клиентский `<script>` на клик), `copy_install` на копирование
    команды установки. В футере: *Privacy-friendly analytics, no cookies.*
 6. `package.json` → `homepage: "https://eberly.dev"` (changeset `patch`,
    поле обновится в npm со следующим релизом). Ссылку на сайт — в описание

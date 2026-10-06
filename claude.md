@@ -135,13 +135,15 @@ npm-пакет.
     (`@astrojs/react`, для плейграунда); Vite-плагин, который роняет
     сборку, если в браузерный бандл попал `node:*`.
   - `src/content/docs/index.mdx` — лендинг (`template: splash`), в разделе
-    «Try it» — плейграунд; место под StackBlitz (04) помечено комментарием
-    `STACKBLITZ`.
+    «Try it» — плейграунд и кнопка «Open in StackBlitz».
   - `src/content/docs/playground.mdx` — плейграунд отдельной страницей.
   - `src/content/docs/**` — документация (разделы README по страницам).
   - `src/components/Playground.astro` — блок плейграунда для `.mdx`: на
     широком экране React-остров (`client:visible`), на узком — статичный
     `example.test.ts` (остров скрыт, Monaco не грузится).
+  - `src/components/OpenInStackBlitz.astro` — кнопка «Open in StackBlitz»
+    (лендинг и Getting started): весь репо из `main` + `?file=` на
+    `nest/…/tests/readme.test.ts`.
   - `src/playground/` — плейграунд: `Playground.tsx` (остров, лениво
     грузит остальное), `Workbench.tsx` (UI: схема → `parseSpecText` +
     `buildClient` из `../../../src/generator/*` прямо в браузере),
@@ -173,6 +175,16 @@ region: '…' })} lang="ts" />`. Руками код в `.mdx` не копиро
 Скрипты репозитория (`scripts/`, проверяются `pnpm lint`):
 - `e2e.ts` — `pnpm e2e` (см. ниже).
 - `sync-template.ts` — пересобрать `clone/tests` из примера.
+- `stackblitz.ts` — `pnpm stackblitz`: сборка библиотеки → Nest-бэкенд
+  (`TEST_MODE=1`, `:3000`) → свагер с живого бэкенда → `client:generate` →
+  vitest в watch-режиме. Стартовая команда StackBlitz.
+
+`.stackblitzrc` (корень) — StackBlitz открывает весь репо
+(`stackblitz.com/github/AlexConglomerate/eberly`): своя установка только
+`eberly` + `examples/nest/*` (`installDependencies: false`), затем
+`pnpm run stackblitz`. Проверка локально — `pnpm stackblitz` (порт `:3000`
+свободен); в самом StackBlitz — только после пуша (ветку открыть
+`…/eberly/tree/<ветка>`).
 
 ## Команды
 

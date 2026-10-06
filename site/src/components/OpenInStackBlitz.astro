@@ -1,0 +1,14 @@
+---
+// "Open in StackBlitz": the whole repo from `main` in WebContainers. The root
+// `.stackblitzrc` installs the Nest example only, builds eberly, starts the
+// backend and runs vitest in watch mode (`scripts/stackblitz.ts`). The link
+// opens the test from the landing's "Before and after".
+import { LinkButton } from '@astrojs/starlight/components'
+
+const STACKBLITZ_URL =
+  'https://stackblitz.com/github/AlexConglomerate/eberly?file=examples/nest/test-with-eberly/tests/readme.test.ts'
+---
+
+<LinkButton href={STACKBLITZ_URL} target="_blank" rel="noopener" icon="external" variant="secondary">
+  Open in StackBlitz
+</LinkButton>

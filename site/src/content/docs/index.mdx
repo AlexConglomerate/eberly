@@ -14,8 +14,9 @@ hero:
       variant: minimal
 ---
 
-import { Aside, Card, CardGrid, Code } from '@astrojs/starlight/components'
+import { Card, CardGrid, Code } from '@astrojs/starlight/components'
 
+import OpenInStackBlitz from '../../components/OpenInStackBlitz.astro'
 import Playground from '../../components/Playground.astro'
 import { snippet } from '../../lib/snippet'
 import readmeTest from '../../../../examples/nest/test-with-eberly/tests/readme.test.ts?raw'
@@ -57,11 +58,11 @@ processed in your browser and never leaves it.
 
 <Playground />
 
-{/* STACKBLITZ: task 04 adds the "Open in StackBlitz" button here. */}
+Want the real thing? Open the NestJS example in StackBlitz: the backend starts
+in your browser, the client is generated from its spec and the tests go green
+in a couple of minutes. Edit a test and it reruns.
 
-<Aside>
-  Coming soon: a one-click StackBlitz project with a real backend.
-</Aside>
+<OpenInStackBlitz />
 
 ## Why eberly
 
