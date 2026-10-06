@@ -28,3 +28,9 @@ void [created, conflict, raw]
 
 // Статус из массива требует `as const`, иначе это просто `number`.
 for (const s of [401, 403] as const) res.assert(s)
+
+// `data` — тело только 2xx-статусов, без assert.
+const fromData: { id: string } = res.data
+// @ts-expect-error — тело 4xx в `data` не попадает
+const notError: { message: string } = res.data
+void [fromData, notError]

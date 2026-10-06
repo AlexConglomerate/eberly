@@ -504,79 +504,79 @@ export class World<
     return {
       "posts": {
         "list": async (input) =>
-          new ApiResponse(await request({
+          new ApiResponse({ ...(await request({
             method: "GET",
             path: "/posts",
             opKey: "posts.list",
             input: input as RequestInput,
-          })) as never,
+          })), endpoint: "GET /posts" }) as never,
         "create": async (input) =>
-          new ApiResponse(await request({
+          new ApiResponse({ ...(await request({
             method: "POST",
             path: "/posts",
             opKey: "posts.create",
             input: input as RequestInput,
-          })) as never,
+          })), endpoint: "POST /posts" }) as never,
         "get": async (input) =>
-          new ApiResponse(await request({
+          new ApiResponse({ ...(await request({
             method: "GET",
             path: "/posts/{id}",
             opKey: "posts.get",
             input: input as RequestInput,
-          })) as never,
+          })), endpoint: "GET /posts/{id}" }) as never,
         "update": async (input) =>
-          new ApiResponse(await request({
+          new ApiResponse({ ...(await request({
             method: "PATCH",
             path: "/posts/{id}",
             opKey: "posts.update",
             input: input as RequestInput,
-          })) as never,
+          })), endpoint: "PATCH /posts/{id}" }) as never,
         "delete": async (input) =>
-          new ApiResponse(await request({
+          new ApiResponse({ ...(await request({
             method: "DELETE",
             path: "/posts/{id}",
             opKey: "posts.delete",
             input: input as RequestInput,
-          })) as never,
+          })), endpoint: "DELETE /posts/{id}" }) as never,
       },
       "auth": {
         "register": async (input) =>
-          new ApiResponse(await request({
+          new ApiResponse({ ...(await request({
             method: "POST",
             path: "/auth/register",
             opKey: "auth.register",
             input: input as RequestInput,
-          })) as never,
+          })), endpoint: "POST /auth/register" }) as never,
         "confirm": async (input) =>
-          new ApiResponse(await request({
+          new ApiResponse({ ...(await request({
             method: "POST",
             path: "/auth/confirm",
             opKey: "auth.confirm",
             input: input as RequestInput,
-          })) as never,
+          })), endpoint: "POST /auth/confirm" }) as never,
         "getGetSession": async (input) =>
-          new ApiResponse(await request({
+          new ApiResponse({ ...(await request({
             method: "GET",
             path: "/auth/session",
             opKey: "auth.getGetSession",
             input: input as RequestInput,
-          })) as never,
+          })), endpoint: "GET /auth/session" }) as never,
         "postGetSession": async (input) =>
-          new ApiResponse(await request({
+          new ApiResponse({ ...(await request({
             method: "POST",
             path: "/auth/session",
             opKey: "auth.postGetSession",
             input: input as RequestInput,
-          })) as never,
+          })), endpoint: "POST /auth/session" }) as never,
       },
       "admin": {
         "clearDatabase": async (input) =>
-          new ApiResponse(await request({
+          new ApiResponse({ ...(await request({
             method: "POST",
             path: "/admin/clear-database",
             opKey: "admin.clearDatabase",
             input: input as RequestInput,
-          })) as never,
+          })), endpoint: "POST /admin/clear-database" }) as never,
       },
     }
   }

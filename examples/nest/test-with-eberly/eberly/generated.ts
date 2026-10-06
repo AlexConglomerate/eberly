@@ -580,104 +580,104 @@ export class World<
     return {
       "auth": {
         "register": async (input) =>
-          new ApiResponse(await request({
+          new ApiResponse({ ...(await request({
             method: "POST",
             path: "/auth/register",
             opKey: "auth.register",
             input: input as RequestInput,
-          })) as never,
+          })), endpoint: "POST /auth/register" }) as never,
         "login": async (input) =>
-          new ApiResponse(await request({
+          new ApiResponse({ ...(await request({
             method: "POST",
             path: "/auth/login",
             opKey: "auth.login",
             input: input as RequestInput,
-          })) as never,
+          })), endpoint: "POST /auth/login" }) as never,
         "me": async (input) =>
-          new ApiResponse(await request({
+          new ApiResponse({ ...(await request({
             method: "GET",
             path: "/auth/me",
             opKey: "auth.me",
             input: input as RequestInput,
-          })) as never,
+          })), endpoint: "GET /auth/me" }) as never,
         "whoami": async (input) =>
-          new ApiResponse(await request({
+          new ApiResponse({ ...(await request({
             method: "GET",
             path: "/auth/whoami",
             opKey: "auth.whoami",
             input: input as RequestInput,
-          })) as never,
+          })), endpoint: "GET /auth/whoami" }) as never,
       },
       "posts": {
         "list": async (input) =>
-          new ApiResponse(await request({
+          new ApiResponse({ ...(await request({
             method: "GET",
             path: "/posts",
             opKey: "posts.list",
             input: input as RequestInput,
-          })) as never,
+          })), endpoint: "GET /posts" }) as never,
         "create": async (input) =>
-          new ApiResponse(await request({
+          new ApiResponse({ ...(await request({
             method: "POST",
             path: "/posts",
             opKey: "posts.create",
             input: input as RequestInput,
-          })) as never,
+          })), endpoint: "POST /posts" }) as never,
         "get": async (input) =>
-          new ApiResponse(await request({
+          new ApiResponse({ ...(await request({
             method: "GET",
             path: "/posts/{id}",
             opKey: "posts.get",
             input: input as RequestInput,
-          })) as never,
+          })), endpoint: "GET /posts/{id}" }) as never,
         "remove": async (input) =>
-          new ApiResponse(await request({
+          new ApiResponse({ ...(await request({
             method: "DELETE",
             path: "/posts/{id}",
             opKey: "posts.remove",
             input: input as RequestInput,
-          })) as never,
+          })), endpoint: "DELETE /posts/{id}" }) as never,
         "publish": async (input) =>
-          new ApiResponse(await request({
+          new ApiResponse({ ...(await request({
             method: "POST",
             path: "/posts/{id}/publish",
             opKey: "posts.publish",
             input: input as RequestInput,
-          })) as never,
+          })), endpoint: "POST /posts/{id}/publish" }) as never,
       },
       "comments": {
         "list": async (input) =>
-          new ApiResponse(await request({
+          new ApiResponse({ ...(await request({
             method: "GET",
             path: "/posts/{id}/comments",
             opKey: "comments.list",
             input: input as RequestInput,
-          })) as never,
+          })), endpoint: "GET /posts/{id}/comments" }) as never,
         "create": async (input) =>
-          new ApiResponse(await request({
+          new ApiResponse({ ...(await request({
             method: "POST",
             path: "/posts/{id}/comments",
             opKey: "comments.create",
             input: input as RequestInput,
-          })) as never,
+          })), endpoint: "POST /posts/{id}/comments" }) as never,
       },
       "users": {
         "uploadAvatar": async (input) =>
-          new ApiResponse(await request({
+          new ApiResponse({ ...(await request({
             method: "POST",
             path: "/users/me/avatar",
             opKey: "users.uploadAvatar",
             input: input as RequestInput,
-          })) as never,
+          })), endpoint: "POST /users/me/avatar" }) as never,
       },
       "test": {
         "reset": async (input) =>
-          new ApiResponse(await request({
+          new ApiResponse({ ...(await request({
             method: "POST",
             path: "/test/reset",
             opKey: "test.reset",
             input: input as RequestInput,
-          })) as never,
+          })), endpoint: "POST /test/reset" }) as never,
       },
     }
   }

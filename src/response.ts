@@ -20,6 +20,15 @@ export class EberlyAssertionError extends Error {
   }
 }
 
+/**
+ * Обрезает стек ошибки по вызов `fn` включительно: первым кадром становится
+ * строка теста, и vitest показывает её, а не внутренности eberly.
+ */
+function trimStack(args: { error: Error; fn: (...args: never[]) => unknown }): Error {
+  Error.captureStackTrace?.(args.error, args.fn)
+  return args.error
+}
+
 /** Описание первого найденного расхождения тела ответа с эталоном. */
 export type Mismatch = { path: string; expected: unknown; actual: unknown }
 
@@ -86,12 +95,15 @@ export function assertResponse(args: {
   actualBody: unknown
   expectedStatus: number
   expectedBody?: unknown
+  /** `"POST /posts"` — префикс сообщения, чтобы было видно, какой запрос упал. */
+  endpoint?: string
 }): void {
-  const { actualStatus, actualBody, expectedStatus, expectedBody } = args
+  const { actualStatus, actualBody, expectedStatus, expectedBody, endpoint } = args
+  const prefix = endpoint ? `${endpoint}: ` : ''
 
   if (actualStatus !== expectedStatus) {
     throw new EberlyAssertionError(
-      `Expected status ${expectedStatus}, got ${actualStatus}.\n` +
+      `${prefix}Expected status ${expectedStatus}, got ${actualStatus}.\n` +
         `Response body: ${safeJson(actualBody)}`,
     )
   }
@@ -101,7 +113,7 @@ export function assertResponse(args: {
   const mismatch = matchPartial({ actual: actualBody, expected: expectedBody })
   if (mismatch) {
     throw new EberlyAssertionError(
-      `Response body mismatch at "${mismatch.path || '<root>'}": ` +
+      `${prefix}Response body mismatch at "${mismatch.path || '<root>'}": ` +
         `expected ${safeJson(mismatch.expected)}, ` +
         `got ${safeJson(mismatch.actual)}.\n` +
         `Full body: ${safeJson(actualBody)}`,
@@ -121,22 +133,48 @@ export type UndeclaredErrorStatus<S extends number, M> = S extends keyof M
     ? S
     : never
 
+/** Задекларированные 2xx-статусы карты `M` (тело — то, что отдаёт `data`). */
+export type SuccessStatus<M> = {
+  [K in keyof M]: `${K & number}` extends `2${string}` ? K : never
+}[keyof M]
+
 /**
  * Ответ эндпоинта в режиме `'test'`. Дженерик `M` — карта «статус → тело»,
  * собранная генератором по swagger.
  *
  * - `status` / `body` — фактические значения ответа (не-2xx тоже доступен);
+ * - `data` — тело успешного ответа, на не-2xx бросает (как `get` у стора);
  * - `assert(status, body?)` — проверка; статус подсказывается интеллисенсом.
  */
 export class ApiResponse<M extends Record<number, unknown>> {
   /** Фактический HTTP-статус ответа. */
   readonly status: number
-  /** Распарсенное тело ответа. */
+  /** Распарсенное тело ответа любого статуса. */
   readonly body: M[keyof M]
+  /** Метод и путь из swagger (`"POST /posts"`) для сообщений об ошибках. */
+  readonly endpoint?: string
 
-  constructor(args: { status: number; body: M[keyof M] }) {
+  constructor(args: { status: number; body: M[keyof M]; endpoint?: string }) {
     this.status = args.status
     this.body = args.body
+    this.endpoint = args.endpoint
+  }
+
+  /**
+   * Тело успешного (2xx) ответа. На любой другой статус бросает
+   * {@link EberlyAssertionError} со статусом и телом — стек указывает на
+   * строку теста. Для подготовки данных: `(await alice.posts.create(…)).data.id`.
+   * Если статус и есть предмет теста, пишите `assert(201)`: `data` примет
+   * любой 2xx, а не именно 201.
+   */
+  get data(): M[SuccessStatus<M>] {
+    if (this.status >= 200 && this.status < 300) return this.body as M[SuccessStatus<M>]
+    const prefix = this.endpoint ? `${this.endpoint}: ` : ''
+    const error = new EberlyAssertionError(
+      `${prefix}Expected a 2xx response, got ${this.status}.\n` +
+        `Response body: ${safeJson(this.body)}`,
+    )
+    throw trimStack({ error, fn: dataGetter })
   }
 
   /**
@@ -157,12 +195,20 @@ export class ApiResponse<M extends Record<number, unknown>> {
   ): this & { readonly body: M[S] }
   assert<S extends number>(status: S & UndeclaredErrorStatus<S, M>, expectedBody?: unknown): this
   assert(status: number, expectedBody?: unknown): this {
-    assertResponse({
-      actualStatus: this.status,
-      actualBody: this.body,
-      expectedStatus: status,
-      expectedBody,
-    })
+    try {
+      assertResponse({
+        actualStatus: this.status,
+        actualBody: this.body,
+        expectedStatus: status,
+        expectedBody,
+        endpoint: this.endpoint,
+      })
+    } catch (error) {
+      throw error instanceof Error ? trimStack({ error, fn: this.assert }) : error
+    }
     return this
   }
 }
+
+/** Геттер `data` как функция — точка обрезки стека в `trimStack`. */
+const dataGetter = Object.getOwnPropertyDescriptor(ApiResponse.prototype, 'data')?.get ?? (() => {})

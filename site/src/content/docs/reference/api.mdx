@@ -20,6 +20,7 @@ await world.reset()                   // a worldStore scenario
 const res = await alice.posts.get({ path: { id: '1' } })   // also: body, query
 res.status                            // number
 res.body                              // union of the declared response bodies
+res.data                              // 2xx body; any other status throws
 res.assert(200)                       // status only
 res.assert(200, { title: 'Hello' })   // + deep-partial body check
 res.assert(200).body.title            // body narrowed to the 200 type

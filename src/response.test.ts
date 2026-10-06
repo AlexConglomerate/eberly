@@ -91,3 +91,40 @@ test('ApiResponse.assert: бросает при несовпадении ста�
   })
   assert.throws(() => res.assert(200), EberlyAssertionError)
 })
+
+test('ApiResponse.data: на 2xx отдаёт тело', () => {
+  const res = new ApiResponse<{ 201: { id: string }; 403: { message: string } }>({
+    status: 201,
+    body: { id: '42' },
+  })
+  assert.equal(res.data.id, '42')
+})
+
+test('ApiResponse.data: на не-2xx бросает со статусом, телом и эндпоинтом', () => {
+  const res = new ApiResponse<{ 201: { id: string }; 403: { message: string } }>({
+    status: 403,
+    body: { message: 'nope' },
+    endpoint: 'POST /posts',
+  })
+  assert.throws(
+    () => res.data,
+    (err: unknown) =>
+      err instanceof EberlyAssertionError &&
+      /^POST \/posts: Expected a 2xx response, got 403\.\nResponse body: \{"message":"nope"\}$/.test(
+        err.message,
+      ),
+  )
+})
+
+test('ApiResponse: стек ошибки начинается с вызывающего кода, а не с eberly', () => {
+  const res = new ApiResponse<{ 200: { id: string } }>({ status: 500, body: { id: '1' } })
+  for (const run of [() => res.data, () => res.assert(200)]) {
+    try {
+      run()
+      assert.fail('должно было бросить')
+    } catch (err) {
+      const firstFrame = String((err as Error).stack).split('\n').find((l) => l.includes(' at '))
+      assert.match(String(firstFrame), /response\.test\.ts/)
+    }
+  }
+})

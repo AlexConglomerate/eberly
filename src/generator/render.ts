@@ -146,8 +146,9 @@ function renderMethod(args: { op: Operation; mode: ClientMode }): string {
           ${call} as never,`
   }
 
+  const endpoint = JSON.stringify(`${op.method.toUpperCase()} ${op.path}`)
   return `        ${JSON.stringify(op.name)}: async (input) =>
-          new ApiResponse(await ${call}) as never,`
+          new ApiResponse({ ...(await ${call}), endpoint: ${endpoint} }) as never,`
 }
 
 /** Импорты сгенерированного файла. В 'test' дополнительно нужны ApiResponse и assertHostAllowed. */

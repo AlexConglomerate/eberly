@@ -34,8 +34,8 @@ response instead.
    - reuse store scenarios instead of repeating register/login steps;
    - `res.assert(status, partialBody)`: take statuses from the md files;
      any 4xx/5xx is allowed even if the swagger does not declare it;
-   - take ids from store variables that hooks save, or from
-     `res.assert(201).body.id`;
+   - take ids from store variables that hooks save, from
+     `res.assert(201).body.id`, or in setup steps from `res.data.id`;
    - unique data per test (`randomUUID()` in emails, titles);
    - test names describe behavior: `'non-author gets 403 on delete'`.
 6. **Refactor when it repeats.** Multi-step setup used in 2+ tests → a
@@ -87,7 +87,9 @@ describe('posts', () => {
   (only given fields are compared; arrays compare by index from 0).
   Returns the response, so `.assert(200).body` is typed. Status from a
   variable needs `as const`: `for (const s of [401, 403] as const) res.assert(s)`.
-- Raw access without asserting: `res.status`, `res.body`.
+- `res.data`: the 2xx body, throws on any other status. Use it in setup
+  steps; when the status is what the test checks, use `assert`.
+- Raw access without asserting: `res.status`, `res.body` (any status).
 - Store vars: `alice.get({ key: 'lastPostId' })` (throws if not set) / `alice.set({ key, value })`;
   where a value may be missing (hooks, anonymous user) use `getSafe` → `T | undefined`;
   inside store methods `this.get` / `this.set`, endpoints via `this.api.<group>.<method>`.

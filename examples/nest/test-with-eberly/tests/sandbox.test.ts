@@ -23,11 +23,13 @@ describe('Песочница', () => {
     const postData = { title: 'Hello', content: 'First post' }
     const post = await alice.posts.create({ body: postData })
 
-    // Как посмотреть ID поста? 
-    const store = alice.get({ key: 'lastPostId' }) // Можем достать из внутренних переменных Алисы.  
-    const body = post.assert(201).body.id // То же самое можем получить из ответа
-    expect(store).toEqual(body)
-    const alicePostId = store
+    // Как посмотреть ID поста? Три способа, все дают одно и то же:
+    const fromStore = alice.get({ key: 'lastPostId' }) // из переменных Алисы (кладёт хук)
+    const fromAssert = post.assert(201).body.id // проверили статус и взяли из ответа
+    const fromData = post.data.id // напрямую: не 2xx — ошибка на этой строке
+    expect(fromStore).toEqual(fromAssert)
+    expect(fromData).toEqual(fromAssert)
+    const alicePostId = fromData
 
     // Алиса и Боб читают пост
     const bobRead = await bob.posts.get({ path: { id: alicePostId } })
