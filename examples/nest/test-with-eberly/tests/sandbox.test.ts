@@ -3,79 +3,151 @@ import { z } from 'zod'
 
 import { World } from '../eberly/generated'
 
-describe('Песочница', () => {
+describe('Sandbox', () => {
   beforeEach(() => new World().reset())
 
-  test('Алиса создаёт, читает и удаляет пост', async () => {
+    // Landing candidate: two users, three kinds of matchers, statuses from the spec.
+  test.only('Bob cannot delete the post of Alice', async () => {
+    const world = new World()
+    const alice = world.createUser()
+    const james = world.createUser()
+
+    await alice.signUp() // register + log in: the token goes into every request of Alice
+    await james.signUp()
+
+    const postData = { title: 'Hello', content: 'First post' }
+    const created = await alice.posts.create({ body: postData })
+
+    const post = created.assert(201, { // only the statuses declared in the spec
+      title: 'Hello', // exact value
+      createdAt: z.iso.datetime(), // any Standard Schema: Zod, Valibot, ArkType…
+      authorId: expect.any(Number), // vitest / Jest matcher
+    })
+
+    const postId = post.body.id
+    const byJames = await james.posts.remove({ path: { postId } })
+    const byAlice = await alice.posts.remove({ path: { postId } })
+    const alAgain = await alice.posts.remove({ path: { postId } })
+
+    byJames.assert(403) // Нельзя удалить чужой пост
+    byAlice.assert(204) // успешное удаление
+    alAgain.assert(404) // уже удалено
+  })
+
+
+  test('Alice creates, reads and deletes a post', async () => {
     const world = new World()
     const alice = world.createUser()
 
     await alice.signUp()
 
-    // создадим пост
+    // create a post
     const postData = { title: 'Hello', content: 'First post' }
     await alice.posts.create({ body: postData })
 
-    // прочитаем пост
-    const postId = alice.get({ key: 'lastPostId' }) // из переменных Алисы (кладёт хук)
+    // read it back
+    const postId = alice.get({ key: 'lastPostId' }) // from Alice's variables (an after-hook saves it)
     const aliceRead = await alice.posts.get({ path: { postId } })
 
-    // проверим ответ
-    aliceRead.assert(200, { // Типизированная проверка статуса
+    // check the response
+    aliceRead.assert(200, { // typed status check
       title: postData.title, // exact value
       createdAt: z.iso.datetime(), // any Standard Schema: Zod, Valibot, ArkType etc
       authorId: expect.any(Number) // Jest/vitest matcher
     })
 
-    // Алиса пытается удалить пост дважды
+    // Alice tries to delete the post twice
     const tryToRemove = await alice.posts.remove({ path: { postId } })
     const tryToRemoveAgain = await alice.posts.remove({ path: { postId } })
 
-    tryToRemove.assert(204) // Успешно удалили
-    tryToRemoveAgain.assert(404) // Уже удалён, 404
+    tryToRemove.assert(204) // deleted
+    tryToRemoveAgain.assert(404) // already gone
   })
 
-  test.skip('Алиса создаёт, читает и удаляет пост, Боб — нет', async () => {
+  // Landing candidate: two users, three kinds of matchers, statuses from the spec.
+  test('Bob cannot delete the post of Alice', async () => {
+    const world = new World()
+    const alice = world.createUser()
+    const bob = world.createUser()
+    await alice.signUp() // register + log in: the token goes into every request of Alice
+    await bob.signUp()
+
+    const created = await alice.posts.create({ body: { title: 'Hello', content: 'First post' } })
+    const post = created.assert(201, { // only the statuses declared in the spec
+      title: 'Hello', // exact value
+      createdAt: z.iso.datetime(), // any Standard Schema: Zod, Valibot, ArkType…
+      authorId: expect.any(Number), // vitest / Jest matcher
+    }).body // typed as PostDto from here on
+
+    const byBob = await bob.posts.remove({ path: { postId: post.id } })
+    byBob.assert(403)
+
+    const byAlice = await alice.posts.remove({ path: { postId: post.id } })
+    byAlice.assert(204)
+
+    const again = await alice.posts.remove({ path: { postId: post.id } })
+    again.assert(404)
+  })
+
+  test.skip('Alice creates, reads and deletes a post, Bob cannot', async () => {
     const world = new World()
 
-    // Создаём двух пользователей
+    // Two users
     const alice = world.createUser()
     const bob = world.createUser()
 
-    // Алиса и Боб регистрируются и логинятся, токены сохраняются в их сторы
+    // Alice and Bob register and log in, the tokens go into their stores
     await alice.signUp({ email: 'alice@example.com', password: '123' })
-    await bob.signUp() // можно без аргументов — сгенерятся случайные email и пароль
+    await bob.signUp() // no arguments: a random email and password are generated
 
-    // Алиса создаёт пост
+    // Alice creates a post
     const postData = { title: 'Hello', content: 'First post' }
     const post = await alice.posts.create({ body: postData })
 
-    // Три способа достать пост ID
+    // Three ways to get the post id
     const v1 = alice.get({ key: 'lastPostId' })
     const v2 = post.data.id
     const v3 = post.assert(201).body.id
     const alicePostId = v1
 
-    // Алиса и Боб читают пост
+    // Alice and Bob read the post
     const bobRead = await bob.posts.get({ path: { postId: alicePostId } })
     const aliceRead = await alice.posts.get({ path: { postId: alicePostId } })
 
-    bobRead.assert(200) // Можем проверить только статус
+    bobRead.assert(200) // status only
 
-    // А можем еще и тело ответа
+    // or the body too
     aliceRead.assert(200, {
       id: z.number().int(), // any Standard Schema: Zod, Valibot, ArkType etc
       title: postData.title, // exact value
       authorId: expect.any(Number) // Jest/vitest matcher
     })
 
-    // Алиса и Боб пытаются удалить пост
+    // Alice and Bob try to delete the post
     const bobTryToRemove = await bob.posts.remove({ path: { postId: alicePostId } })
     const aliceTryToRemove = await alice.posts.remove({ path: { postId: alicePostId } })
     const aliceTryToRemoveAgain = await alice.posts.remove({ path: { postId: alicePostId } })
 
-    bobTryToRemove.assert(403) // Боб не может удалить чужой пост
-    aliceTryToRemove.assert(204) // Успешно удалили
-    aliceTryToRemoveAgain.assert(404) // Уже удалён, 404
+    bobTryToRemove.assert(403) // Bob cannot delete a post of someone else
+    aliceTryToRemove.assert(204) // deleted
+    aliceTryToRemoveAgain.assert(404) // already gone
   })
 })
+
+// "It is all typed", for the landing. Never runs: `pnpm typecheck` checks
+// that every line below is a compile error.
+export async function caughtByTypeScript(): Promise<void> {
+  const alice = new World().createUser()
+
+  // @ts-expect-error: `titel` does not exist in CreatePostDto
+  const res = await alice.posts.create({ body: { titel: 'Hello', content: 'First post' } })
+
+  // @ts-expect-error: POST /posts answers 201, not 200
+  res.assert(200)
+
+  // @ts-expect-error: `createdAt` is a string, the schema gives a number
+  res.assert(201, { createdAt: z.number() })
+
+  // @ts-expect-error: the path param is `postId`, not `id`
+  await alice.posts.get({ path: { id: 1 } })
+}
