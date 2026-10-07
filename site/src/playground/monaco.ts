@@ -2,6 +2,7 @@
 // (no CDN), and the virtual project the test is type-checked in:
 //
 //   file:///node_modules/eberly/index.d.ts  ← dist/index.d.ts (extra lib)
+//   file:///node_modules/zod/**/*.d.ts      ← zod's own types (extra libs)
 //   file:///vitest.d.ts                     ← a tiny `vitest` shim (extra lib)
 //   file:///eberly/eberly.ts                ← the config (hidden model)
 //   file:///eberly/generated.ts             ← buildClient(...).source
@@ -38,6 +39,14 @@ ts.setCompilerOptions(compilerOptions as monaco.typescript.CompilerOptions)
 ts.setEagerModelSync(true)
 ts.addExtraLib(eberlyDts, 'file:///node_modules/eberly/index.d.ts')
 ts.addExtraLib(vitestDts, 'file:///vitest.d.ts')
+
+// The real zod types, so any schema type-checks, not only the one in the
+// example. Only what `import { z } from 'zod'` reaches (v4 classic).
+const zodDts = import.meta.glob<string>(
+  ['/node_modules/zod/index.d.ts', '/node_modules/zod/v4/{classic,core,locales}/*.d.ts'],
+  { query: '?raw', import: 'default', eager: true },
+)
+for (const [path, source] of Object.entries(zodDts)) ts.addExtraLib(source, `file://${path}`)
 
 export const example = { spec: exampleSpec, test: exampleTest }
 

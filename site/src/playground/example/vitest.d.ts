@@ -3,4 +3,7 @@
 declare module 'vitest' {
   export function describe(name: string, fn: () => void): void
   export function test(name: string, fn: () => Promise<void> | void): void
+  export const expect: {
+    any(constructor: unknown): any
+  }
 }

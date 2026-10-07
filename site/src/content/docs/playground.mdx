@@ -6,16 +6,18 @@ template: splash
 
 import Playground from '../../components/Playground.astro'
 
-Left: an OpenAPI spec (YAML or JSON). Right: a test on the client eberly
-generates from it, and the generated client itself. The client is rebuilt
+Left: an OpenAPI spec (YAML or JSON). Right: the test from the landing page on
+the client eberly generates from it, and the generated client itself. The client is rebuilt
 when you click outside the spec editor or press <kbd>⌘</kbd>/<kbd>Ctrl</kbd>+<kbd>S</kbd>.
 
-Try renaming `title` to `name` in `CreatePostDto`: the test turns red, the
+Try renaming `title` to `name` in `PostDto`: the test turns red, the
 same way `tsc` fails in your project when the backend changes its contract.
 **Upload spec** takes your own `.json`, `.yaml` or `.yml` file. It is
 processed in your browser and never leaves it.
 
 <Playground />
 
-The test is type-checked, not run: there is no backend here. To run real
+The test is type-checked, not run: there is no backend here, and `signUp`
+is a stub (the real one registers and logs in, see
+[Stores](/reference/api/#stores)). To run real
 tests against a real backend, see [Getting started](/getting-started/).

@@ -14,10 +14,9 @@ hero:
       variant: minimal
 ---
 
-import { Card, CardGrid, Code } from '@astrojs/starlight/components'
+import { Card, CardGrid, Code, LinkButton } from '@astrojs/starlight/components'
 
 import OpenInStackBlitz from '../../components/OpenInStackBlitz.astro'
-import Playground from '../../components/Playground.astro'
 import { snippet } from '../../lib/snippet'
 import readmeTest from '../../../../examples/nest/test-with-eberly/tests/readme.test.ts?raw'
 
@@ -34,6 +33,10 @@ One `assert` checks the status and the body: exact values, schemas (Zod,
 Valibot, ArkType) and vitest matchers, all typed by the spec.
 
 <Code code={snippet({ source: readmeTest, region: 'readme-hero' })} lang="ts" />
+
+<LinkButton href="/playground/" icon="right-arrow" variant="secondary" data-umami-event="open_playground">
+  Edit in the playground
+</LinkButton>
 
 ## Before and after
 
@@ -56,12 +59,9 @@ and the statuses `201` / `403` are all checked by TypeScript.
 
 ## Try it
 
-Left: an OpenAPI spec. Right: a test on the client eberly generates from it.
-Rename `title` to `name` in `CreatePostDto`, click outside the editor, and the
-test turns red where the contract changed. Or upload your own spec: it is
+The [playground](/playground/) runs right here: edit the spec and watch the
+test above go red where the contract changed. Or upload your own spec: it is
 processed in your browser and never leaves it.
-
-<Playground />
 
 Want the real thing? Open the NestJS example in StackBlitz: the backend starts
 in your browser, the client is generated from its spec and the tests go green

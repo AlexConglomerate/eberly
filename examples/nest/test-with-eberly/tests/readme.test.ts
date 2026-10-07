@@ -1,7 +1,9 @@
 // Примеры из корневого README.md и лендинга сайта: короткий тест под
 // установкой (регион `docs:readme-hero`) и «до и после» (`docs:readme-before`
 // / `docs:readme-after`). Тела тестов скопированы в README один в один —
-// поменяли здесь, поменяйте и там.
+// поменяли здесь, поменяйте и там. `docs:readme-hero` ещё и в плейграунде
+// сайта (`site/src/playground/example/example.test.ts`), сверяет
+// `check:playground`.
 
 import { beforeEach, describe, expect, test } from 'vitest'
 import { z } from 'zod'

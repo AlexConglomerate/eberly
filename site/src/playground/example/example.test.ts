@@ -1,25 +1,19 @@
-import { describe, test } from 'vitest'
+import { expect, test } from 'vitest'
+import { z } from 'zod'
 
 import { World } from '../eberly/generated'
 
-// Rename `title` in the spec and click outside it:
-// this test turns red.
-describe('posts', () => {
-  test('Bob cannot delete the post of Alice', async () => {
-    const world = new World()
-    const alice = world.createUser()
-    const bob = world.createUser()
+test('a user creates a post', async () => {
+  const world = new World()
+  const user = world.createUser()
 
-    const res = await alice.posts.create({
-      body: { title: 'Hello', content: 'First post' },
-    })
-    // Statuses come from the spec, the body is
-    // checked partially and typed by the status.
-    const post = res.assert(201, { title: 'Hello' }).body
-    const removed = await bob.posts.remove({ path: { id: post.id } })
-    removed.assert(403, { message: 'Only the author can do this' })
+  await user.signUp() // register + log in
+  const body = { title: 'Hello', content: 'First post' }
+  const created = await user.posts.create({ body })
 
-    const found = await alice.posts.get({ path: { id: post.id } })
-    found.assert(200, { id: post.id, publishedAt: null })
+  created.assert(201, { // typed status
+    title: 'Hello', // exact value
+    createdAt: z.iso.datetime(), // Zod, Valibot, ArkType…
+    authorId: expect.any(Number), // vitest / Jest matcher
   })
 })

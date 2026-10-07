@@ -144,8 +144,11 @@ npm-пакет.
     Umami в `head`, свой `Footer`; React (`@astrojs/react`, для
     плейграунда); Vite-плагин, который роняет сборку, если в браузерный
     бандл попал `node:*`.
-  - `src/content/docs/index.mdx` — лендинг (`template: splash`), в разделе
-    «Try it» — плейграунд и кнопка «Open in StackBlitz».
+  - `src/content/docs/index.mdx` — лендинг (`template: splash`): под
+    hero-сниппетом кнопка «Edit in the playground» (`/playground/`, тот же
+    код, событие `open_playground`), в разделе «Try it» — ссылка на
+    плейграунд и кнопка «Open in StackBlitz». Самого плейграунда на
+    лендинге нет.
   - `src/content/docs/playground.mdx` — плейграунд отдельной страницей.
   - `src/content/docs/**` — документация (разделы README по страницам).
   - `src/components/Playground.astro` — блок плейграунда для `.mdx`: на
@@ -162,9 +165,12 @@ npm-пакет.
     `eberly/eberly.ts`, `eberly/generated.ts`, `tests/example.test.ts`),
     `compilerOptions.ts` (общие для Monaco и скрипта проверки).
   - `src/playground/example/` — пример по умолчанию: `example.yaml`
-    (посты из Nest-схемы), `example.test.ts`, `eberly.ts` (скрытый
-    конфиг), `vitest.d.ts` (заглушка `describe`/`test`). Исключены из
-    `tsconfig` сайта — их проверяет `scripts/check-playground.ts`.
+    (минимальная схема, один `POST /posts`), `example.test.ts` (содержит
+    регион `docs:readme-hero` один в один), `eberly.ts` (скрытый конфиг,
+    `signUp` — заглушка), `vitest.d.ts` (заглушка `describe`/`test`/
+    `expect.any`). Исключены из `tsconfig` сайта — их проверяет
+    `scripts/check-playground.ts`. Типы Zod в Monaco — настоящие
+    (`import.meta.glob` по `node_modules/zod`, `zod` — зависимость сайта).
   - `src/lib/analytics.ts` — `track({ name })` → `umami.track`. В события —
     только имя, никогда схему или имя файла.
   - `src/components/Footer.astro` — футер Starlight + «Privacy-friendly
@@ -173,8 +179,10 @@ npm-пакет.
     кнопке.
   - `public/favicon.svg` — иконка.
   - `scripts/check-playground.ts` — генерирует клиент из `example.yaml` в
-    `node_modules/.cache/eberly-playground/` и проверяет тест `tsc`-API.
-    Первый шаг `build`: сломанный пример ломает сборку.
+    `node_modules/.cache/eberly-playground/` и проверяет тест `tsc`-API, а
+    ещё что в `example.test.ts` есть регион `docs:readme-hero` (построчно,
+    без отступов). Первый шаг `build`: сломанный или разъехавшийся с
+    лендингом пример ломает сборку.
   - `scripts/check-dist.ts` — последний шаг `build`: в `dist/_astro` есть
     CSS Monaco и скрипт, который его грузит. Astro выбрасывает CSS из
     динамических импортов (в `dev` всё работает, в проде редактор кривой),

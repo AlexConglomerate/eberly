@@ -15,44 +15,12 @@ paths:
             schema: { $ref: '#/components/schemas/CreatePostDto' }
       responses:
         '201':
-          description: The created draft.
+          description: The created post.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/PostDto' }
         '400':
           description: Empty title or content.
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErrorDto' }
-  /posts/{id}:
-    get:
-      operationId: posts.get
-      tags: [posts]
-      summary: Get a post by id
-      parameters:
-        - { name: id, in: path, required: true, schema: { type: number } }
-      responses:
-        '200':
-          description: The post.
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/PostDto' }
-        '404':
-          description: No post with this id.
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErrorDto' }
-    delete:
-      operationId: posts.remove
-      tags: [posts]
-      summary: Delete a post
-      parameters:
-        - { name: id, in: path, required: true, schema: { type: number } }
-      responses:
-        '204':
-          description: Deleted. Empty body.
-        '403':
-          description: The current user is not the author.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorDto' }
@@ -62,22 +30,19 @@ components:
       type: object
       required: [title, content]
       properties:
-        title: { type: string, description: Post title, non-empty. }
-        content: { type: string, description: Post body, non-empty. }
+        title: { type: string }
+        content: { type: string }
     PostDto:
       type: object
-      required: [id, title, content, publishedAt]
+      required: [id, title, content, createdAt, authorId]
       properties:
         id: { type: number }
         title: { type: string }
         content: { type: string }
-        publishedAt:
-          type: string
-          nullable: true
-          description: '`null` while the post is a draft.'
+        createdAt: { type: string, format: date-time }
+        authorId: { type: number }
     ErrorDto:
       type: object
-      required: [statusCode, message]
+      required: [message]
       properties:
-        statusCode: { type: number }
         message: { type: string }

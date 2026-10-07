@@ -1,6 +1,8 @@
 // Runs before `astro build`: generates the client from the playground's
 // example spec and type-checks the example test, the same way the browser
-// does. A broken example breaks the build (and the deploy).
+// does. A broken example breaks the build (and the deploy). The test must
+// also contain the landing's hero snippet (`docs:readme-hero`) as is: the
+// "Edit in the playground" button under it promises the same code.
 //
 // Files go to node_modules/.cache/eberly-playground/ inside site/, so the
 // generated `import … from "eberly"` resolves to the workspace package.
@@ -10,6 +12,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
 
+import { snippet } from '../src/lib/snippet'
 import { compilerOptions } from '../src/playground/compilerOptions'
 
 // The library root is a CommonJS package: tsx loads `src/` as CJS, and from
@@ -26,6 +29,20 @@ const example = join(site, 'src/playground/example')
 const out = join(site, 'node_modules/.cache/eberly-playground')
 
 const read = (name: string) => readFile(join(example, name), 'utf8')
+
+// Indentation differs (the region sits inside `describe`), so lines are
+// compared trimmed.
+const readmeTest = await readFile(join(site, '../examples/nest/test-with-eberly/tests/readme.test.ts'), 'utf8')
+const trimLines = (text: string) => text.split(/\r?\n/).map((line) => line.trim()).join('\n')
+const hero = snippet({ source: readmeTest, region: 'readme-hero' })
+if (!trimLines(await read('example.test.ts')).includes(trimLines(hero))) {
+  console.error(
+    'check-playground: example.test.ts must contain the `docs:readme-hero` region of ' +
+      'examples/nest/test-with-eberly/tests/readme.test.ts line for line:\n\n' +
+      hero,
+  )
+  process.exit(1)
+}
 
 const spec = await parseSpecText({ text: await read('example.yaml'), source: 'example.yaml' })
 const { source, operations } = buildClient({ spec, mode: 'test', userStoreImport: 'eberly', configImport: './eberly' })
@@ -60,4 +77,4 @@ if (diagnostics.length > 0) {
   process.exit(1)
 }
 
-console.log(`check-playground: example spec → ${operations.length} endpoints, example.test.ts type-checks.`)
+console.log(`check-playground: example spec → ${operations.length} endpoints, example.test.ts type-checks and matches the hero snippet.`)
