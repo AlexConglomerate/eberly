@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm --filter eberly run build && astro dev",
-    "build": "pnpm --filter eberly run build && tsx scripts/check-playground.ts && astro build",
+    "build": "pnpm --filter eberly run build && tsx scripts/check-playground.ts && astro build && tsx scripts/check-dist.ts",
     "preview": "astro preview",
     "check:playground": "tsx scripts/check-playground.ts"
   },

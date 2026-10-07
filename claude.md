@@ -175,6 +175,11 @@ npm-пакет.
   - `scripts/check-playground.ts` — генерирует клиент из `example.yaml` в
     `node_modules/.cache/eberly-playground/` и проверяет тест `tsc`-API.
     Первый шаг `build`: сломанный пример ломает сборку.
+  - `scripts/check-dist.ts` — последний шаг `build`: в `dist/_astro` есть
+    CSS Monaco и скрипт, который его грузит. Astro выбрасывает CSS из
+    динамических импортов (в `dev` всё работает, в проде редактор кривой),
+    поэтому `Playground.tsx` сам вставляет `<link>` на
+    `monaco-editor/min/vs/editor/editor.main.css?url` перед монтированием.
   - `src/lib/snippet.ts` — `snippet({ source, region })`: вырезает из текста
     файла регион `// #region docs:<имя>` … `// #endregion` и убирает отступ.
     Нет региона — ошибка сборки.
@@ -235,7 +240,7 @@ region: '…' })} lang="ts" />`. Руками код в `.mdx` не копиро
 - `dev` — сайт локально на `http://localhost:4321` (сначала `pnpm build`
   библиотеки: плейграунду нужен `dist/index.d.ts`).
 - `build` — `pnpm build` библиотеки → `check:playground` → собрать в
-  `site/dist/` (заодно проверяет, что все регионы `docs:*` на месте);
+  `site/dist/` → `check-dist.ts` (заодно проверяет, что все регионы `docs:*` на месте);
   `preview` — посмотреть сборку.
 - `check:playground` — только проверка примера плейграунда.
 
