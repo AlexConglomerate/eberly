@@ -57,6 +57,24 @@ Scenario: Alice creates a post, Bob tries to delete it and must get `403`.
 token to every request of that user. `posts.create`, `posts.remove`, the body
 and the statuses `201` / `403` are all checked by TypeScript.
 
+## Built for AI agents
+
+An agent needs two things to write tests: the URL of a running backend and its
+OpenAPI spec. No access to the backend code.
+
+- **Reads only what the test needs.** `eberly/api/INDEX.md` lists the
+  endpoints. The agent opens one short file per endpoint it calls, not the
+  whole spec or the generated client.
+- **TypeScript is the feedback loop.** A wrong field or status doesn't
+  compile, and the error points at that exact field. The agent fixes it
+  without guessing.
+- **Skills included.** `npx eberly create` installs Claude Code skills for
+  setup and test writing.
+
+What keeps a human's head clear keeps an agent's context small. More in
+[Writing tests with AI agents](/guides/ai-agents/) and
+[Motivation](/motivation/).
+
 ## Try it
 
 The [playground](/playground/) runs right here: edit the spec and watch the
@@ -96,11 +114,6 @@ in a couple of minutes. Edit a test and it reruns.
   </Card>
   <Card title="File upload by path" icon="document">
     `{ body: { file: './avatar.png' } }`, and eberly builds the multipart form.
-  </Card>
-  <Card title="Endpoint docs for AI agents" icon="open-book">
-    The generator writes `eberly/api/`: one short Markdown file per endpoint,
-    so an agent writes tests without reading the whole client or the backend
-    code.
   </Card>
 </CardGrid>
 

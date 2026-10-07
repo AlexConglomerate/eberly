@@ -1,0 +1,35 @@
+---
+title: Motivation
+description: Why eberly exists. Types and tests take load off a person's attention, and an AI agent has the same limit.
+---
+
+I have always liked types and tests for one reason: they let me stop thinking.
+
+You think hard once, before writing the code: what should this endpoint do,
+what should it return, and to whom. You write that down as a test. From then
+on the test holds the behavior, and writing the code is almost mechanical. If
+something breaks, the test and the compiler point at the exact place, and you
+fix it without keeping the whole system in your head.
+
+API tests rarely work like that. They talk to the backend through bare
+`fetch`: tokens passed by hand, ids kept in variables, `any` in every
+response. A renamed field shows up as a failed run, if it shows up at all.
+eberly brings back the "think once" part: the client comes from the spec, so
+the compiler knows every endpoint, status and body, and every test user keeps
+their own tokens and ids, so a test is just the scenario.
+
+Then AI agents started writing code, and it turned out they have the same
+problem people do. Overload the context and an agent gets worse at the task,
+just like a person who has to keep too much in mind. The approach that takes
+load off a person's attention fits an agent almost exactly:
+
+- The agent doesn't need the backend repository. The URL of a running backend
+  and its OpenAPI spec are enough.
+- It doesn't load the whole spec either. It reads the
+  [endpoint index](/guides/ai-agents/) and opens only the endpoints of the
+  test it writes.
+- When it gets something wrong, TypeScript says where, and it fixes that one
+  spot.
+
+So eberly was useful before agents and is useful now for the same reason:
+attention is limited, whether it belongs to a person or a model.

@@ -57,6 +57,7 @@ export default defineConfig({
         { label: 'Gotchas', slug: 'gotchas' },
         { label: 'Reference', items: [{ autogenerate: { directory: 'reference' } }] },
         { label: 'Roadmap', slug: 'roadmap' },
+        { label: 'Motivation', slug: 'motivation' },
       ],
     }),
     react(),
