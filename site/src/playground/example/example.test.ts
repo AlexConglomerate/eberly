@@ -1,6 +1,5 @@
 import { expect, test } from 'vitest'
 import { z } from 'zod'
-
 import { World } from '../eberly/generated'
 
 test('a user creates a post', async () => {
