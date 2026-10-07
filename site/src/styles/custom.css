@@ -25,6 +25,18 @@
   order: 2;
 }
 
+/* On narrow screens Starlight shrinks the hero image to `min(70%, 20rem)`,
+   which squeezes the card's text into a thin column: use the full width. */
+@media (max-width: 49.99rem) {
+  .hero > .hero-html {
+    width: min(100%, 32rem);
+  }
+
+  .ai-card {
+    padding: 1rem 1.25rem;
+  }
+}
+
 .ai-card {
   display: flex;
   flex-direction: column;
