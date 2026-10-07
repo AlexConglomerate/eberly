@@ -20,6 +20,13 @@ res.assert(409, { wrong: 1 })
 // @ts-expect-error — тело 201 типизировано
 res.assert(201, { id: 1 })
 
+// Ошибка в теле подсвечивает само поле, а не `assert` целиком: директива
+// стоит на строке поля, поэтому уедь ошибка на вызов — она станет «unused».
+res.assert(201, {
+  // @ts-expect-error — `id` у 201 — string
+  id: 1,
+})
+
 // После задекларированного статуса тело сужено до него.
 const created: { id: string } = res.assert(201).body
 const conflict: { message: string } = res.assert(409).body

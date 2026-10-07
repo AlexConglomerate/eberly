@@ -217,16 +217,25 @@ export function assertResponse(args: {
 }
 
 /**
- * 4xx/5xx-статус, которого НЕТ в карте `M`. Задекларированные статусы
- * исключены намеренно: они идут через первую перегрузку `assert` с
- * типизированным телом — иначе `assert(409, { wrong: 1 })` молча прошёл бы
- * здесь с телом `unknown`. 1xx–3xx → `never` (опечатка 200 вместо 201).
+ * 4xx/5xx-статус, которого НЕТ в карте `M` (тело в `assert` — `unknown`).
+ * 1xx–3xx → `never` (опечатка 200 вместо 201).
  */
 export type UndeclaredErrorStatus<S extends number, M> = S extends keyof M
   ? never
   : `${S}` extends `4${string}` | `5${string}`
     ? S
     : never
+
+/**
+ * Статус, допустимый в `assert`: задекларированный или незадекларированный
+ * 4xx/5xx. На недопустимый — союз задекларированных, а не `never`: тогда
+ * ошибка говорит, какие подходят (`'202' is not assignable to '201 | 400'`).
+ */
+type AssertStatus<S extends number, M> = S extends keyof M
+  ? S
+  : [UndeclaredErrorStatus<S, M>] extends [never]
+    ? keyof M & number
+    : S
 
 /** Задекларированные 2xx-статусы карты `M` (тело — то, что отдаёт `data`). */
 export type SuccessStatus<M> = {
@@ -286,11 +295,14 @@ export class ApiResponse<M extends Record<number, unknown>> {
    * @returns тот же объект ответа. После задекларированного статуса `.body`
    *   сужен до его тела: `res.assert(201).body.id` без каста.
    */
-  assert<S extends keyof M>(
-    status: S,
-    expectedBody?: Expected<M[S]>,
-  ): this & { readonly body: M[S] }
-  assert<S extends number>(status: S & UndeclaredErrorStatus<S, M>, expectedBody?: unknown): this
+  // Одна сигнатура, а не перегрузки: если тело не сошлось, а перегрузки
+  // упали в разных местах, TS подчёркивает `assert` целиком («No overload
+  // matches this call»), а не неверное поле. `(number & {})` не даёт TS
+  // схлопнуть ограничение в `number` — иначе пропадёт автокомплит статусов.
+  assert<S extends (keyof M & number) | (number & {})>(
+    status: AssertStatus<S, M>,
+    expectedBody?: S extends keyof M ? Expected<M[S]> : unknown,
+  ): S extends keyof M ? this & { readonly body: M[S] } : this
   assert(status: number, expectedBody?: unknown): this {
     try {
       assertResponse({
