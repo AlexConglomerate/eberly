@@ -3,7 +3,20 @@ title: eberly
 description: Typed end-to-end API tests for any backend with an OpenAPI 3 spec.
 template: splash
 hero:
-  tagline: Typed end-to-end API tests for any backend with an OpenAPI 3 spec.
+  tagline: Typed end-to-end API tests for any backend with an OpenAPI 3 spec. Written by you or your AI agent.
+  # The right column of the hero: the AI pitch, visible without scrolling.
+  # Styles: `.ai-card` in `src/styles/custom.css`.
+  image:
+    html: |
+      <div class="ai-card">
+        <p class="ai-card-title">Built for AI agents</p>
+        <ul>
+          <li><strong>No backend code needed.</strong> The URL of a running backend and its OpenAPI spec are enough.</li>
+          <li><strong>Small context.</strong> The agent opens one short file per endpoint it calls, not the whole spec.</li>
+          <li><strong>TypeScript as feedback.</strong> A wrong field doesn't compile, and the error points right at it.</li>
+        </ul>
+        <a href="#built-for-ai-agents">How it works →</a>
+      </div>
   actions:
     - text: Get started
       link: /getting-started/
