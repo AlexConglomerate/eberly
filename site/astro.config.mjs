@@ -39,6 +39,13 @@ export default defineConfig({
       customCss: ['./src/styles/custom.css'],
       components: { Footer: './src/components/Footer.astro' },
       head: [
+        // Link preview (Telegram, Slack, X…). The image is drawn by
+        // `scripts/og-image.ts`; Starlight already sets og:title / og:description.
+        { tag: 'meta', attrs: { property: 'og:image', content: 'https://eberly.dev/og.png' } },
+        { tag: 'meta', attrs: { property: 'og:image:width', content: '1200' } },
+        { tag: 'meta', attrs: { property: 'og:image:height', content: '630' } },
+        { tag: 'meta', attrs: { name: 'twitter:card', content: 'summary_large_image' } },
+        { tag: 'meta', attrs: { name: 'twitter:image', content: 'https://eberly.dev/og.png' } },
         {
           tag: 'script',
           attrs: {

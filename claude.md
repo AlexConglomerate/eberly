@@ -179,6 +179,10 @@ npm-пакет.
     команды установки). `open_stackblitz` — атрибут `data-umami-event` на
     кнопке.
   - `public/favicon.svg` — иконка.
+  - `public/og.png` — превью ссылок (`og:image`, мета-теги — в `head` в
+    `astro.config.mjs`). Рисует `scripts/og-image.ts` (`og:image`: SVG →
+    `sharp`, код — регион `docs:readme-hero`); запускать руками и коммитить
+    PNG (шрифты системные, в `build` не входит).
   - `scripts/check-playground.ts` — генерирует клиент из `example.yaml` в
     `node_modules/.cache/eberly-playground/` и проверяет тест `tsc`-API, а
     ещё что в `example.test.ts` есть регион `docs:readme-hero` (построчно,
